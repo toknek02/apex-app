@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// role is a plain string ("ADMIN" | "STAFF") because SQLite does not support native Prisma enums
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("STAFF")
+  department   String?
+  designation  String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  createdEvents  Event[]         @relation("EventCreatedBy")
+  eventAttendees EventAttendee[]
+  signInRecords  SignInRecord[]
+
+  @@index([department])
+}
+
+model Project {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  title     String
+  status    String   @default("Active")
+  access    String   @default("Team")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  events Event[]
+}
+
+model Venue {
+  id             String  @id @default(cuid())
+  description    String
+  collisionCheck Boolean @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  events Event[]
+}
+
+model Event {
+  id            String    @id @default(cuid())
+  title         String
+  date          DateTime
+  durationMins  Int?
+  stage         String?
+  task          String?
+  externalVenue String?
+  resources     String?
+  remarks       String?
+  repeat        Boolean   @default(false)
+  private       Boolean   @default(false)
+  remindMe      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  venueId   String?
+  venue     Venue?   @relation(fields: [venueId], references: [id])
+
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id])
+
+  createdById String
+  createdBy   User   @relation("EventCreatedBy", fields: [createdById], references: [id])
+
+  attendees EventAttendee[]
+
+  @@index([date])
+}
+
+model EventAttendee {
+  id      String @id @default(cuid())
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User   @relation(fields: [userId], references: [id])
+
+  @@unique([eventId, userId])
+}
+
+model SignInRecord {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  signInAt  DateTime  @default(now())
+  signOutAt DateTime?
+
+  @@index([userId, signInAt])
+}

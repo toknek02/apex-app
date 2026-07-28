@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+:root {
+  --apex-navy: #1a1a2e;
+  --apex-accent: #e07b39;
+  --apex-accent-lt: #fef3ea;
+  --apex-bg: #f5f5f0;
+  --apex-tbl-hdr: #4a4a5a;
+  --apex-green: #2e7d52;
+  --apex-green-lt: #e8f5ee;
+  --apex-text: #1c1c1c;
+  --apex-muted: #6b6b75;
+  --apex-border: #dddddd;
+  --apex-row-alt: #f8f8f5;
+  --apex-red: #c0392b;
+  --apex-red-lt: #fdecea;
+  --apex-dept-bg: #ededea;
+}
+
+body {
+  background-color: var(--apex-bg);
+  color: var(--apex-text);
+}
