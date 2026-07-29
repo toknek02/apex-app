@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Fragment } from 'react'
-import { requireUser } from '@/lib/rbac'
+import { Pencil } from 'lucide-react'
+import { requireUser, hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 
@@ -87,7 +88,7 @@ export default async function LogbookPage({
   )
 
   return (
-    <AppShell user={{ name: user.name ?? '', role: user.role }}>
+    <AppShell user={{ name: user.name ?? '', roleName: user.roleName, permissions: user.permissions }}>
       <Breadcrumb items={['LogBook']} />
       <h1 style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700, marginBottom: 16 }}>Events</h1>
 
@@ -97,7 +98,7 @@ export default async function LogbookPage({
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
-              {['Date', 'Title', 'Venue', 'Status'].map((h) => (
+              {['Date', 'Title', 'Venue', 'Status', 'Actions'].map((h) => (
                 <th key={h} style={{ padding: '9px 14px', textAlign: 'left', color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em' }}>
                   {h}
                 </th>
@@ -107,7 +108,7 @@ export default async function LogbookPage({
           <tbody>
             {[...grouped.entries()].length === 0 && (
               <tr>
-                <td colSpan={4} style={{ padding: 20, fontSize: 13, color: 'var(--apex-muted)' }}>
+                <td colSpan={5} style={{ padding: 20, fontSize: 13, color: 'var(--apex-muted)' }}>
                   No events in this range.
                 </td>
               </tr>
@@ -120,7 +121,7 @@ export default async function LogbookPage({
                 <Fragment key={key}>
                   <tr>
                     <td
-                      colSpan={4}
+                      colSpan={5}
                       style={{
                         padding: '7px 14px',
                         backgroundColor: 'var(--apex-accent-lt)',
@@ -147,6 +148,13 @@ export default async function LogbookPage({
                       </td>
                       <td style={{ padding: '9px 14px', fontSize: 12 }}>
                         {e.date < today ? 'Past' : 'Upcoming'}
+                      </td>
+                      <td style={{ padding: '9px 14px', fontSize: 12 }}>
+                        {(e.createdById === user.id || hasPermission(user, 'EDIT_ANY_EVENT')) && (
+                          <Link href={`/logbook/${e.id}/edit`} style={{ display: 'inline-flex' }}>
+                            <Pencil size={14} color="var(--apex-accent)" />
+                          </Link>
+                        )}
                       </td>
                     </tr>
                   ))}

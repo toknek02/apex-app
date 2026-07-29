@@ -1,6 +1,6 @@
 import { Fragment } from 'react'
 import { Pencil } from 'lucide-react'
-import { requireUser } from '@/lib/rbac'
+import { requireUser, hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import { SignInButton } from '@/components/staff/sign-in-button'
@@ -8,18 +8,20 @@ import { UserModal } from '@/components/staff/user-modal'
 
 export default async function StaffPage() {
   const user = await requireUser()
-  const isAdmin = user.role === 'ADMIN'
+  const canManageUsers = hasPermission(user, 'MANAGE_USERS')
   const now = new Date()
   const startOfDay = new Date(now)
   startOfDay.setHours(0, 0, 0, 0)
   const endOfDay = new Date(now)
   endOfDay.setHours(23, 59, 59, 999)
 
-  const [staff, openRecords, todaysAttendance] = await Promise.all([
+  const [staff, roles, openRecords, todaysAttendance] = await Promise.all([
     prisma.user.findMany({
-      where: isAdmin ? {} : { isActive: true },
+      where: canManageUsers ? {} : { isActive: true },
+      include: { role: true },
       orderBy: [{ department: 'asc' }, { name: 'asc' }],
     }),
+    canManageUsers ? prisma.role.findMany({ orderBy: { name: 'asc' } }) : Promise.resolve([]),
     prisma.signInRecord.findMany({ where: { signOutAt: null } }),
     prisma.eventAttendee.findMany({
       where: { event: { date: { gte: startOfDay, lte: endOfDay } } },
@@ -47,10 +49,12 @@ export default async function StaffPage() {
   }
 
   const myOpenRecord = openByUser.get(user.id)
-  const columns = isAdmin ? ['Name', 'Designation', 'Status', 'Sign-in', 'Actions'] : ['Name', 'Designation', 'Status', 'Sign-in']
+  const columns = canManageUsers
+    ? ['Name', 'Designation', 'Role', 'Status', 'Sign-in', 'Actions']
+    : ['Name', 'Designation', 'Role', 'Status', 'Sign-in']
 
   return (
-    <AppShell user={{ name: user.name ?? '', role: user.role }}>
+    <AppShell user={{ name: user.name ?? '', roleName: user.roleName, permissions: user.permissions }}>
       <Breadcrumb items={['Staff', 'Directory']} />
       <h1 style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700, marginBottom: 16 }}>Staff Directory</h1>
 
@@ -63,9 +67,10 @@ export default async function StaffPage() {
         }
       />
 
-      {isAdmin && (
+      {canManageUsers && (
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
           <UserModal
+            roles={roles}
             trigger={
               <span style={{ padding: '8px 16px', backgroundColor: 'var(--apex-accent)', color: '#fff', borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
                 New Staff
@@ -112,6 +117,7 @@ export default async function StaffPage() {
                         {m.name}
                       </td>
                       <td style={{ padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>{m.designation ?? '—'}</td>
+                      <td style={{ padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>{m.role.name}</td>
                       <td style={{ padding: '9px 14px', fontSize: 12 }}>
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: statusColor, fontWeight: 600 }}>
                           {open && <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: statusColor }} />}
@@ -121,9 +127,13 @@ export default async function StaffPage() {
                       <td style={{ padding: '9px 14px', fontSize: 12 }}>
                         {open ? open.signInAt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) : '—'}
                       </td>
-                      {isAdmin && (
+                      {canManageUsers && (
                         <td style={{ padding: '9px 14px', fontSize: 12 }}>
-                          <UserModal user={m} trigger={<Pencil size={14} color="var(--apex-accent)" />} />
+                          <UserModal
+                            user={{ id: m.id, name: m.name, email: m.email, department: m.department, designation: m.designation, roleId: m.roleId, isActive: m.isActive }}
+                            roles={roles}
+                            trigger={<Pencil size={14} color="var(--apex-accent)" />}
+                          />
                         </td>
                       )}
                     </tr>

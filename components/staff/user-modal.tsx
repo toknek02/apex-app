@@ -18,11 +18,13 @@ type User = {
   email: string
   department: string | null
   designation: string | null
-  role: string
+  roleId: string
   isActive: boolean
 }
 
-export function UserModal({ user, trigger }: { user?: User; trigger: React.ReactNode }) {
+type RoleOption = { id: string; name: string }
+
+export function UserModal({ user, roles, trigger }: { user?: User; roles: RoleOption[]; trigger: React.ReactNode }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState(user?.name ?? '')
@@ -30,7 +32,7 @@ export function UserModal({ user, trigger }: { user?: User; trigger: React.React
   const [password, setPassword] = useState('')
   const [department, setDepartment] = useState(user?.department ?? '')
   const [designation, setDesignation] = useState(user?.designation ?? '')
-  const [role, setRole] = useState(user?.role ?? 'STAFF')
+  const [roleId, setRoleId] = useState(user?.roleId ?? roles[0]?.id ?? '')
   const [isActive, setIsActive] = useState(user?.isActive ?? true)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
@@ -39,6 +41,10 @@ export function UserModal({ user, trigger }: { user?: User; trigger: React.React
     setError('')
     if (!name.trim() || (!user && !email.trim())) {
       setError('Name and email are required')
+      return
+    }
+    if (!roleId) {
+      setError('A role must be selected')
       return
     }
     if (!user && password.length < 6) {
@@ -56,8 +62,8 @@ export function UserModal({ user, trigger }: { user?: User; trigger: React.React
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(
         user
-          ? { name, department, designation, role, isActive, ...(password ? { password } : {}) }
-          : { name, email, password, department, designation, role }
+          ? { name, department, designation, roleId, isActive, ...(password ? { password } : {}) }
+          : { name, email, password, department, designation, roleId }
       ),
     })
     setSaving(false)
@@ -125,9 +131,10 @@ export function UserModal({ user, trigger }: { user?: User; trigger: React.React
             </div>
             <div style={{ marginBottom: 12 }}>
               <label style={labelStyle}>Role</label>
-              <select style={inputStyle} value={role} onChange={(e) => setRole(e.target.value)}>
-                <option value="STAFF">Staff</option>
-                <option value="ADMIN">Admin</option>
+              <select style={inputStyle} value={roleId} onChange={(e) => setRoleId(e.target.value)}>
+                {roles.map((r) => (
+                  <option key={r.id} value={r.id}>{r.name}</option>
+                ))}
               </select>
             </div>
             {user && (

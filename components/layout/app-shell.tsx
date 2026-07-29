@@ -5,10 +5,12 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { signOut } from 'next-auth/react'
 import { LayoutDashboard, BookOpen, Users, Settings, LogOut } from 'lucide-react'
+import type { PermissionCode } from '@/lib/permissions'
 
 type NavUser = {
   name: string
-  role: 'ADMIN' | 'STAFF'
+  roleName: string
+  permissions: string[]
 }
 
 const NAV: {
@@ -16,12 +18,12 @@ const NAV: {
   href: string
   label: string
   Icon: typeof LayoutDashboard
-  adminOnly?: boolean
+  requiresAnyOf?: PermissionCode[]
 }[] = [
   { key: 'dashboard', href: '/', label: 'Dashboard', Icon: LayoutDashboard },
   { key: 'logbook', href: '/logbook', label: 'LogBook', Icon: BookOpen },
   { key: 'staff', href: '/staff', label: 'Staff', Icon: Users },
-  { key: 'system', href: '/system', label: 'System', Icon: Settings, adminOnly: true },
+  { key: 'system', href: '/system', label: 'System', Icon: Settings, requiresAnyOf: ['MANAGE_USERS', 'MANAGE_ROLES', 'MANAGE_VENUES', 'MANAGE_PROJECTS'] },
 ]
 
 const SUB: Record<string, [string, string][]> = {
@@ -37,6 +39,7 @@ const SUB: Record<string, [string, string][]> = {
   system: [
     ['/system/venue', 'Venue'],
     ['/system/project', 'Project'],
+    ['/system/roles', 'Roles'],
   ],
 }
 
@@ -49,6 +52,7 @@ const SECTION_TITLES: Record<string, string> = {
   '/staff/timesheet': 'Timesheet',
   '/system/venue': 'Venue',
   '/system/project': 'Project',
+  '/system/roles': 'Roles',
 }
 
 function Clock() {
@@ -115,7 +119,7 @@ function Header({ user, pathname }: { user: NavUser; pathname: string }) {
               borderRadius: 4,
             }}
           >
-            {user.role}
+            {user.roleName}
           </span>
         </div>
         <button
@@ -160,7 +164,7 @@ function Sidebar({ user, pathname }: { user: NavUser; pathname: string }) {
         overflowY: 'auto',
       }}
     >
-      {NAV.filter((n) => !n.adminOnly || user.role === 'ADMIN').map(({ key, href, label, Icon }) => {
+      {NAV.filter((n) => !n.requiresAnyOf || n.requiresAnyOf.some((code) => user.permissions.includes(code))).map(({ key, href, label, Icon }) => {
         const active = pathname === href || (href !== '/' && pathname.startsWith(href))
         const style: React.CSSProperties = {
           display: 'flex',

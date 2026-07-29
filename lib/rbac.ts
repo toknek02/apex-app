@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
+import type { PermissionCode } from '@/lib/permissions'
 
 export async function requireUser() {
   const session = await auth()
@@ -7,8 +8,12 @@ export async function requireUser() {
   return session.user
 }
 
-export async function requireAdmin() {
+export function hasPermission(user: { permissions: string[] }, code: PermissionCode) {
+  return user.permissions.includes(code)
+}
+
+export async function requirePermission(code: PermissionCode) {
   const user = await requireUser()
-  if (user.role !== 'ADMIN') redirect('/')
+  if (!hasPermission(user, code)) redirect('/')
   return user
 }

@@ -17,7 +17,7 @@ export default async function DashboardPage() {
   const user = await requireUser()
   const today = new Date()
 
-  const [todaysEvents, signedIn, activeProjectCount, totalStaff] = await Promise.all([
+  const [todaysEvents, signedIn, activeProjectCount, totalActiveUsers] = await Promise.all([
     prisma.event.findMany({
       where: { date: { gte: startOfDay(today), lte: endOfDay(today) } },
       include: { venue: true, attendees: { include: { user: true } } },
@@ -29,18 +29,18 @@ export default async function DashboardPage() {
       orderBy: { signInAt: 'asc' },
     }),
     prisma.project.count({ where: { status: 'Active' } }),
-    prisma.user.count({ where: { role: 'STAFF' } }),
+    prisma.user.count({ where: { isActive: true } }),
   ])
 
   const cards = [
     { label: 'Total Events Today', value: todaysEvents.length },
     { label: 'Staff Signed In', value: signedIn.length },
     { label: 'Active Projects', value: activeProjectCount },
-    { label: 'Staff Not Signed In', value: Math.max(totalStaff - signedIn.length, 0) },
+    { label: 'Staff Not Signed In', value: Math.max(totalActiveUsers - signedIn.length, 0) },
   ]
 
   return (
-    <AppShell user={{ name: user.name ?? '', role: user.role }}>
+    <AppShell user={{ name: user.name ?? '', roleName: user.roleName, permissions: user.permissions }}>
       <h1 style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700, marginBottom: 20 }}>Dashboard</h1>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>

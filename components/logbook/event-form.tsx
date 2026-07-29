@@ -7,6 +7,22 @@ type Staff = { id: string; name: string }
 type Venue = { id: string; description: string }
 type Project = { id: string; code: string; title: string }
 
+type ExistingEvent = {
+  id: string
+  title: string
+  date: string
+  durationMins: number | null
+  venueId: string | null
+  externalVenue: string | null
+  projectId: string | null
+  resources: string | null
+  remarks: string | null
+  repeat: boolean
+  private: boolean
+  remindMe: boolean
+  attendeeIds: string[]
+}
+
 const inputStyle: React.CSSProperties = {
   width: '100%',
   padding: '8px 10px',
@@ -20,35 +36,40 @@ function Required() {
   return <span style={{ color: 'var(--apex-red)' }}> *</span>
 }
 
-export function NewEventForm({
+export function EventForm({
   currentUserId,
   staff,
   venues,
   projects,
   resources,
+  event,
 }: {
   currentUserId: string
   staff: Staff[]
   venues: Venue[]
   projects: Project[]
   resources: string[]
+  event?: ExistingEvent
 }) {
   const router = useRouter()
   const today = new Date().toISOString().slice(0, 10)
+  const eventDate = event ? new Date(event.date) : null
 
-  const [title, setTitle] = useState('')
-  const [attendeeIds, setAttendeeIds] = useState<string[]>([currentUserId])
-  const [projectId, setProjectId] = useState('')
-  const [date, setDate] = useState(today)
-  const [time, setTime] = useState('09:00')
-  const [durationMins, setDurationMins] = useState('60')
-  const [venueId, setVenueId] = useState('')
-  const [externalVenue, setExternalVenue] = useState('')
-  const [selectedResources, setSelectedResources] = useState<string[]>([])
-  const [remarks, setRemarks] = useState('')
-  const [repeat, setRepeat] = useState(false)
-  const [isPrivate, setIsPrivate] = useState(false)
-  const [remindMe, setRemindMe] = useState(true)
+  const [title, setTitle] = useState(event?.title ?? '')
+  const [attendeeIds, setAttendeeIds] = useState<string[]>(event?.attendeeIds ?? [currentUserId])
+  const [projectId, setProjectId] = useState(event?.projectId ?? '')
+  const [date, setDate] = useState(eventDate ? eventDate.toISOString().slice(0, 10) : today)
+  const [time, setTime] = useState(eventDate ? eventDate.toTimeString().slice(0, 5) : '09:00')
+  const [durationMins, setDurationMins] = useState(String(event?.durationMins ?? 60))
+  const [venueId, setVenueId] = useState(event?.venueId ?? '')
+  const [externalVenue, setExternalVenue] = useState(event?.externalVenue ?? '')
+  const [selectedResources, setSelectedResources] = useState<string[]>(
+    event?.resources ? event.resources.split(', ').filter(Boolean) : []
+  )
+  const [remarks, setRemarks] = useState(event?.remarks ?? '')
+  const [repeat, setRepeat] = useState(event?.repeat ?? false)
+  const [isPrivate, setIsPrivate] = useState(event?.private ?? false)
+  const [remindMe, setRemindMe] = useState(event?.remindMe ?? true)
   const [errors, setErrors] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
 
@@ -74,8 +95,8 @@ export function NewEventForm({
     if (missing.length > 0) return
 
     setSubmitting(true)
-    const res = await fetch('/api/events', {
-      method: 'POST',
+    const res = await fetch(event ? `/api/events/${event.id}` : '/api/events', {
+      method: event ? 'PATCH' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         title,
@@ -98,7 +119,7 @@ export function NewEventForm({
       router.refresh()
     } else {
       const data = await res.json().catch(() => ({}))
-      setErrors([data.error ?? 'Failed to create event'])
+      setErrors([data.error ?? `Failed to ${event ? 'update' : 'create'} event`])
     }
   }
 
@@ -222,7 +243,7 @@ export function NewEventForm({
           opacity: submitting ? 0.6 : 1,
         }}
       >
-        {submitting ? 'Adding…' : 'Add To Planner'}
+        {submitting ? (event ? 'Saving…' : 'Adding…') : event ? 'Save Changes' : 'Add To Planner'}
       </button>
     </form>
   )

@@ -12,7 +12,7 @@ export default async function FindEventsPage() {
   ])
 
   return (
-    <AppShell user={{ name: user.name ?? '', role: user.role }}>
+    <AppShell user={{ name: user.name ?? '', roleName: user.roleName, permissions: user.permissions }}>
       <Breadcrumb items={['LogBook', 'Find Event']} />
       <h1 style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700, marginBottom: 16 }}>Find Event</h1>
       <FindEventsForm staff={staff} venues={venues} projects={projects} />

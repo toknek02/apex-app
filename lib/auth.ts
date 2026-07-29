@@ -13,7 +13,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id
-        token.role = user.role
+        token.roleId = user.roleId
+        token.roleName = user.roleName
+        token.permissions = user.permissions
         token.department = user.department ?? null
       }
       return token
@@ -21,7 +23,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async session({ session, token }) {
       if (session.user) {
         session.user.id = typeof token.id === 'string' ? token.id : ''
-        session.user.role = token.role === 'ADMIN' ? 'ADMIN' : 'STAFF'
+        session.user.roleId = typeof token.roleId === 'string' ? token.roleId : ''
+        session.user.roleName = typeof token.roleName === 'string' ? token.roleName : ''
+        session.user.permissions = Array.isArray(token.permissions) ? (token.permissions as string[]) : []
         session.user.department = typeof token.department === 'string' ? token.department : null
       }
       return session
@@ -40,7 +44,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const email = credentials.email as string
         const password = credentials.password as string
 
-        const user = await prisma.user.findUnique({ where: { email } })
+        const user = await prisma.user.findUnique({
+          where: { email },
+          include: { role: { include: { rolePermissions: { include: { permission: true } } } } },
+        })
         if (!user || !user.isActive) return null
 
         const passwordValid = await bcrypt.compare(password, user.passwordHash)
@@ -50,7 +57,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           id: user.id,
           email: user.email,
           name: user.name,
-          role: user.role === 'ADMIN' ? 'ADMIN' : 'STAFF',
+          roleId: user.roleId,
+          roleName: user.role.name,
+          permissions: user.role.rolePermissions.map((rp) => rp.permission.code),
           department: user.department,
         }
       },

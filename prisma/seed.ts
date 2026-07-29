@@ -1,5 +1,6 @@
 import { PrismaClient, User } from '@prisma/client'
 import bcrypt from 'bcryptjs'
+import { PERMISSIONS } from '../lib/permissions'
 
 const prisma = new PrismaClient()
 
@@ -39,6 +40,35 @@ const PROJECTS = [
 ]
 
 async function main() {
+  const permissions = []
+  for (const p of PERMISSIONS) {
+    const permission = await prisma.permission.upsert({
+      where: { code: p.code },
+      update: { label: p.label, description: p.description },
+      create: { code: p.code, label: p.label, description: p.description },
+    })
+    permissions.push(permission)
+  }
+
+  const administratorRole = await prisma.role.upsert({
+    where: { name: 'Administrator' },
+    update: { isSystem: true },
+    create: { name: 'Administrator', description: 'Full system access. Protected — cannot be edited or deleted.', isSystem: true },
+  })
+  for (const permission of permissions) {
+    await prisma.rolePermission.upsert({
+      where: { roleId_permissionId: { roleId: administratorRole.id, permissionId: permission.id } },
+      update: {},
+      create: { roleId: administratorRole.id, permissionId: permission.id },
+    })
+  }
+
+  const employeeRole = await prisma.role.upsert({
+    where: { name: 'Employee' },
+    update: {},
+    create: { name: 'Employee', description: 'Default role with no elevated permissions.', isSystem: false },
+  })
+
   const adminPasswordHash = await bcrypt.hash('admin123', 10)
   const admin = await prisma.user.upsert({
     where: { email: 'admin@apex.local' },
@@ -47,7 +77,7 @@ async function main() {
       name: 'Mohammad Azmi',
       email: 'admin@apex.local',
       passwordHash: adminPasswordHash,
-      role: 'ADMIN',
+      roleId: administratorRole.id,
       department: 'DIRECTOR',
       designation: 'Administrator',
     },
@@ -63,7 +93,7 @@ async function main() {
         name: s.name,
         email: s.email,
         passwordHash: staffPasswordHash,
-        role: 'STAFF',
+        roleId: employeeRole.id,
         department: s.department,
         designation: s.designation,
       },

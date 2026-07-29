@@ -1,21 +1,8 @@
 import { requireUser } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
-import { NewEventForm } from '@/components/logbook/new-event-form'
-
-const RESOURCES = [
-  'Camera-Olympus Digital',
-  'Camera-Nikon Digital',
-  'Camera-Nikon Auto',
-  'Camera-Fuji Auto',
-  'Perodua Alza',
-  'Notebook-MAANB-018',
-  'Notebook-MAANB-015',
-  'Notebook-MAANB-016',
-  'Notebook-MAANB-017',
-  'Projector-Nec',
-  'Projector-Epson',
-]
+import { EventForm } from '@/components/logbook/event-form'
+import { RESOURCES } from '@/lib/logbook-resources'
 
 export default async function NewEventPage() {
   const user = await requireUser()
@@ -26,10 +13,10 @@ export default async function NewEventPage() {
   ])
 
   return (
-    <AppShell user={{ name: user.name ?? '', role: user.role }}>
+    <AppShell user={{ name: user.name ?? '', roleName: user.roleName, permissions: user.permissions }}>
       <Breadcrumb items={['LogBook', 'New Event']} />
       <h1 style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700, marginBottom: 16 }}>New Event</h1>
-      <NewEventForm
+      <EventForm
         currentUserId={user.id}
         staff={staff}
         venues={venues}

@@ -1,15 +1,15 @@
 import { Pencil } from 'lucide-react'
-import { requireAdmin } from '@/lib/rbac'
+import { requirePermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import { VenueModal } from '@/components/system/venue-modal'
 
 export default async function VenuePage() {
-  const user = await requireAdmin()
+  const user = await requirePermission('MANAGE_VENUES')
   const venues = await prisma.venue.findMany({ orderBy: { createdAt: 'asc' } })
 
   return (
-    <AppShell user={{ name: user.name ?? '', role: user.role }}>
+    <AppShell user={{ name: user.name ?? '', roleName: user.roleName, permissions: user.permissions }}>
       <Breadcrumb items={['System', 'Venue']} />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <h1 style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700 }}>Venue</h1>

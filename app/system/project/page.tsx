@@ -1,5 +1,5 @@
 import { Pencil } from 'lucide-react'
-import { requireAdmin } from '@/lib/rbac'
+import { requirePermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import { ProjectModal } from '@/components/system/project-modal'
@@ -11,11 +11,11 @@ const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
 }
 
 export default async function ProjectPage() {
-  const user = await requireAdmin()
+  const user = await requirePermission('MANAGE_PROJECTS')
   const projects = await prisma.project.findMany({ orderBy: { code: 'asc' } })
 
   return (
-    <AppShell user={{ name: user.name ?? '', role: user.role }}>
+    <AppShell user={{ name: user.name ?? '', roleName: user.roleName, permissions: user.permissions }}>
       <Breadcrumb items={['System', 'Project']} />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <h1 style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700 }}>Project</h1>

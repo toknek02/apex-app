@@ -44,7 +44,7 @@ export default async function TimesheetPage({
   const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month
 
   return (
-    <AppShell user={{ name: user.name ?? '', role: user.role }}>
+    <AppShell user={{ name: user.name ?? '', roleName: user.roleName, permissions: user.permissions }}>
       <Breadcrumb items={['Staff', 'Timesheet']} />
       <h1 style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
         Timesheet — {monthLabel}
