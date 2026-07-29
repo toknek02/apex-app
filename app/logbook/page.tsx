@@ -69,8 +69,6 @@ export default async function LogbookPage({
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
       <Link href="/logbook/new" style={btnStyle(true)}>New</Link>
       <Link href="/logbook/find" style={btnStyle(false)}>Find</Link>
-      <span style={btnStyle(false, true)}>Summary</span>
-      <span style={btnStyle(false, true)}>Planner</span>
 
       <div style={toggleGroupStyle}>
         <Link href={toggleLink({ scope: 'mine' })} style={toggleItemStyle(scope === 'mine')}>My</Link>
@@ -184,7 +182,7 @@ function toggleItemStyle(active: boolean): React.CSSProperties {
   }
 }
 
-function btnStyle(primary: boolean, disabled = false): React.CSSProperties {
+function btnStyle(primary: boolean): React.CSSProperties {
   return {
     display: 'inline-flex',
     alignItems: 'center',
@@ -195,8 +193,7 @@ function btnStyle(primary: boolean, disabled = false): React.CSSProperties {
     textDecoration: 'none',
     border: `1px solid ${primary ? 'var(--apex-accent)' : 'var(--apex-border)'}`,
     backgroundColor: primary ? 'var(--apex-accent)' : '#fff',
-    color: disabled ? 'var(--apex-muted)' : primary ? '#fff' : 'var(--apex-text)',
-    opacity: disabled ? 0.5 : 1,
-    cursor: disabled ? 'not-allowed' : 'pointer',
+    color: primary ? '#fff' : 'var(--apex-text)',
+    cursor: 'pointer',
   }
 }

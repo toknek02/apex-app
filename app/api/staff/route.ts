@@ -20,13 +20,16 @@ export async function POST(req: NextRequest) {
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (session.user.role !== 'ADMIN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { name, email, department, designation, role } = await req.json()
+  const { name, email, password, department, designation, role } = await req.json()
   if (!name || !email) return NextResponse.json({ error: 'Name and email are required' }, { status: 400 })
+  if (!password || password.length < 6) {
+    return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 })
+  }
 
   const existing = await prisma.user.findUnique({ where: { email } })
   if (existing) return NextResponse.json({ error: 'A user with this email already exists' }, { status: 409 })
 
-  const passwordHash = await bcrypt.hash('welcome123', 10)
+  const passwordHash = await bcrypt.hash(password, 10)
   const user = await prisma.user.create({
     data: {
       name,

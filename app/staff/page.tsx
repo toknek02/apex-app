@@ -1,12 +1,14 @@
 import { Fragment } from 'react'
+import { Pencil } from 'lucide-react'
 import { requireUser } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import { SignInButton } from '@/components/staff/sign-in-button'
-import { NewStaffModal } from '@/components/staff/new-staff-modal'
+import { UserModal } from '@/components/staff/user-modal'
 
 export default async function StaffPage() {
   const user = await requireUser()
+  const isAdmin = user.role === 'ADMIN'
   const now = new Date()
   const startOfDay = new Date(now)
   startOfDay.setHours(0, 0, 0, 0)
@@ -14,7 +16,10 @@ export default async function StaffPage() {
   endOfDay.setHours(23, 59, 59, 999)
 
   const [staff, openRecords, todaysAttendance] = await Promise.all([
-    prisma.user.findMany({ where: { isActive: true }, orderBy: [{ department: 'asc' }, { name: 'asc' }] }),
+    prisma.user.findMany({
+      where: isAdmin ? {} : { isActive: true },
+      orderBy: [{ department: 'asc' }, { name: 'asc' }],
+    }),
     prisma.signInRecord.findMany({ where: { signOutAt: null } }),
     prisma.eventAttendee.findMany({
       where: { event: { date: { gte: startOfDay, lte: endOfDay } } },
@@ -42,6 +47,7 @@ export default async function StaffPage() {
   }
 
   const myOpenRecord = openByUser.get(user.id)
+  const columns = isAdmin ? ['Name', 'Designation', 'Status', 'Sign-in', 'Actions'] : ['Name', 'Designation', 'Status', 'Sign-in']
 
   return (
     <AppShell user={{ name: user.name ?? '', role: user.role }}>
@@ -57,9 +63,15 @@ export default async function StaffPage() {
         }
       />
 
-      {user.role === 'ADMIN' && (
+      {isAdmin && (
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-          <NewStaffModal />
+          <UserModal
+            trigger={
+              <span style={{ padding: '8px 16px', backgroundColor: 'var(--apex-accent)', color: '#fff', borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
+                New Staff
+              </span>
+            }
+          />
         </div>
       )}
 
@@ -67,7 +79,7 @@ export default async function StaffPage() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
-              {['Name', 'Designation', 'Status', 'Sign-in'].map((h) => (
+              {columns.map((h) => (
                 <th key={h} style={{ padding: '9px 14px', textAlign: 'left', color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em' }}>
                   {h}
                 </th>
@@ -78,18 +90,25 @@ export default async function StaffPage() {
             {[...grouped.entries()].map(([dept, members]) => (
               <Fragment key={dept}>
                 <tr>
-                  <td colSpan={4} style={{ padding: '6px 14px', backgroundColor: 'var(--apex-dept-bg)', fontSize: 11, fontWeight: 700, color: 'var(--apex-tbl-hdr)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  <td colSpan={columns.length} style={{ padding: '6px 14px', backgroundColor: 'var(--apex-dept-bg)', fontSize: 11, fontWeight: 700, color: 'var(--apex-tbl-hdr)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                     Department: {dept}
                   </td>
                 </tr>
                 {members.map((m, i) => {
                   const open = openByUser.get(m.id)
                   const atPlanner = atPlannerUserIds.has(m.id)
-                  const statusLabel = open ? 'Active' : atPlanner ? 'At Planner' : 'Not logged in'
-                  const statusColor = open ? 'var(--apex-green)' : atPlanner ? 'var(--apex-accent)' : 'var(--apex-muted)'
+                  const statusLabel = !m.isActive ? 'Inactive' : open ? 'Active' : atPlanner ? 'At Planner' : 'Not logged in'
+                  const statusColor = !m.isActive
+                    ? 'var(--apex-red)'
+                    : open
+                      ? 'var(--apex-green)'
+                      : atPlanner
+                        ? 'var(--apex-accent)'
+                        : 'var(--apex-muted)'
+                  const muted = statusLabel === 'Not logged in' || statusLabel === 'Inactive'
                   return (
-                    <tr key={m.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
-                      <td style={{ padding: '9px 14px', fontSize: 12, fontStyle: statusLabel === 'Not logged in' ? 'italic' : 'normal', color: statusLabel === 'Not logged in' ? 'var(--apex-muted)' : 'var(--apex-text)' }}>
+                    <tr key={m.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff', opacity: m.isActive ? 1 : 0.6 }}>
+                      <td style={{ padding: '9px 14px', fontSize: 12, fontStyle: muted ? 'italic' : 'normal', color: muted ? 'var(--apex-muted)' : 'var(--apex-text)' }}>
                         {m.name}
                       </td>
                       <td style={{ padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>{m.designation ?? '—'}</td>
@@ -102,6 +121,11 @@ export default async function StaffPage() {
                       <td style={{ padding: '9px 14px', fontSize: 12 }}>
                         {open ? open.signInAt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) : '—'}
                       </td>
+                      {isAdmin && (
+                        <td style={{ padding: '9px 14px', fontSize: 12 }}>
+                          <UserModal user={m} trigger={<Pencil size={14} color="var(--apex-accent)" />} />
+                        </td>
+                      )}
                     </tr>
                   )
                 })}

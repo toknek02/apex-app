@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { signOut } from 'next-auth/react'
-import { LayoutDashboard, BookOpen, Users, Settings, Mail, LogOut } from 'lucide-react'
+import { LayoutDashboard, BookOpen, Users, Settings, LogOut } from 'lucide-react'
 
 type NavUser = {
   name: string
@@ -17,13 +17,11 @@ const NAV: {
   label: string
   Icon: typeof LayoutDashboard
   adminOnly?: boolean
-  disabled?: boolean
 }[] = [
   { key: 'dashboard', href: '/', label: 'Dashboard', Icon: LayoutDashboard },
   { key: 'logbook', href: '/logbook', label: 'LogBook', Icon: BookOpen },
   { key: 'staff', href: '/staff', label: 'Staff', Icon: Users },
   { key: 'system', href: '/system', label: 'System', Icon: Settings, adminOnly: true },
-  { key: 'email', href: '#', label: 'Email', Icon: Mail, disabled: true },
 ]
 
 const SUB: Record<string, [string, string][]> = {
@@ -142,7 +140,7 @@ function Header({ user, pathname }: { user: NavUser; pathname: string }) {
 }
 
 function Sidebar({ user, pathname }: { user: NavUser; pathname: string }) {
-  const activeMain = NAV.find((n) => !n.disabled && (pathname === n.href || (n.href !== '/' && pathname.startsWith(n.href))))
+  const activeMain = NAV.find((n) => pathname === n.href || (n.href !== '/' && pathname.startsWith(n.href)))
   const subItems = activeMain ? SUB[activeMain.key] : undefined
 
   return (
@@ -162,13 +160,8 @@ function Sidebar({ user, pathname }: { user: NavUser; pathname: string }) {
         overflowY: 'auto',
       }}
     >
-      {NAV.filter((n) => !n.adminOnly || user.role === 'ADMIN').map(({ key, href, label, Icon, disabled }) => {
+      {NAV.filter((n) => !n.adminOnly || user.role === 'ADMIN').map(({ key, href, label, Icon }) => {
         const active = pathname === href || (href !== '/' && pathname.startsWith(href))
-        const content = (
-          <>
-            <Icon size={16} /> {label}
-          </>
-        )
         const style: React.CSSProperties = {
           display: 'flex',
           alignItems: 'center',
@@ -176,18 +169,18 @@ function Sidebar({ user, pathname }: { user: NavUser; pathname: string }) {
           padding: '11px 18px',
           border: 'none',
           textDecoration: 'none',
-          cursor: disabled ? 'not-allowed' : 'pointer',
+          cursor: 'pointer',
           backgroundColor: active ? 'rgba(224,123,57,0.14)' : 'transparent',
           borderLeft: active ? '3px solid var(--apex-accent)' : '3px solid transparent',
-          color: disabled ? 'rgba(255,255,255,0.22)' : active ? 'var(--apex-accent)' : 'rgba(255,255,255,0.62)',
+          color: active ? 'var(--apex-accent)' : 'rgba(255,255,255,0.62)',
           fontSize: 13,
           fontWeight: active ? 600 : 400,
           width: '100%',
         }
-        return disabled ? (
-          <span key={key} style={style}>{content}</span>
-        ) : (
-          <Link key={key} href={href} style={style}>{content}</Link>
+        return (
+          <Link key={key} href={href} style={style}>
+            <Icon size={16} /> {label}
+          </Link>
         )
       })}
       {subItems && (
