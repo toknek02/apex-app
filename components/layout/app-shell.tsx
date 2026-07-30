@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { signOut } from 'next-auth/react'
-import { LayoutDashboard, BookOpen, Users, Settings, Megaphone, LogOut } from 'lucide-react'
+import { LayoutDashboard, BookOpen, Users, Settings, Megaphone, LogOut, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { PermissionCode } from '@/lib/permissions'
 
 type NavUser = {
@@ -148,9 +148,22 @@ function Header({ user, pathname }: { user: NavUser; pathname: string }) {
   )
 }
 
-function Sidebar({ user, pathname }: { user: NavUser; pathname: string }) {
+const SIDEBAR_EXPANDED_WIDTH = 200
+const SIDEBAR_COLLAPSED_WIDTH = 60
+
+function Sidebar({
+  user,
+  pathname,
+  collapsed,
+  onToggle,
+}: {
+  user: NavUser
+  pathname: string
+  collapsed: boolean
+  onToggle: () => void
+}) {
   const activeMain = NAV.find((n) => pathname === n.href || (n.href !== '/' && pathname.startsWith(n.href)))
-  const subItems = activeMain ? SUB[activeMain.key] : undefined
+  const subItems = !collapsed && activeMain ? SUB[activeMain.key] : undefined
 
   return (
     <aside
@@ -159,7 +172,7 @@ function Sidebar({ user, pathname }: { user: NavUser; pathname: string }) {
         top: 60,
         left: 0,
         bottom: 0,
-        width: 200,
+        width: collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH,
         zIndex: 100,
         backgroundColor: 'var(--apex-navy)',
         borderRight: '1px solid rgba(255,255,255,0.07)',
@@ -167,6 +180,8 @@ function Sidebar({ user, pathname }: { user: NavUser; pathname: string }) {
         flexDirection: 'column',
         paddingTop: 8,
         overflowY: 'auto',
+        overflowX: 'hidden',
+        transition: 'width 0.18s ease',
       }}
     >
       {NAV.filter((n) => !n.requiresAnyOf || n.requiresAnyOf.some((code) => user.permissions.includes(code))).map(({ key, href, label, Icon }) => {
@@ -175,7 +190,8 @@ function Sidebar({ user, pathname }: { user: NavUser; pathname: string }) {
           display: 'flex',
           alignItems: 'center',
           gap: 11,
-          padding: '11px 18px',
+          padding: collapsed ? '11px 0' : '11px 18px',
+          justifyContent: collapsed ? 'center' : 'flex-start',
           border: 'none',
           textDecoration: 'none',
           cursor: 'pointer',
@@ -185,10 +201,12 @@ function Sidebar({ user, pathname }: { user: NavUser; pathname: string }) {
           fontSize: 13,
           fontWeight: active ? 600 : 400,
           width: '100%',
+          whiteSpace: 'nowrap',
         }
         return (
-          <Link key={key} href={href} style={style}>
-            <Icon size={16} /> {label}
+          <Link key={key} href={href} style={style} title={collapsed ? label : undefined}>
+            <Icon size={16} />
+            {!collapsed && label}
           </Link>
         )
       })}
@@ -205,6 +223,7 @@ function Sidebar({ user, pathname }: { user: NavUser; pathname: string }) {
                   padding: '9px 18px 9px 44px',
                   textDecoration: 'none',
                   fontSize: 12,
+                  whiteSpace: 'nowrap',
                   color: active ? 'var(--apex-accent)' : 'rgba(255,255,255,0.5)',
                   fontWeight: active ? 600 : 400,
                 }}
@@ -215,6 +234,27 @@ function Sidebar({ user, pathname }: { user: NavUser; pathname: string }) {
           })}
         </div>
       )}
+
+      <div style={{ marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+        <button
+          onClick={onToggle}
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: collapsed ? 'center' : 'flex-end',
+            gap: 6,
+            width: '100%',
+            padding: '11px 14px',
+            border: 'none',
+            background: 'transparent',
+            color: 'rgba(255,255,255,0.5)',
+            cursor: 'pointer',
+          }}
+        >
+          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+        </button>
+      </div>
     </aside>
   )
 }
@@ -227,13 +267,31 @@ export function Breadcrumb({ items }: { items: string[] }) {
   )
 }
 
+const SIDEBAR_STORAGE_KEY = 'apex-sidebar-collapsed'
+
 export function AppShell({ user, children }: { user: NavUser; children: React.ReactNode }) {
   const pathname = usePathname()
+  const [collapsed, setCollapsed] = useState(false)
+
+  useEffect(() => {
+    setCollapsed(localStorage.getItem(SIDEBAR_STORAGE_KEY) === 'true')
+  }, [])
+
+  function toggleCollapsed() {
+    setCollapsed((prev) => {
+      const next = !prev
+      localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next))
+      return next
+    })
+  }
+
+  const sidebarWidth = collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH
+
   return (
     <div>
       <Header user={user} pathname={pathname} />
-      <Sidebar user={user} pathname={pathname} />
-      <main style={{ marginLeft: 200, paddingTop: 60, minHeight: '100vh' }}>
+      <Sidebar user={user} pathname={pathname} collapsed={collapsed} onToggle={toggleCollapsed} />
+      <main style={{ marginLeft: sidebarWidth, paddingTop: 60, minHeight: '100vh', transition: 'margin-left 0.18s ease' }}>
         <div style={{ padding: 24 }}>{children}</div>
       </main>
     </div>
