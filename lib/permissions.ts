@@ -4,6 +4,7 @@ export type PermissionCode =
   | 'MANAGE_VENUES'
   | 'MANAGE_PROJECTS'
   | 'EDIT_ANY_EVENT'
+  | 'MANAGE_ANNOUNCEMENTS'
 
 export type PermissionMeta = {
   code: PermissionCode
@@ -17,4 +18,5 @@ export const PERMISSIONS: PermissionMeta[] = [
   { code: 'MANAGE_VENUES', label: 'Manage venues', description: 'Create and edit venues used in the LogBook.' },
   { code: 'MANAGE_PROJECTS', label: 'Manage projects', description: 'Create and edit projects used in the LogBook.' },
   { code: 'EDIT_ANY_EVENT', label: 'Edit any event', description: "Edit LogBook events created by other employees, not just your own." },
+  { code: 'MANAGE_ANNOUNCEMENTS', label: 'Manage announcements', description: 'Post, edit, and delete company-wide announcements and their attachments.' },
 ]

@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { signOut } from 'next-auth/react'
-import { LayoutDashboard, BookOpen, Users, Settings, LogOut } from 'lucide-react'
+import { LayoutDashboard, BookOpen, Users, Settings, Megaphone, LogOut } from 'lucide-react'
 import type { PermissionCode } from '@/lib/permissions'
 
 type NavUser = {
@@ -23,6 +23,7 @@ const NAV: {
   { key: 'dashboard', href: '/', label: 'Dashboard', Icon: LayoutDashboard },
   { key: 'logbook', href: '/logbook', label: 'LogBook', Icon: BookOpen },
   { key: 'staff', href: '/staff', label: 'Staff', Icon: Users },
+  { key: 'announcements', href: '/announcements', label: 'Announcements', Icon: Megaphone },
   { key: 'system', href: '/system', label: 'System', Icon: Settings, requiresAnyOf: ['MANAGE_USERS', 'MANAGE_ROLES', 'MANAGE_VENUES', 'MANAGE_PROJECTS'] },
 ]
 
@@ -35,6 +36,7 @@ const SUB: Record<string, [string, string][]> = {
   staff: [
     ['/staff', 'Directory'],
     ['/staff/timesheet', 'Timesheet'],
+    ['/staff/activities', 'Activities'],
   ],
   system: [
     ['/system/venue', 'Venue'],
@@ -50,6 +52,9 @@ const SECTION_TITLES: Record<string, string> = {
   '/logbook/find': 'Find Event',
   '/staff': 'Staff Directory',
   '/staff/timesheet': 'Timesheet',
+  '/staff/activities': 'Activities',
+  '/announcements': 'Announcements',
+  '/announcements/new': 'New Announcement',
   '/system/venue': 'Venue',
   '/system/project': 'Project',
   '/system/roles': 'Roles',

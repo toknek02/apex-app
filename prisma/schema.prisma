@@ -24,6 +24,7 @@ model User {
   createdEvents  Event[]         @relation("EventCreatedBy")
   eventAttendees EventAttendee[]
   signInRecords  SignInRecord[]
+  announcements  Announcement[]
 
   @@index([department])
   @@index([roleId])
@@ -130,4 +131,28 @@ model SignInRecord {
   signOutAt DateTime?
 
   @@index([userId, signInAt])
+}
+
+model Announcement {
+  id          String   @id @default(cuid())
+  title       String
+  body        String
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  attachments AnnouncementAttachment[]
+
+  @@index([createdAt])
+}
+
+model AnnouncementAttachment {
+  id             String       @id @default(cuid())
+  announcementId String
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  fileName       String
+  storagePath    String
+  fileSize       Int
+  createdAt      DateTime     @default(now())
 }
