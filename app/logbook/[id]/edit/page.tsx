@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import { EventForm } from '@/components/logbook/event-form'
 import { RESOURCES } from '@/lib/logbook-resources'
+import { STAGES } from '@/lib/logbook-stages'
+import { TASKS } from '@/lib/logbook-tasks'
 
 export default async function EditEventPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser()
@@ -11,7 +13,11 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
 
   const [event, staff, venues, projects] = await Promise.all([
     prisma.event.findUnique({ where: { id }, include: { attendees: true } }),
-    prisma.user.findMany({ where: { isActive: true }, select: { id: true, name: true }, orderBy: { name: 'asc' } }),
+    prisma.user.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true, department: true },
+      orderBy: [{ department: 'asc' }, { name: 'asc' }],
+    }),
     prisma.venue.findMany({ orderBy: { description: 'asc' } }),
     prisma.project.findMany({ where: { status: 'Active' }, orderBy: { code: 'asc' } }),
   ])
@@ -31,11 +37,15 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
         venues={venues}
         projects={projects}
         resources={RESOURCES}
+        stages={STAGES}
+        tasks={TASKS}
         event={{
           id: event.id,
           title: event.title,
           date: event.date.toISOString(),
           durationMins: event.durationMins,
+          stage: event.stage,
+          task: event.task,
           venueId: event.venueId,
           externalVenue: event.externalVenue,
           projectId: event.projectId,

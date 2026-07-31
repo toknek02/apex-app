@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-type Staff = { id: string; name: string }
+type Staff = { id: string; name: string; department: string | null }
 type Venue = { id: string; description: string }
 type Project = { id: string; code: string; title: string }
 
@@ -12,6 +12,8 @@ type ExistingEvent = {
   title: string
   date: string
   durationMins: number | null
+  stage: string | null
+  task: string | null
   venueId: string | null
   externalVenue: string | null
   projectId: string | null
@@ -42,6 +44,8 @@ export function EventForm({
   venues,
   projects,
   resources,
+  stages,
+  tasks,
   event,
 }: {
   currentUserId: string
@@ -49,6 +53,8 @@ export function EventForm({
   venues: Venue[]
   projects: Project[]
   resources: string[]
+  stages: string[]
+  tasks: string[]
   event?: ExistingEvent
 }) {
   const router = useRouter()
@@ -58,6 +64,8 @@ export function EventForm({
   const [title, setTitle] = useState(event?.title ?? '')
   const [attendeeIds, setAttendeeIds] = useState<string[]>(event?.attendeeIds ?? [currentUserId])
   const [projectId, setProjectId] = useState(event?.projectId ?? '')
+  const [stage, setStage] = useState(event?.stage ?? '')
+  const [task, setTask] = useState(event?.task ?? '')
   const [date, setDate] = useState(eventDate ? eventDate.toISOString().slice(0, 10) : today)
   const [time, setTime] = useState(eventDate ? eventDate.toTimeString().slice(0, 5) : '09:00')
   const [durationMins, setDurationMins] = useState(String(event?.durationMins ?? 60))
@@ -76,12 +84,27 @@ export function EventForm({
   const venueDesc = venues.find((v) => v.id === venueId)?.description ?? ''
   const showExternal = venueDesc === 'External Venue'
 
+  const staffByDept = new Map<string, Staff[]>()
+  for (const s of staff) {
+    const dept = s.department ?? 'UNASSIGNED'
+    if (!staffByDept.has(dept)) staffByDept.set(dept, [])
+    staffByDept.get(dept)!.push(s)
+  }
+
   function toggleResource(name: string) {
     setSelectedResources((prev) => (prev.includes(name) ? prev.filter((r) => r !== name) : [...prev, name]))
   }
 
   function toggleAttendee(id: string) {
     setAttendeeIds((prev) => (prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id]))
+  }
+
+  function toggleDept(members: Staff[]) {
+    const memberIds = members.map((m) => m.id)
+    const allSelected = memberIds.every((id) => attendeeIds.includes(id))
+    setAttendeeIds((prev) =>
+      allSelected ? prev.filter((id) => !memberIds.includes(id)) : [...new Set([...prev, ...memberIds])]
+    )
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -102,6 +125,8 @@ export function EventForm({
         title,
         date: new Date(`${date}T${time}:00`).toISOString(),
         durationMins,
+        stage,
+        task,
         venueId: venueId || null,
         externalVenue: showExternal ? externalVenue : null,
         projectId: projectId || null,
@@ -126,7 +151,7 @@ export function EventForm({
   return (
     <form
       onSubmit={handleSubmit}
-      style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 24, maxWidth: 720 }}
+      style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 24, maxWidth: 720, margin: '0 auto' }}
     >
       {errors.length > 0 && (
         <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 6, backgroundColor: 'var(--apex-red-lt)', color: 'var(--apex-red)', fontSize: 12 }}>
@@ -141,17 +166,43 @@ export function EventForm({
 
       <div style={{ marginBottom: 16 }}>
         <label style={labelStyle}>Staff<Required /></label>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, border: '1px solid var(--apex-border)', borderRadius: 6, padding: 10 }}>
-          {staff.map((s) => (
-            <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}>
-              <input type="checkbox" checked={attendeeIds.includes(s.id)} onChange={() => toggleAttendee(s.id)} />
-              {s.name}
-            </label>
-          ))}
+        <div style={{ border: '1px solid var(--apex-border)', borderRadius: 6, padding: 10 }}>
+          {[...staffByDept.entries()].map(([dept, members], i) => {
+            const memberIds = members.map((m) => m.id)
+            const allSelected = memberIds.every((id) => attendeeIds.includes(id))
+            return (
+              <div key={dept} style={{ marginTop: i === 0 ? 0 : 10 }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    borderBottom: '1px solid var(--apex-border)',
+                    paddingBottom: 4,
+                    marginBottom: 6,
+                  }}
+                >
+                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--apex-navy)' }}>Department: {dept}</span>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}>
+                    <input type="checkbox" checked={allSelected} onChange={() => toggleDept(members)} />
+                    All in this Dept
+                  </label>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                  {members.map((s) => (
+                    <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}>
+                      <input type="checkbox" checked={attendeeIds.includes(s.id)} onChange={() => toggleAttendee(s.id)} />
+                      {s.name}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
         <div>
           <label style={labelStyle}>Project</label>
           <select style={inputStyle} value={projectId} onChange={(e) => setProjectId(e.target.value)}>
@@ -162,16 +213,24 @@ export function EventForm({
           </select>
         </div>
         <div>
-          <label style={labelStyle}>Duration (minutes)</label>
-          <select style={inputStyle} value={durationMins} onChange={(e) => setDurationMins(e.target.value)}>
-            {[15, 30, 45, 60, 90, 120].map((m) => (
-              <option key={m} value={m}>{m} mins</option>
+          <label style={labelStyle}>Stage</label>
+          <select style={inputStyle} value={stage} onChange={(e) => setStage(e.target.value)}>
+            {stages.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label style={labelStyle}>Task</label>
+          <select style={inputStyle} value={task} onChange={(e) => setTask(e.target.value)}>
+            {tasks.map((t) => (
+              <option key={t} value={t}>{t}</option>
             ))}
           </select>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
         <div>
           <label style={labelStyle}>Date<Required /></label>
           <input type="date" style={inputStyle} value={date} onChange={(e) => setDate(e.target.value)} />
@@ -179,6 +238,14 @@ export function EventForm({
         <div>
           <label style={labelStyle}>Time</label>
           <input type="time" style={inputStyle} value={time} onChange={(e) => setTime(e.target.value)} />
+        </div>
+        <div>
+          <label style={labelStyle}>Duration (minutes)</label>
+          <select style={inputStyle} value={durationMins} onChange={(e) => setDurationMins(e.target.value)}>
+            {[15, 30, 45, 60, 90, 120].map((m) => (
+              <option key={m} value={m}>{m} mins</option>
+            ))}
+          </select>
         </div>
       </div>
 
