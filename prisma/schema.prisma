@@ -21,10 +21,12 @@ model User {
   roleId String
   role   Role   @relation(fields: [roleId], references: [id])
 
-  createdEvents  Event[]         @relation("EventCreatedBy")
-  eventAttendees EventAttendee[]
-  signInRecords  SignInRecord[]
-  announcements  Announcement[]
+  createdEvents      Event[]          @relation("EventCreatedBy")
+  eventAttendees     EventAttendee[]
+  signInRecords      SignInRecord[]
+  announcements      Announcement[]
+  timesheetEntries   TimesheetEntry[]
+  projectMemberships ProjectMember[]
 
   @@index([department])
   @@index([roleId])
@@ -70,7 +72,20 @@ model Project {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  events Event[]
+  events           Event[]
+  timesheetEntries TimesheetEntry[]
+  members          ProjectMember[]
+}
+
+model ProjectMember {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([projectId, userId])
 }
 
 model Venue {
@@ -155,4 +170,23 @@ model AnnouncementAttachment {
   storagePath    String
   fileSize       Int
   createdAt      DateTime     @default(now())
+}
+
+model TimesheetEntry {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  date       DateTime
+  eventType  String
+  projectId  String?
+  project    Project? @relation(fields: [projectId], references: [id])
+  stage      String?
+  task       String?
+  normalMins Int      @default(0)
+  otMins     Int      @default(0)
+  remarks    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId, date])
 }

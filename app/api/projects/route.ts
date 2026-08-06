@@ -16,11 +16,19 @@ export async function POST(req: NextRequest) {
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!hasPermission(session.user, 'MANAGE_PROJECTS')) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { code, title, status, access } = await req.json()
+  const { code, title, status, access, memberUserIds } = await req.json()
   if (!code || !title) return NextResponse.json({ error: 'Code and title are required' }, { status: 400 })
 
   const project = await prisma.project.create({
-    data: { code, title, status: status || 'Active', access: access || 'Team' },
+    data: {
+      code,
+      title,
+      status: status || 'Active',
+      access: access || 'Team',
+      ...(Array.isArray(memberUserIds) && memberUserIds.length > 0
+        ? { members: { create: memberUserIds.map((userId: string) => ({ userId })) } }
+        : {}),
+    },
   })
   return NextResponse.json({ project }, { status: 201 })
 }

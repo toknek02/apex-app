@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { requireUser } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
+import { DeleteTimesheetEntryButton } from '@/components/staff/delete-timesheet-entry-button'
 
 function ymd(d: Date) {
   return d.toISOString().slice(0, 10)
@@ -29,10 +30,18 @@ export default async function TimesheetPage({
   const prevKey = `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}`
   const nextKey = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}`
 
-  const [staff, records] = await Promise.all([
+  const [staff, records, myEntries] = await Promise.all([
     prisma.user.findMany({ where: { isActive: true }, orderBy: { name: 'asc' } }),
     prisma.signInRecord.findMany({ where: { signInAt: { gte: monthStart, lte: monthEnd } } }),
+    prisma.timesheetEntry.findMany({
+      where: { userId: user.id, date: { gte: monthStart, lte: monthEnd } },
+      include: { project: true },
+      orderBy: { date: 'asc' },
+    }),
   ])
+
+  const totalNormalMins = myEntries.reduce((sum, e) => sum + e.normalMins, 0)
+  const totalOtMins = myEntries.reduce((sum, e) => sum + e.otMins, 0)
 
   const signedDays = new Map<string, Set<number>>() // userId -> set of day numbers
   for (const r of records) {
@@ -54,6 +63,12 @@ export default async function TimesheetPage({
         <Link href={`/staff/timesheet?month=${prevKey}`} style={navBtn}>&lt; Prev Month</Link>
         <span style={{ fontSize: 13, fontWeight: 600 }}>{monthLabel}</span>
         <Link href={`/staff/timesheet?month=${nextKey}`} style={navBtn}>Next Month &gt;</Link>
+        <Link href="/staff/timesheet/reports" style={{ ...navBtn, marginLeft: 'auto' }}>
+          Reports
+        </Link>
+        <Link href="/staff/timesheet/new" style={{ ...navBtn, backgroundColor: 'var(--apex-navy)', color: '#fff', borderColor: 'var(--apex-navy)' }}>
+          + New Entry
+        </Link>
       </div>
 
       <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
@@ -98,6 +113,56 @@ export default async function TimesheetPage({
 
       <div style={{ marginTop: 12, fontSize: 12, color: 'var(--apex-muted)' }}>
         <span style={{ color: 'var(--apex-green)', fontWeight: 700 }}>✓</span> Signed In &nbsp;·&nbsp; — No Record
+      </div>
+
+      <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, marginTop: 28, marginBottom: 12 }}>
+        My Timesheet Entries
+      </h2>
+      <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
+        <table style={{ borderCollapse: 'collapse', fontSize: 12, width: '100%' }}>
+          <thead>
+            <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
+              {['Date', 'Event Type', 'Project', 'Stage / Task', 'Normal', 'OT', 'Remarks', ''].map((h) => (
+                <th key={h} style={{ ...thStyle, textAlign: 'left' }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {myEntries.length === 0 ? (
+              <tr>
+                <td colSpan={8} style={{ ...tdStyle, textAlign: 'left', color: 'var(--apex-muted)' }}>
+                  No entries yet this month.
+                </td>
+              </tr>
+            ) : (
+              myEntries.map((e, i) => (
+                <tr key={e.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
+                  <td style={{ ...tdStyle, textAlign: 'left' }}>{e.date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</td>
+                  <td style={{ ...tdStyle, textAlign: 'left' }}>{e.eventType}</td>
+                  <td style={{ ...tdStyle, textAlign: 'left' }}>{e.project ? `${e.project.code} — ${e.project.title}` : '—'}</td>
+                  <td style={{ ...tdStyle, textAlign: 'left' }}>{[e.stage, e.task].filter(Boolean).join(' / ') || '—'}</td>
+                  <td style={{ ...tdStyle, textAlign: 'left' }}>{(e.normalMins / 60).toFixed(2)}</td>
+                  <td style={{ ...tdStyle, textAlign: 'left' }}>{(e.otMins / 60).toFixed(2)}</td>
+                  <td style={{ ...tdStyle, textAlign: 'left' }}>{e.remarks || '—'}</td>
+                  <td style={{ ...tdStyle, textAlign: 'left' }}>
+                    <DeleteTimesheetEntryButton entryId={e.id} />
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+          {myEntries.length > 0 && (
+            <tfoot>
+              <tr>
+                <td colSpan={4} style={{ ...tdStyle, textAlign: 'right', fontWeight: 700 }}>Monthly Total</td>
+                <td style={{ ...tdStyle, textAlign: 'left', fontWeight: 700 }}>{(totalNormalMins / 60).toFixed(2)}</td>
+                <td style={{ ...tdStyle, textAlign: 'left', fontWeight: 700 }}>{(totalOtMins / 60).toFixed(2)}</td>
+                <td style={tdStyle} />
+                <td style={tdStyle} />
+              </tr>
+            </tfoot>
+          )}
+        </table>
       </div>
     </AppShell>
   )
