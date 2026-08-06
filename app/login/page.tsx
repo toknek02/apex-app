@@ -29,11 +29,15 @@ export default function LoginPage() {
   return (
     <div
       style={{
-        minHeight: '100vh',
+        minHeight: '100dvh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: 'var(--apex-bg)',
+        padding: '16px',
+        paddingTop: 'max(16px, env(safe-area-inset-top))',
+        paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+        boxSizing: 'border-box',
       }}
     >
       <div
@@ -43,8 +47,9 @@ export default function LoginPage() {
           backgroundColor: '#fff',
           border: '1px solid var(--apex-border)',
           borderRadius: 10,
-          padding: 32,
+          padding: 28,
           boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
+          boxSizing: 'border-box',
         }}
       >
         <div style={{ marginBottom: 28 }}>
@@ -71,13 +76,16 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoFocus
+              autoComplete="username"
+              inputMode="email"
               placeholder="you@apex.local"
               style={{
                 width: '100%',
-                padding: '9px 12px',
+                padding: '12px',
                 border: '1px solid var(--apex-border)',
                 borderRadius: 6,
-                fontSize: 13,
+                fontSize: 16,
+                boxSizing: 'border-box',
               }}
             />
           </div>
@@ -88,13 +96,15 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              autoComplete="current-password"
               placeholder="••••••••"
               style={{
                 width: '100%',
-                padding: '9px 12px',
+                padding: '12px',
                 border: '1px solid var(--apex-border)',
                 borderRadius: 6,
-                fontSize: 13,
+                fontSize: 16,
+                boxSizing: 'border-box',
               }}
             />
           </div>
@@ -118,12 +128,12 @@ export default function LoginPage() {
             disabled={loading}
             style={{
               marginTop: 4,
-              padding: '10px 0',
+              padding: '13px 0',
               backgroundColor: 'var(--apex-navy)',
               color: '#fff',
               border: 'none',
               borderRadius: 6,
-              fontSize: 13,
+              fontSize: 14,
               fontWeight: 600,
               cursor: loading ? 'not-allowed' : 'pointer',
               opacity: loading ? 0.6 : 1,
