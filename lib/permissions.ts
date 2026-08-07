@@ -7,6 +7,7 @@ export type PermissionCode =
   | 'MANAGE_ANNOUNCEMENTS'
   | 'VIEW_TIMESHEET_REPORTS'
   | 'MANAGE_TIMESHEET_ENTRIES'
+  | 'MANAGE_SETTINGS'
 
 export type PermissionMeta = {
   code: PermissionCode
@@ -23,4 +24,5 @@ export const PERMISSIONS: PermissionMeta[] = [
   { code: 'MANAGE_ANNOUNCEMENTS', label: 'Manage announcements', description: 'Post, edit, and delete company-wide announcements and their attachments.' },
   { code: 'VIEW_TIMESHEET_REPORTS', label: 'View timesheet reports', description: 'View timesheet entries for all staff on a project, for cost evaluation.' },
   { code: 'MANAGE_TIMESHEET_ENTRIES', label: 'Manage timesheet entries', description: 'Delete timesheet entries submitted by other staff, for corrections.' },
+  { code: 'MANAGE_SETTINGS', label: 'Manage settings', description: 'Configure system-wide settings such as the office location used for attendance sign-in.' },
 ]

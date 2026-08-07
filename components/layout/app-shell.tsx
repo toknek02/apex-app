@@ -24,7 +24,7 @@ const NAV: {
   { key: 'logbook', href: '/logbook', label: 'LogBook', Icon: BookOpen },
   { key: 'staff', href: '/staff', label: 'Staff', Icon: Users },
   { key: 'announcements', href: '/announcements', label: 'Announcements', Icon: Megaphone },
-  { key: 'system', href: '/system', label: 'System', Icon: Settings, requiresAnyOf: ['MANAGE_USERS', 'MANAGE_ROLES', 'MANAGE_VENUES', 'MANAGE_PROJECTS'] },
+  { key: 'system', href: '/system', label: 'System', Icon: Settings, requiresAnyOf: ['MANAGE_USERS', 'MANAGE_ROLES', 'MANAGE_VENUES', 'MANAGE_PROJECTS', 'MANAGE_SETTINGS'] },
 ]
 
 const SUB: Record<string, { href: string; label: string; requires?: PermissionCode }[]> = {
@@ -42,6 +42,7 @@ const SUB: Record<string, { href: string; label: string; requires?: PermissionCo
   system: [
     { href: '/system/venue', label: 'Venue' },
     { href: '/system/roles', label: 'Roles' },
+    { href: '/system/settings', label: 'Settings', requires: 'MANAGE_SETTINGS' },
   ],
 }
 
