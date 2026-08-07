@@ -63,7 +63,13 @@ export default async function TimesheetPage({
         <Link href={`/staff/timesheet?month=${prevKey}`} style={navBtn}>&lt; Prev Month</Link>
         <span style={{ fontSize: 13, fontWeight: 600 }}>{monthLabel}</span>
         <Link href={`/staff/timesheet?month=${nextKey}`} style={navBtn}>Next Month &gt;</Link>
-        <Link href="/staff/timesheet/reports" style={{ ...navBtn, marginLeft: 'auto' }}>
+        <a
+          href={`/api/timesheet-entries?from=${ymd(monthStart)}&to=${ymd(monthEnd)}&format=xlsx`}
+          style={{ ...navBtn, marginLeft: 'auto', color: 'var(--apex-green)', borderColor: 'var(--apex-green)' }}
+        >
+          Download
+        </a>
+        <Link href="/staff/timesheet/reports" style={navBtn}>
           Reports
         </Link>
         <Link href="/staff/timesheet/new" style={{ ...navBtn, backgroundColor: 'var(--apex-navy)', color: '#fff', borderColor: 'var(--apex-navy)' }}>

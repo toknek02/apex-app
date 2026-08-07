@@ -76,6 +76,15 @@ export function TimesheetReportForm({
     }
   }
 
+  function buildParams() {
+    const params = new URLSearchParams()
+    if (projectId) params.set('projectId', projectId)
+    if (from) params.set('from', from)
+    if (to) params.set('to', to)
+    if (teamMode) params.set('scope', 'project')
+    return params
+  }
+
   async function handleGenerate(e?: React.FormEvent) {
     e?.preventDefault()
     if (teamMode && !projectId) {
@@ -84,17 +93,17 @@ export function TimesheetReportForm({
     }
     setError('')
     setLoading(true)
-    const params = new URLSearchParams()
-    if (projectId) params.set('projectId', projectId)
-    if (from) params.set('from', from)
-    if (to) params.set('to', to)
-    if (teamMode) params.set('scope', 'project')
-
-    const res = await fetch(`/api/timesheet-entries?${params.toString()}`)
+    const res = await fetch(`/api/timesheet-entries?${buildParams().toString()}`)
     const data = await res.json()
     setResults(data.entries ?? [])
     setMembers(data.members ?? [])
     setLoading(false)
+  }
+
+  function handleDownload() {
+    const params = buildParams()
+    params.set('format', 'xlsx')
+    window.location.assign(`/api/timesheet-entries?${params.toString()}`)
   }
 
   function handleCancel() {
@@ -188,6 +197,15 @@ export function TimesheetReportForm({
           >
             Cancel
           </button>
+          {results !== null && (
+            <button
+              type="button"
+              onClick={handleDownload}
+              style={{ padding: '8px 22px', backgroundColor: '#fff', border: '1px solid var(--apex-green)', color: 'var(--apex-green)', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+            >
+              Download Excel
+            </button>
+          )}
         </div>
       </form>
 

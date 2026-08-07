@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { EVENT_TYPES } from '@/lib/timesheet-event-types'
+import { buildTimesheetWorkbook } from '@/lib/timesheet-export'
 
 export async function GET(request: Request) {
   const session = await auth()
@@ -44,6 +45,21 @@ export async function GET(request: Request) {
         })
       : Promise.resolve([]),
   ])
+
+  if (searchParams.get('format') === 'xlsx') {
+    const buffer = await buildTimesheetWorkbook({
+      entries,
+      members: members.map((m) => m.user),
+      teamScope,
+    })
+    const filename = teamScope ? 'team-timesheet-report.xlsx' : 'my-timesheet-entries.xlsx'
+    return new NextResponse(new Uint8Array(buffer), {
+      headers: {
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+      },
+    })
+  }
 
   return NextResponse.json({ entries, ...(teamScope ? { members: members.map((m) => m.user) } : {}) })
 }
