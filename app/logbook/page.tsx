@@ -4,18 +4,19 @@ import { Pencil } from 'lucide-react'
 import { requireUser, hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
+import { DeleteEventButton } from '@/components/logbook/delete-event-button'
 
 function startOfWeek(d: Date) {
   const x = new Date(d)
-  const day = x.getDay() // 0 = Sun
+  const day = x.getUTCDay() // 0 = Sun
   const diff = day === 0 ? -6 : 1 - day // move back to Monday
-  x.setDate(x.getDate() + diff)
-  x.setHours(0, 0, 0, 0)
+  x.setUTCDate(x.getUTCDate() + diff)
+  x.setUTCHours(0, 0, 0, 0)
   return x
 }
 function addDays(d: Date, n: number) {
   const x = new Date(d)
-  x.setDate(x.getDate() + n)
+  x.setUTCDate(x.getUTCDate() + n)
   return x
 }
 function ymd(d: Date) {
@@ -36,15 +37,19 @@ export default async function LogbookPage({
   const scope = sp.scope === 'mine' ? 'mine' : 'all'
   const start = sp.start ? new Date(sp.start) : new Date()
 
-  const rangeStart = view === 'daily' ? new Date(new Date(start).setHours(0, 0, 0, 0)) : startOfWeek(start)
-  const rangeEnd =
-    view === 'daily' ? new Date(new Date(start).setHours(23, 59, 59, 999)) : addDays(rangeStart, 6)
-  rangeEnd.setHours(23, 59, 59, 999)
+  const rangeStart = view === 'daily' ? new Date(new Date(start).setUTCHours(0, 0, 0, 0)) : startOfWeek(start)
+  const rangeEnd = view === 'daily' ? new Date(rangeStart) : addDays(rangeStart, 6)
+  rangeEnd.setUTCHours(23, 59, 59, 999)
+
+  const canSeeAllPrivate = hasPermission(user, 'EDIT_ANY_EVENT')
 
   const events = await prisma.event.findMany({
     where: {
       date: { gte: rangeStart, lte: rangeEnd },
       ...(scope === 'mine' ? { attendees: { some: { userId: user.id } } } : {}),
+      ...(scope === 'all' && !canSeeAllPrivate
+        ? { OR: [{ private: false }, { createdById: user.id }, { attendees: { some: { userId: user.id } } }] }
+        : {}),
     },
     include: { venue: true, attendees: { include: { user: true } } },
     orderBy: { date: 'asc' },
@@ -55,6 +60,13 @@ export default async function LogbookPage({
     const key = ymd(e.date)
     if (!grouped.has(key)) grouped.set(key, { date: e.date, items: [] })
     grouped.get(key)!.items.push(e)
+  }
+
+  // Always show every day in the range, even ones with no events.
+  const days: { date: Date; items: typeof events }[] = []
+  for (let d = new Date(rangeStart); d <= rangeEnd; d = addDays(d, 1)) {
+    const key = ymd(d)
+    days.push(grouped.get(key) ?? { date: new Date(d), items: [] })
   }
 
   const prevStart = ymd(addDays(rangeStart, view === 'daily' ? -1 : -7))
@@ -106,14 +118,8 @@ export default async function LogbookPage({
             </tr>
           </thead>
           <tbody>
-            {[...grouped.entries()].length === 0 && (
-              <tr>
-                <td colSpan={5} style={{ padding: 20, fontSize: 13, color: 'var(--apex-muted)' }}>
-                  No events in this range.
-                </td>
-              </tr>
-            )}
-            {[...grouped.entries()].map(([key, group]) => {
+            {days.map((group) => {
+              const key = ymd(group.date)
               const isToday = isSameDay(group.date, today)
               const dow = group.date.toLocaleDateString('en-GB', { weekday: 'long' })
               const dstr = group.date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })
@@ -133,6 +139,13 @@ export default async function LogbookPage({
                       {dstr}, {dow}
                     </td>
                   </tr>
+                  {group.items.length === 0 && (
+                    <tr>
+                      <td colSpan={5} style={{ padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)', fontStyle: 'italic' }}>
+                        No events scheduled.
+                      </td>
+                    </tr>
+                  )}
                   {group.items.map((e, i) => (
                     <tr key={e.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
                       <td style={{ padding: '9px 14px', fontSize: 12, whiteSpace: 'nowrap' }}>
@@ -151,9 +164,12 @@ export default async function LogbookPage({
                       </td>
                       <td style={{ padding: '9px 14px', fontSize: 12 }}>
                         {(e.createdById === user.id || hasPermission(user, 'EDIT_ANY_EVENT')) && (
-                          <Link href={`/logbook/${e.id}/edit`} style={{ display: 'inline-flex' }}>
-                            <Pencil size={14} color="var(--apex-accent)" />
-                          </Link>
+                          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                            <Link href={`/logbook/${e.id}/edit`} style={{ display: 'inline-flex' }}>
+                              <Pencil size={14} color="var(--apex-accent)" />
+                            </Link>
+                            <DeleteEventButton eventId={e.id} />
+                          </div>
                         )}
                       </td>
                     </tr>

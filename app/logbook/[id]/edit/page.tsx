@@ -3,6 +3,7 @@ import { requireUser, hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import { EventForm } from '@/components/logbook/event-form'
+import { DeleteEventButton } from '@/components/logbook/delete-event-button'
 import { RESOURCES } from '@/lib/logbook-resources'
 import { STAGES } from '@/lib/logbook-stages'
 import { TASKS } from '@/lib/logbook-tasks'
@@ -30,7 +31,13 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
   return (
     <AppShell user={{ name: user.name ?? '', roleName: user.roleName, permissions: user.permissions }}>
       <Breadcrumb items={['LogBook', 'Edit Event']} />
-      <h1 style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700, marginBottom: 16 }}>Edit Event</h1>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: 720, margin: '0 auto 16px' }}>
+        <h1 style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700 }}>Edit Event</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--apex-red)' }}>
+          <DeleteEventButton eventId={event.id} redirectTo="/logbook" />
+          Delete Event
+        </div>
+      </div>
       <EventForm
         currentUserId={user.id}
         staff={staff}

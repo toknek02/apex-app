@@ -38,6 +38,31 @@ function Required() {
   return <span style={{ color: 'var(--apex-red)' }}> *</span>
 }
 
+const MAX_REPEAT_OCCURRENCES = 365
+
+function repeatStepMs(frequency: 'daily' | 'weekly') {
+  return (frequency === 'weekly' ? 7 : 1) * 24 * 60 * 60 * 1000
+}
+
+function countRepeatOccurrences(startDate: string, time: string, untilDate: string, frequency: 'daily' | 'weekly') {
+  const startMs = new Date(`${startDate}T${time}:00`).getTime()
+  const untilMs = new Date(`${untilDate}T${time}:00`).getTime()
+  if (untilMs < startMs) return 0
+  return Math.floor((untilMs - startMs) / repeatStepMs(frequency)) + 1
+}
+
+function buildRepeatDates(startDate: string, time: string, untilDate: string, frequency: 'daily' | 'weekly') {
+  const step = repeatStepMs(frequency)
+  const untilMs = new Date(`${untilDate}T${time}:00`).getTime()
+  const dates: string[] = []
+  let cursorMs = new Date(`${startDate}T${time}:00`).getTime()
+  while (cursorMs <= untilMs && dates.length < MAX_REPEAT_OCCURRENCES) {
+    dates.push(new Date(cursorMs).toISOString())
+    cursorMs += step
+  }
+  return dates
+}
+
 export function EventForm({
   currentUserId,
   staff,
@@ -76,6 +101,8 @@ export function EventForm({
   )
   const [remarks, setRemarks] = useState(event?.remarks ?? '')
   const [repeat, setRepeat] = useState(event?.repeat ?? false)
+  const [repeatUntil, setRepeatUntil] = useState('')
+  const [repeatFrequency, setRepeatFrequency] = useState<'daily' | 'weekly'>('daily')
   const [isPrivate, setIsPrivate] = useState(event?.private ?? false)
   const [remindMe, setRemindMe] = useState(event?.remindMe ?? true)
   const [errors, setErrors] = useState<string[]>([])
@@ -107,6 +134,8 @@ export function EventForm({
     )
   }
 
+  const isRepeating = repeat && !event
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const missing: string[] = []
@@ -114,6 +143,23 @@ export function EventForm({
     if (attendeeIds.length === 0) missing.push('Staff')
     if (!date) missing.push('Date')
     if (!venueId && !showExternal) missing.push('Venue')
+
+    let repeatDates: string[] | undefined
+    if (isRepeating) {
+      if (!repeatUntil) {
+        missing.push('Repeat Until date')
+      } else {
+        const occurrences = countRepeatOccurrences(date, time, repeatUntil, repeatFrequency)
+        if (occurrences === 0) {
+          missing.push('Repeat Until date must be on or after the start date')
+        } else if (occurrences > MAX_REPEAT_OCCURRENCES) {
+          missing.push(`Repeat range too long — max ${MAX_REPEAT_OCCURRENCES} occurrences, shorten the Repeat Until date`)
+        } else {
+          repeatDates = buildRepeatDates(date, time, repeatUntil, repeatFrequency)
+        }
+      }
+    }
+
     setErrors(missing)
     if (missing.length > 0) return
 
@@ -124,6 +170,7 @@ export function EventForm({
       body: JSON.stringify({
         title,
         date: new Date(`${date}T${time}:00`).toISOString(),
+        ...(repeatDates ? { dates: repeatDates } : {}),
         durationMins,
         stage,
         task,
@@ -188,7 +235,7 @@ export function EventForm({
                     All in this Dept
                   </label>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {members.map((s) => (
                     <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}>
                       <input type="checkbox" checked={attendeeIds.includes(s.id)} onChange={() => toggleAttendee(s.id)} />
@@ -202,7 +249,7 @@ export function EventForm({
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
+      <div className="grid grid-cols-1 sm:grid-cols-[1.4fr_1fr_1fr] gap-4 mb-4">
         <div>
           <label style={labelStyle}>Project</label>
           <select style={inputStyle} value={projectId} onChange={(e) => setProjectId(e.target.value)}>
@@ -230,9 +277,9 @@ export function EventForm({
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4" style={{ marginBottom: isRepeating ? 12 : 16 }}>
         <div>
-          <label style={labelStyle}>Date<Required /></label>
+          <label style={labelStyle}>{isRepeating ? 'Start Date' : 'Date'}<Required /></label>
           <input type="date" style={inputStyle} value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
         <div>
@@ -248,6 +295,30 @@ export function EventForm({
           </select>
         </div>
       </div>
+
+      {isRepeating && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4" style={{ padding: 12, backgroundColor: 'var(--apex-row-alt)', borderRadius: 6 }}>
+          <div>
+            <label style={labelStyle}>Repeat Until<Required /></label>
+            <input type="date" style={inputStyle} min={date} value={repeatUntil} onChange={(e) => setRepeatUntil(e.target.value)} />
+          </div>
+          <div>
+            <label style={labelStyle}>Frequency</label>
+            <select style={inputStyle} value={repeatFrequency} onChange={(e) => setRepeatFrequency(e.target.value as 'daily' | 'weekly')}>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly (same day)</option>
+            </select>
+          </div>
+          {date && repeatUntil && (
+            <p style={{ gridColumn: '1 / -1', fontSize: 11, color: 'var(--apex-muted)', margin: 0 }}>
+              {(() => {
+                const n = countRepeatOccurrences(date, time, repeatUntil, repeatFrequency)
+                return n > 0 ? `Will create ${n} event${n === 1 ? '' : 's'}, one per ${repeatFrequency === 'weekly' ? 'week' : 'day'} through ${repeatUntil}.` : 'Repeat Until must be on or after the start date.'
+              })()}
+            </p>
+          )}
+        </div>
+      )}
 
       <div style={{ marginBottom: 16 }}>
         <label style={labelStyle}>Venue<Required /></label>
@@ -268,7 +339,7 @@ export function EventForm({
 
       <div style={{ marginBottom: 16 }}>
         <label style={labelStyle}>Resources</label>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {resources.map((r) => (
             <label key={r} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
               <input type="checkbox" checked={selectedResources.includes(r)} onChange={() => toggleResource(r)} />
@@ -283,10 +354,12 @@ export function EventForm({
         <input style={inputStyle} value={remarks} onChange={(e) => setRemarks(e.target.value)} />
       </div>
 
-      <div style={{ display: 'flex', gap: 18, marginBottom: 20 }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
-          <input type="checkbox" checked={repeat} onChange={(e) => setRepeat(e.target.checked)} /> Repeat
-        </label>
+      <div style={{ display: 'flex', gap: 18, marginBottom: 20, flexWrap: 'wrap' }}>
+        {!event && (
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+            <input type="checkbox" checked={repeat} onChange={(e) => setRepeat(e.target.checked)} /> Repeat
+          </label>
+        )}
         <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
           <input type="checkbox" checked={isPrivate} onChange={(e) => setIsPrivate(e.target.checked)} /> Private
         </label>
