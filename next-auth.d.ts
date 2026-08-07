@@ -16,6 +16,7 @@ declare module 'next-auth' {
     roleName: string
     permissions: string[]
     department?: string | null
+    sessionId?: string
   }
 }
 
@@ -26,5 +27,6 @@ declare module 'next-auth/jwt' {
     roleName: string
     permissions: string[]
     department?: string | null
+    sessionId?: string
   }
 }

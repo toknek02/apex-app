@@ -8,15 +8,16 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  name         String
-  email        String   @unique
-  passwordHash String
-  department   String?
-  designation  String?
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String   @id @default(cuid())
+  name            String
+  email           String   @unique
+  passwordHash    String
+  department      String?
+  designation     String?
+  isActive        Boolean  @default(true)
+  activeSessionId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   roleId String
   role   Role   @relation(fields: [roleId], references: [id])
