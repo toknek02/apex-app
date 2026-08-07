@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { Building, Users, Settings, ShieldCheck } from 'lucide-react'
+import { Building, Users, ShieldCheck } from 'lucide-react'
 import { requireUser, hasPermission } from '@/lib/rbac'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import type { PermissionCode } from '@/lib/permissions'
@@ -8,7 +8,6 @@ import type { PermissionCode } from '@/lib/permissions'
 const CARDS: { label: string; Icon: typeof Users; href: string; requires: PermissionCode }[] = [
   { label: 'Staff', Icon: Users, href: '/staff', requires: 'MANAGE_USERS' },
   { label: 'Venue', Icon: Building, href: '/system/venue', requires: 'MANAGE_VENUES' },
-  { label: 'Project', Icon: Settings, href: '/system/project', requires: 'MANAGE_PROJECTS' },
   { label: 'Roles', Icon: ShieldCheck, href: '/system/roles', requires: 'MANAGE_ROLES' },
 ]
 

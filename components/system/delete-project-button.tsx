@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Trash2 } from 'lucide-react'
 
-export function DeleteProjectButton({ projectId }: { projectId: string }) {
+export function DeleteProjectButton({ projectId, redirectTo }: { projectId: string; redirectTo?: string }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
@@ -14,7 +14,11 @@ export function DeleteProjectButton({ projectId }: { projectId: string }) {
     const res = await fetch(`/api/projects/${projectId}`, { method: 'DELETE' })
     setLoading(false)
     if (res.ok) {
-      router.refresh()
+      if (redirectTo) {
+        router.push(redirectTo)
+      } else {
+        router.refresh()
+      }
     } else {
       const data = await res.json().catch(() => ({}))
       alert(data.error ?? 'Failed to delete project')

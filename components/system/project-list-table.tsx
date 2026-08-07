@@ -1,9 +1,8 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import Link from 'next/link'
-import { Pencil, Search, Users } from 'lucide-react'
-import { ProjectModal } from '@/components/system/project-modal'
+import { useRouter } from 'next/navigation'
+import { Search, Users } from 'lucide-react'
 import { DeleteProjectButton } from '@/components/system/delete-project-button'
 
 type ProjectRow = {
@@ -30,6 +29,7 @@ const inputStyle: React.CSSProperties = {
 }
 
 export function ProjectListTable({ projects }: { projects: ProjectRow[] }) {
+  const router = useRouter()
   const [search, setSearch] = useState('')
 
   const filtered = useMemo(() => {
@@ -72,8 +72,12 @@ export function ProjectListTable({ projects }: { projects: ProjectRow[] }) {
               filtered.map((p, i) => {
                 const s = STATUS_STYLES[p.status] ?? STATUS_STYLES.Active
                 return (
-                  <tr key={p.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
-                    <td style={{ padding: '9px 14px', fontSize: 12 }}>{p.code}</td>
+                  <tr
+                    key={p.id}
+                    onClick={() => router.push(`/staff/project/${p.id}`)}
+                    style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff', cursor: 'pointer' }}
+                  >
+                    <td style={{ padding: '9px 14px', fontSize: 12, color: 'var(--apex-accent)', fontWeight: 600 }}>{p.code}</td>
                     <td style={{ padding: '9px 14px', fontSize: 12 }}>{p.title || '—'}</td>
                     <td style={{ padding: '9px 14px', fontSize: 12 }}>
                       <span style={{ padding: '2px 10px', borderRadius: 10, fontSize: 11, fontWeight: 600, backgroundColor: s.bg, color: s.color }}>
@@ -82,20 +86,13 @@ export function ProjectListTable({ projects }: { projects: ProjectRow[] }) {
                     </td>
                     <td style={{ padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>{p.access}</td>
                     <td style={{ padding: '9px 14px', fontSize: 12 }}>
-                      <Link
-                        href={`/system/project/${p.id}/team`}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--apex-text)', textDecoration: 'none' }}
-                        title="Assign team"
-                      >
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--apex-text)' }}>
                         <Users size={13} color="var(--apex-accent)" />
                         {p.memberCount}
-                      </Link>
+                      </span>
                     </td>
-                    <td style={{ padding: '9px 14px', fontSize: 12 }}>
-                      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                        <ProjectModal project={p} trigger={<Pencil size={14} color="var(--apex-accent)" />} />
-                        <DeleteProjectButton projectId={p.id} />
-                      </div>
+                    <td style={{ padding: '9px 14px', fontSize: 12 }} onClick={(e) => e.stopPropagation()}>
+                      <DeleteProjectButton projectId={p.id} />
                     </td>
                   </tr>
                 )

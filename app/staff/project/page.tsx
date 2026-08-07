@@ -1,3 +1,5 @@
+import Link from 'next/link'
+import { Archive } from 'lucide-react'
 import { requirePermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
@@ -7,6 +9,7 @@ import { ProjectListTable } from '@/components/system/project-list-table'
 export default async function ProjectPage() {
   const user = await requirePermission('MANAGE_PROJECTS')
   const projects = await prisma.project.findMany({
+    where: { status: { not: 'Archived' } },
     orderBy: { code: 'asc' },
     include: { _count: { select: { members: true } } },
   })
@@ -22,16 +25,24 @@ export default async function ProjectPage() {
 
   return (
     <AppShell user={{ name: user.name ?? '', roleName: user.roleName, permissions: user.permissions }}>
-      <Breadcrumb items={['System', 'Project']} />
+      <Breadcrumb items={['Staff', 'Project']} />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <h1 style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700 }}>Project</h1>
-        <ProjectModal
-          trigger={
-            <span style={{ padding: '8px 16px', backgroundColor: 'var(--apex-accent)', color: '#fff', borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
-              Add Project
-            </span>
-          }
-        />
+        <div style={{ display: 'flex', gap: 10 }}>
+          <Link
+            href="/staff/project/archive"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 6, fontSize: 12, fontWeight: 600, color: 'var(--apex-text)', textDecoration: 'none' }}
+          >
+            <Archive size={14} /> Archive
+          </Link>
+          <ProjectModal
+            trigger={
+              <span style={{ padding: '8px 16px', backgroundColor: 'var(--apex-accent)', color: '#fff', borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
+                Add Project
+              </span>
+            }
+          />
+        </div>
       </div>
 
       <ProjectListTable projects={rows} />

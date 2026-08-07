@@ -9,7 +9,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!hasPermission(session.user, 'MANAGE_PROJECTS')) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const { id } = await params
-  const { title, status, access, memberUserIds } = await req.json()
+  const { title, status, access, client, description, startDate, completedAt, memberUserIds } = await req.json()
 
   if (Array.isArray(memberUserIds)) {
     await prisma.projectMember.deleteMany({ where: { projectId: id } })
@@ -24,6 +24,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ...(title !== undefined ? { title } : {}),
       ...(status !== undefined ? { status } : {}),
       ...(access !== undefined ? { access } : {}),
+      ...(client !== undefined ? { client: client || null } : {}),
+      ...(description !== undefined ? { description: description || null } : {}),
+      ...(startDate !== undefined ? { startDate: startDate ? new Date(startDate) : null } : {}),
+      ...(completedAt !== undefined ? { completedAt: completedAt ? new Date(completedAt) : null } : {}),
     },
     include: { members: true },
   })
