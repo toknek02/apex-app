@@ -24,7 +24,7 @@ const NAV: {
   { key: 'logbook', href: '/logbook', label: 'LogBook', Icon: BookOpen },
   { key: 'staff', href: '/staff', label: 'Staff', Icon: Users },
   { key: 'announcements', href: '/announcements', label: 'Announcements', Icon: Megaphone },
-  { key: 'system', href: '/system', label: 'System', Icon: Settings, requiresAnyOf: ['MANAGE_USERS', 'MANAGE_ROLES', 'MANAGE_VENUES', 'MANAGE_PROJECTS', 'MANAGE_SETTINGS', 'VIEW_AUDIT_LOG'] },
+  { key: 'system', href: '/system', label: 'System', Icon: Settings, requiresAnyOf: ['MANAGE_USERS', 'MANAGE_ROLES', 'MANAGE_VENUES', 'MANAGE_PROJECTS', 'MANAGE_SETTINGS', 'VIEW_AUDIT_LOG', 'VIEW_ERROR_LOG'] },
 ]
 
 const SUB: Record<string, { href: string; label: string; requires?: PermissionCode }[]> = {
@@ -44,6 +44,7 @@ const SUB: Record<string, { href: string; label: string; requires?: PermissionCo
     { href: '/system/roles', label: 'Roles' },
     { href: '/system/settings', label: 'Settings', requires: 'MANAGE_SETTINGS' },
     { href: '/system/audit', label: 'Audit Log', requires: 'VIEW_AUDIT_LOG' },
+    { href: '/system/errors', label: 'Error Log', requires: 'VIEW_ERROR_LOG' },
   ],
 }
 
