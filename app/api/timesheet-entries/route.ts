@@ -2,8 +2,12 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { EVENT_TYPES } from '@/lib/timesheet-event-types'
+import { STAGES } from '@/lib/logbook-stages'
+import { TASKS } from '@/lib/logbook-tasks'
 import { buildTimesheetWorkbook } from '@/lib/timesheet-export'
 import { calcCost } from '@/lib/cost-calc'
+
+const MAX_MINS_PER_ENTRY = 24 * 60
 
 export async function GET(request: Request) {
   const session = await auth()
@@ -14,6 +18,7 @@ export async function GET(request: Request) {
   const from = searchParams.get('from')
   const to = searchParams.get('to')
   const scope = searchParams.get('scope')
+  const requestedUserId = searchParams.get('userId')
 
   const canViewTeamReports = session.user.permissions.includes('VIEW_TIMESHEET_REPORTS')
   const teamScope = scope === 'project' && canViewTeamReports
@@ -22,10 +27,19 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Project is required for team reports' }, { status: 400 })
   }
 
+  // Viewing a specific colleague's personal timesheet (not a project-wide
+  // report) requires the same permission as the project cost report — both
+  // are "see someone else's logged hours" capabilities.
+  const viewingOtherUser = Boolean(requestedUserId) && requestedUserId !== session.user.id && canViewTeamReports
+  if (requestedUserId && requestedUserId !== session.user.id && !canViewTeamReports) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+  const effectiveUserId = viewingOtherUser ? requestedUserId! : session.user.id
+
   const [entries, members] = await Promise.all([
     prisma.timesheetEntry.findMany({
       where: {
-        ...(teamScope ? {} : { userId: session.user.id }),
+        ...(teamScope ? {} : { userId: effectiveUserId }),
         ...(projectId ? { projectId } : {}),
         ...(from || to
           ? {
@@ -86,8 +100,24 @@ export async function POST(request: Request) {
   if (!date || !eventType || !EVENT_TYPES.includes(eventType)) {
     return NextResponse.json({ error: 'Missing or invalid required fields' }, { status: 400 })
   }
+  const parsedDate = new Date(date)
+  if (Number.isNaN(parsedDate.getTime())) {
+    return NextResponse.json({ error: 'Invalid date' }, { status: 400 })
+  }
   if (eventType === 'Project Work' && !projectId) {
     return NextResponse.json({ error: 'Project is required for Project Work' }, { status: 400 })
+  }
+  if (stage && !STAGES.includes(stage)) {
+    return NextResponse.json({ error: 'Invalid stage' }, { status: 400 })
+  }
+  if (task && !TASKS.includes(task)) {
+    return NextResponse.json({ error: 'Invalid task' }, { status: 400 })
+  }
+
+  const normalizedNormalMins = Math.max(0, Number(normalMins) || 0)
+  const normalizedOtMins = Math.max(0, Number(otMins) || 0)
+  if (normalizedNormalMins > MAX_MINS_PER_ENTRY || normalizedOtMins > MAX_MINS_PER_ENTRY) {
+    return NextResponse.json({ error: 'Hours for a single entry cannot exceed 24' }, { status: 400 })
   }
 
   if (projectId) {
@@ -102,13 +132,13 @@ export async function POST(request: Request) {
   const entry = await prisma.timesheetEntry.create({
     data: {
       userId: session.user.id,
-      date: new Date(date),
+      date: parsedDate,
       eventType,
       projectId: projectId || null,
       stage: stage || null,
       task: task || null,
-      normalMins: Math.max(0, Number(normalMins) || 0),
-      otMins: Math.max(0, Number(otMins) || 0),
+      normalMins: normalizedNormalMins,
+      otMins: normalizedOtMins,
       remarks: remarks || null,
     },
   })

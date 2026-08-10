@@ -17,14 +17,15 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   if (!isOwner && !canManageEntries) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   await prisma.timesheetEntry.delete({ where: { id } })
-  if (!isOwner) {
-    await logAudit({
-      actor: session.user,
-      action: 'timesheet_entry.delete',
-      targetType: 'TimesheetEntry',
-      targetId: id,
-      metadata: { ownerId: existing.userId, date: existing.date, normalMins: existing.normalMins, otMins: existing.otMins },
-    })
-  }
+  // Always logged, including self-deletes — this data feeds cost reports
+  // directors may have already relied on, so a self-delete of a past entry
+  // needs a trail too, not just deletions made on someone else's behalf.
+  await logAudit({
+    actor: session.user,
+    action: isOwner ? 'timesheet_entry.delete_own' : 'timesheet_entry.delete',
+    targetType: 'TimesheetEntry',
+    targetId: id,
+    metadata: { ownerId: existing.userId, date: existing.date, normalMins: existing.normalMins, otMins: existing.otMins },
+  })
   return NextResponse.json({ success: true })
 }

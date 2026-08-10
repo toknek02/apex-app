@@ -1,8 +1,9 @@
 import Link from 'next/link'
-import { requireUser } from '@/lib/rbac'
+import { requireUser, hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import { DeleteTimesheetEntryButton } from '@/components/staff/delete-timesheet-entry-button'
+import { TimesheetStaffSelector } from '@/components/staff/timesheet-staff-selector'
 
 function ymd(d: Date) {
   return d.toISOString().slice(0, 10)
@@ -11,10 +12,15 @@ function ymd(d: Date) {
 export default async function TimesheetPage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string }>
+  searchParams: Promise<{ month?: string; userId?: string }>
 }) {
   const user = await requireUser()
   const sp = await searchParams
+  const canViewOthers = hasPermission(user, 'VIEW_TIMESHEET_REPORTS')
+  const canManageEntries = hasPermission(user, 'MANAGE_TIMESHEET_ENTRIES')
+  const viewingUserId = canViewOthers && sp.userId ? sp.userId : user.id
+  const isOwnView = viewingUserId === user.id
+
   const now = new Date()
   const [yearStr, monthStr] = (sp.month ?? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`).split('-')
   const year = Number(yearStr)
@@ -29,12 +35,14 @@ export default async function TimesheetPage({
   const nextMonth = new Date(year, month + 1, 1)
   const prevKey = `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}`
   const nextKey = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}`
+  const userQuery = !isOwnView ? `&userId=${viewingUserId}` : ''
 
-  const [staff, records, myEntries] = await Promise.all([
+  const [staff, records, viewedUser, myEntries] = await Promise.all([
     prisma.user.findMany({ where: { isActive: true }, orderBy: { name: 'asc' } }),
     prisma.signInRecord.findMany({ where: { signInAt: { gte: monthStart, lte: monthEnd } } }),
+    isOwnView ? Promise.resolve(user) : prisma.user.findUnique({ where: { id: viewingUserId } }),
     prisma.timesheetEntry.findMany({
-      where: { userId: user.id, date: { gte: monthStart, lte: monthEnd } },
+      where: { userId: viewingUserId, date: { gte: monthStart, lte: monthEnd } },
       include: { project: true },
       orderBy: { date: 'asc' },
     }),
@@ -59,12 +67,15 @@ export default async function TimesheetPage({
         Timesheet — {monthLabel}
       </h1>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-        <Link href={`/staff/timesheet?month=${prevKey}`} style={navBtn}>&lt; Prev Month</Link>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+        <Link href={`/staff/timesheet?month=${prevKey}${userQuery}`} style={navBtn}>&lt; Prev Month</Link>
         <span style={{ fontSize: 13, fontWeight: 600 }}>{monthLabel}</span>
-        <Link href={`/staff/timesheet?month=${nextKey}`} style={navBtn}>Next Month &gt;</Link>
+        <Link href={`/staff/timesheet?month=${nextKey}${userQuery}`} style={navBtn}>Next Month &gt;</Link>
+        {canViewOthers && (
+          <TimesheetStaffSelector staff={staff.map((s) => ({ id: s.id, name: s.name }))} selectedUserId={viewingUserId} />
+        )}
         <a
-          href={`/api/timesheet-entries?from=${ymd(monthStart)}&to=${ymd(monthEnd)}&format=xlsx`}
+          href={`/api/timesheet-entries?from=${ymd(monthStart)}&to=${ymd(monthEnd)}&format=xlsx${userQuery}`}
           style={{ ...navBtn, marginLeft: 'auto', color: 'var(--apex-green)', borderColor: 'var(--apex-green)' }}
         >
           Download
@@ -72,9 +83,11 @@ export default async function TimesheetPage({
         <Link href="/staff/timesheet/reports" style={navBtn}>
           Reports
         </Link>
-        <Link href="/staff/timesheet/new" style={{ ...navBtn, backgroundColor: 'var(--apex-navy)', color: '#fff', borderColor: 'var(--apex-navy)' }}>
-          + New Entry
-        </Link>
+        {isOwnView && (
+          <Link href="/staff/timesheet/new" style={{ ...navBtn, backgroundColor: 'var(--apex-navy)', color: '#fff', borderColor: 'var(--apex-navy)' }}>
+            + New Entry
+          </Link>
+        )}
       </div>
 
       <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
@@ -122,7 +135,7 @@ export default async function TimesheetPage({
       </div>
 
       <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, marginTop: 28, marginBottom: 12 }}>
-        My Timesheet Entries
+        {isOwnView ? 'My Timesheet Entries' : `${viewedUser?.name ?? 'Unknown'}’s Timesheet Entries`}
       </h2>
       <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
         <table style={{ borderCollapse: 'collapse', fontSize: 12, width: '100%' }}>
@@ -151,7 +164,7 @@ export default async function TimesheetPage({
                   <td style={{ ...tdStyle, textAlign: 'left' }}>{(e.otMins / 60).toFixed(2)}</td>
                   <td style={{ ...tdStyle, textAlign: 'left' }}>{e.remarks || '—'}</td>
                   <td style={{ ...tdStyle, textAlign: 'left' }}>
-                    <DeleteTimesheetEntryButton entryId={e.id} />
+                    {(isOwnView || canManageEntries) && <DeleteTimesheetEntryButton entryId={e.id} />}
                   </td>
                 </tr>
               ))
