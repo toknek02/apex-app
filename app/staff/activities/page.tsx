@@ -1,5 +1,5 @@
 import { Fragment } from 'react'
-import { requireUser } from '@/lib/rbac'
+import { requireUser, hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import { RefreshButton } from '@/components/staff/refresh-button'
@@ -12,15 +12,32 @@ export default async function ActivitiesPage() {
   const endOfDay = new Date(now)
   endOfDay.setHours(23, 59, 59, 999)
 
-  const [staff, openRecords, todaysAttendance] = await Promise.all([
+  // Same tiering as the Dashboard and Timesheet pages: company-wide activity
+  // is only meaningful to someone with oversight responsibility. And same
+  // private-event rule as /logbook — without it, this page was showing
+  // private event titles/remarks to anyone logged in, regardless of
+  // EDIT_ANY_EVENT.
+  const isPrivileged =
+    hasPermission(user, 'VIEW_TIMESHEET_REPORTS') ||
+    hasPermission(user, 'MANAGE_PROJECTS') ||
+    hasPermission(user, 'MANAGE_USERS')
+  const canSeeAllPrivate = hasPermission(user, 'EDIT_ANY_EVENT')
+
+  const [allStaff, openRecords, todaysAttendance] = await Promise.all([
     prisma.user.findMany({ where: { isActive: true }, orderBy: [{ department: 'asc' }, { name: 'asc' }] }),
     prisma.signInRecord.findMany({ where: { signOutAt: null }, orderBy: { signInAt: 'asc' } }),
     prisma.eventAttendee.findMany({
-      where: { event: { date: { gte: startOfDay, lte: endOfDay } } },
+      where: {
+        event: {
+          date: { gte: startOfDay, lte: endOfDay },
+          ...(canSeeAllPrivate ? {} : { OR: [{ private: false }, { createdById: user.id }, { attendees: { some: { userId: user.id } } }] }),
+        },
+      },
       include: { event: { include: { project: true } } },
     }),
   ])
 
+  const staff = isPrivileged ? allStaff : allStaff.filter((s) => s.id === user.id)
   const openByUser = new Map(openRecords.map((r) => [r.userId, r]))
   const plannerByUser = new Map(
     todaysAttendance
