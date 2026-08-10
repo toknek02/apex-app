@@ -7,6 +7,7 @@ import { logAudit } from '@/lib/audit'
 export async function GET() {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!hasPermission(session.user, 'MANAGE_ROLES')) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const roles = await prisma.role.findMany({
     include: { rolePermissions: { include: { permission: true } }, _count: { select: { users: true } } },
