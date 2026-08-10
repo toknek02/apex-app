@@ -44,13 +44,13 @@ export default async function DashboardPage() {
         date: { gte: startOfDay(today), lte: endOfDay(today) },
         ...(canSeeAllPrivate ? {} : { OR: [{ private: false }, { createdById: user.id }, { attendees: { some: { userId: user.id } } }] }),
       },
-      include: { venue: true, attendees: { include: { user: true } } },
+      include: { venue: true, attendees: { include: { user: { select: { id: true, name: true } } } } },
       orderBy: { date: 'asc' },
     }),
     isPrivileged
       ? prisma.signInRecord.findMany({
           where: { signOutAt: null },
-          include: { user: true },
+          include: { user: { select: { id: true, name: true } } },
           orderBy: { signInAt: 'asc' },
         })
       : Promise.resolve([]),

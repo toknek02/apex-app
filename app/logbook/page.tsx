@@ -51,7 +51,7 @@ export default async function LogbookPage({
         ? { OR: [{ private: false }, { createdById: user.id }, { attendees: { some: { userId: user.id } } }] }
         : {}),
     },
-    include: { venue: true, attendees: { include: { user: true } } },
+    include: { venue: true, attendees: { include: { user: { select: { id: true, name: true } } } } },
     orderBy: { date: 'asc' },
   })
 

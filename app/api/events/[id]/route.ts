@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
-import { findVenueConflicts } from '@/lib/venue-collision'
+import { findVenueConflicts, describeConflict } from '@/lib/venue-collision'
+import { logAudit } from '@/lib/audit'
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -12,8 +13,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const existing = await prisma.event.findUnique({ where: { id } })
   if (!existing) return NextResponse.json({ error: 'Event not found' }, { status: 404 })
 
-  const canEdit = existing.createdById === session.user.id || hasPermission(session.user, 'EDIT_ANY_EVENT')
-  if (!canEdit) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const isOwner = existing.createdById === session.user.id
+  const canEditAny = hasPermission(session.user, 'EDIT_ANY_EVENT')
+  if (!isOwner && !canEditAny) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const body = await req.json()
   const {
@@ -44,8 +46,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const conflicts = await findVenueConflicts(venueId, [{ date: new Date(date), durationMins: resolvedDurationMins }], id)
     if (conflicts.length > 0) {
       const first = conflicts[0]
+      const viewer = { id: session.user.id, canSeeAllPrivate: canEditAny }
       return NextResponse.json(
-        { error: `Venue already booked for "${first.conflictingEvent.title}" on ${first.conflictingEvent.date.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}` },
+        { error: `Venue already booked for ${describeConflict(first, viewer)}` },
         { status: 409 }
       )
     }
@@ -71,8 +74,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       remindMe: remindMe !== undefined ? Boolean(remindMe) : true,
       attendees: { create: attendees.map((userId) => ({ userId })) },
     },
-    include: { venue: true, project: true, attendees: { include: { user: true } } },
+    include: { venue: true, project: true, attendees: { include: { user: { select: { id: true, name: true, department: true } } } } },
   })
+
+  // Only logged when acting on someone else's event via the EDIT_ANY_EVENT
+  // override — editing your own event is routine, not an admin action.
+  if (!isOwner) {
+    await logAudit({
+      actor: session.user,
+      action: 'event.update_others',
+      targetType: 'Event',
+      targetId: id,
+      targetLabel: existing.title,
+      metadata: { ownerId: existing.createdById },
+    })
+  }
 
   return NextResponse.json({ event })
 }
@@ -85,9 +101,20 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const existing = await prisma.event.findUnique({ where: { id } })
   if (!existing) return NextResponse.json({ error: 'Event not found' }, { status: 404 })
 
-  const canDelete = existing.createdById === session.user.id || hasPermission(session.user, 'EDIT_ANY_EVENT')
+  const isOwner = existing.createdById === session.user.id
+  const canDelete = isOwner || hasPermission(session.user, 'EDIT_ANY_EVENT')
   if (!canDelete) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   await prisma.event.delete({ where: { id } })
+  if (!isOwner) {
+    await logAudit({
+      actor: session.user,
+      action: 'event.delete_others',
+      targetType: 'Event',
+      targetId: id,
+      targetLabel: existing.title,
+      metadata: { ownerId: existing.createdById },
+    })
+  }
   return NextResponse.json({ success: true })
 }

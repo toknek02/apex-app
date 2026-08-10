@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
-import { findVenueConflicts } from '@/lib/venue-collision'
+import { findVenueConflicts, describeConflict } from '@/lib/venue-collision'
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -42,8 +42,8 @@ export async function GET(req: NextRequest) {
     include: {
       venue: true,
       project: true,
-      attendees: { include: { user: true } },
-      createdBy: true,
+      attendees: { include: { user: { select: { id: true, name: true, department: true } } } },
+      createdBy: { select: { id: true, name: true, department: true } },
     },
     orderBy: { date: 'asc' },
   })
@@ -95,9 +95,10 @@ export async function POST(req: NextRequest) {
     )
     if (conflicts.length > 0) {
       const first = conflicts[0]
+      const viewer = { id: session.user.id, canSeeAllPrivate: hasPermission(session.user, 'EDIT_ANY_EVENT') }
       return NextResponse.json(
         {
-          error: `Venue already booked for "${first.conflictingEvent.title}" on ${first.conflictingEvent.date.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}${conflicts.length > 1 ? ` (+${conflicts.length - 1} more conflict${conflicts.length - 1 === 1 ? '' : 's'})` : ''}`,
+          error: `Venue already booked for ${describeConflict(first, viewer)}${conflicts.length > 1 ? ` (+${conflicts.length - 1} more conflict${conflicts.length - 1 === 1 ? '' : 's'})` : ''}`,
         },
         { status: 409 }
       )
@@ -128,7 +129,7 @@ export async function POST(req: NextRequest) {
           date: new Date(occurrenceDate),
           attendees: { create: attendees.map((userId) => ({ userId })) },
         },
-        include: { venue: true, project: true, attendees: { include: { user: true } } },
+        include: { venue: true, project: true, attendees: { include: { user: { select: { id: true, name: true, department: true } } } } },
       })
     )
   )
