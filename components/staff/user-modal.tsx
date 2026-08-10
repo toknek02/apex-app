@@ -20,6 +20,8 @@ type User = {
   designation: string | null
   roleId: string
   isActive: boolean
+  hourlyRate?: number | null
+  otRate?: number | null
 }
 
 type RoleOption = { id: string; name: string }
@@ -34,6 +36,8 @@ export function UserModal({ user, roles, trigger }: { user?: User; roles: RoleOp
   const [designation, setDesignation] = useState(user?.designation ?? '')
   const [roleId, setRoleId] = useState(user?.roleId ?? roles[0]?.id ?? '')
   const [isActive, setIsActive] = useState(user?.isActive ?? true)
+  const [hourlyRate, setHourlyRate] = useState(user?.hourlyRate?.toString() ?? '')
+  const [otRate, setOtRate] = useState(user?.otRate?.toString() ?? '')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -62,8 +66,8 @@ export function UserModal({ user, roles, trigger }: { user?: User; roles: RoleOp
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(
         user
-          ? { name, department, designation, roleId, isActive, ...(password ? { password } : {}) }
-          : { name, email, password, department, designation, roleId }
+          ? { name, department, designation, roleId, isActive, hourlyRate, otRate, ...(password ? { password } : {}) }
+          : { name, email, password, department, designation, roleId, hourlyRate, otRate }
       ),
     })
     setSaving(false)
@@ -136,6 +140,16 @@ export function UserModal({ user, roles, trigger }: { user?: User; roles: RoleOp
                   <option key={r.id} value={r.id}>{r.name}</option>
                 ))}
               </select>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 12 }}>
+              <div>
+                <label style={labelStyle}>Hourly Rate (RM/hr)</label>
+                <input type="number" min="0" step="0.01" style={inputStyle} value={hourlyRate} onChange={(e) => setHourlyRate(e.target.value)} placeholder="e.g. 25.00" />
+              </div>
+              <div>
+                <label style={labelStyle}>OT Rate (RM/hr)</label>
+                <input type="number" min="0" step="0.01" style={inputStyle} value={otRate} onChange={(e) => setOtRate(e.target.value)} placeholder="e.g. 37.50" />
+              </div>
             </div>
             {user && (
               <div style={{ marginBottom: 20 }}>

@@ -10,7 +10,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!hasPermission(session.user, 'MANAGE_PROJECTS')) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const { id } = await params
-  const { title, status, access, client, description, startDate, completedAt, memberUserIds } = await req.json()
+  const { shortName, title, status, access, offices, client, description, startDate, completedAt, memberUserIds } = await req.json()
+
+  if (shortName !== undefined && !shortName.trim()) {
+    return NextResponse.json({ error: 'Short name is required' }, { status: 400 })
+  }
 
   if (Array.isArray(memberUserIds)) {
     await prisma.projectMember.deleteMany({ where: { projectId: id } })
@@ -22,9 +26,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const project = await prisma.project.update({
     where: { id },
     data: {
+      ...(shortName !== undefined ? { shortName } : {}),
       ...(title !== undefined ? { title } : {}),
       ...(status !== undefined ? { status } : {}),
       ...(access !== undefined ? { access } : {}),
+      ...(offices !== undefined ? { offices: Array.isArray(offices) ? offices : [] } : {}),
       ...(client !== undefined ? { client: client || null } : {}),
       ...(description !== undefined ? { description: description || null } : {}),
       ...(startDate !== undefined ? { startDate: startDate ? new Date(startDate) : null } : {}),
@@ -37,8 +43,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     action: 'project.update',
     targetType: 'Project',
     targetId: project.id,
-    targetLabel: `${project.code} — ${project.title}`,
-    metadata: { title, status, access, client, description, startDate, completedAt, memberUserIds },
+    targetLabel: `${project.code} — ${project.shortName}`,
+    metadata: { shortName, title, status, access, offices, client, description, startDate, completedAt, memberUserIds },
   })
   return NextResponse.json({ project })
 }
@@ -64,7 +70,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     action: 'project.delete',
     targetType: 'Project',
     targetId: id,
-    targetLabel: `${existing.code} — ${existing.title}`,
+    targetLabel: `${existing.code} — ${existing.shortName}`,
   })
   return NextResponse.json({ success: true })
 }

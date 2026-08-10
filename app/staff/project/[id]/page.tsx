@@ -6,12 +6,7 @@ import { ProjectInfoForm } from '@/components/system/project-info-form'
 import { ProjectTeamForm } from '@/components/system/project-team-form'
 import { DeleteProjectButton } from '@/components/system/delete-project-button'
 import { formatDuration } from '@/lib/project-duration'
-
-const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
-  Active: { bg: 'var(--apex-green-lt)', color: 'var(--apex-green)' },
-  Archived: { bg: 'var(--apex-row-alt)', color: 'var(--apex-muted)' },
-  Suspended: { bg: 'var(--apex-red-lt)', color: 'var(--apex-red)' },
-}
+import { PROJECT_STATUS_STYLES } from '@/lib/project-statuses'
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requirePermission('MANAGE_PROJECTS')
@@ -37,7 +32,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const totalNormalMins = entries.reduce((sum, e) => sum + e.normalMins, 0)
   const totalOtMins = entries.reduce((sum, e) => sum + e.otMins, 0)
 
-  const s = STATUS_STYLES[project.status] ?? STATUS_STYLES.Active
+  const s = PROJECT_STATUS_STYLES[project.status] ?? PROJECT_STATUS_STYLES.Active
 
   return (
     <AppShell user={{ name: user.name ?? '', roleName: user.roleName, permissions: user.permissions }}>
@@ -46,7 +41,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       <div style={{ maxWidth: 560, margin: '0 auto 20px', textAlign: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 4 }}>
           <h1 style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700 }}>
-            {project.code} — {project.title}
+            {project.code} — {project.shortName}
           </h1>
           <span style={{ padding: '2px 10px', borderRadius: 10, fontSize: 11, fontWeight: 600, backgroundColor: s.bg, color: s.color }}>
             {project.status}
@@ -61,9 +56,11 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       <ProjectInfoForm
         project={{
           id: project.id,
+          shortName: project.shortName,
           title: project.title,
           status: project.status,
           access: project.access,
+          offices: project.offices,
           client: project.client,
           description: project.description,
           startDate: project.startDate ? project.startDate.toISOString() : null,

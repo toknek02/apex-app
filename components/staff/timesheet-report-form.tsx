@@ -2,20 +2,22 @@
 
 import { Fragment, useState } from 'react'
 import { Trash2 } from 'lucide-react'
+import { formatCurrency } from '@/lib/cost-calc'
 
-type Project = { id: string; code: string; title: string }
+type Project = { id: string; code: string; shortName: string }
 type EntryResult = {
   id: string
   userId: string
   date: string
   eventType: string
-  project: { code: string; title: string } | null
+  project: { code: string; shortName: string } | null
   stage: string | null
   task: string | null
   normalMins: number
   otMins: number
   remarks: string | null
   user?: { id: string; name: string; department: string | null }
+  cost?: { normalCost: number; otCost: number; totalCost: number }
 }
 type Member = { id: string; name: string; department: string | null }
 
@@ -117,6 +119,7 @@ export function TimesheetReportForm({
 
   const totalNormalMins = (results ?? []).reduce((sum, e) => sum + e.normalMins, 0)
   const totalOtMins = (results ?? []).reduce((sum, e) => sum + e.otMins, 0)
+  const totalCost = (results ?? []).reduce((sum, e) => sum + (e.cost?.totalCost ?? 0), 0)
 
   const byStaff = new Map<string, { name: string; department: string | null; entries: EntryResult[] }>()
   if (teamMode && results) {
@@ -154,7 +157,7 @@ export function TimesheetReportForm({
           <select style={inputStyle} value={projectId} onChange={(e) => setProjectId(e.target.value)}>
             <option value="">{teamMode ? '— Select a Project —' : '— Any Project —'}</option>
             {projects.map((p) => (
-              <option key={p.id} value={p.id}>{p.code} — {p.title}</option>
+              <option key={p.id} value={p.id}>{p.code} — {p.shortName}</option>
             ))}
           </select>
         </div>
@@ -213,7 +216,7 @@ export function TimesheetReportForm({
         <table style={{ borderCollapse: 'collapse', fontSize: 12, width: '100%' }}>
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
-              {[...(teamMode ? ['Staff'] : []), 'Date', 'Event Type', 'Project', 'Stage / Task', 'Normal', 'OT', 'Remarks', ...(showActionsCol ? ['Actions'] : [])].map((h) => (
+              {[...(teamMode ? ['Staff'] : []), 'Date', 'Event Type', 'Project', 'Stage / Task', 'Normal', 'OT', ...(teamMode ? ['Cost'] : []), 'Remarks', ...(showActionsCol ? ['Actions'] : [])].map((h) => (
                 <th key={h} style={{ padding: '9px 14px', textAlign: 'left', color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em' }}>
                   {h}
                 </th>
@@ -222,11 +225,11 @@ export function TimesheetReportForm({
           </thead>
           <tbody>
             {results === null && (
-              <tr><td colSpan={teamMode ? (showActionsCol ? 9 : 8) : 7} style={{ padding: 20, fontSize: 13, color: 'var(--apex-muted)' }}>{loading ? 'Generating…' : 'Set your criteria and click Generate.'}</td></tr>
+              <tr><td colSpan={teamMode ? (showActionsCol ? 10 : 9) : 7} style={{ padding: 20, fontSize: 13, color: 'var(--apex-muted)' }}>{loading ? 'Generating…' : 'Set your criteria and click Generate.'}</td></tr>
             )}
             {results?.length === 0 && byStaff.size === 0 && (
               <tr>
-                <td colSpan={teamMode ? (showActionsCol ? 9 : 8) : 7} style={{ padding: 20, fontSize: 13, color: 'var(--apex-muted)' }}>
+                <td colSpan={teamMode ? (showActionsCol ? 10 : 9) : 7} style={{ padding: 20, fontSize: 13, color: 'var(--apex-muted)' }}>
                   {teamMode ? 'No staff assigned to this project yet.' : 'No entries found for this range.'}
                 </td>
               </tr>
@@ -235,7 +238,7 @@ export function TimesheetReportForm({
               <tr key={e.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
                 <td style={{ padding: '9px 14px' }}>{new Date(e.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                 <td style={{ padding: '9px 14px' }}>{e.eventType}</td>
-                <td style={{ padding: '9px 14px' }}>{e.project ? `${e.project.code} — ${e.project.title}` : '—'}</td>
+                <td style={{ padding: '9px 14px' }}>{e.project ? `${e.project.code} — ${e.project.shortName}` : '—'}</td>
                 <td style={{ padding: '9px 14px' }}>{[e.stage, e.task].filter(Boolean).join(' / ') || '—'}</td>
                 <td style={{ padding: '9px 14px' }}>{(e.normalMins / 60).toFixed(2)}</td>
                 <td style={{ padding: '9px 14px' }}>{(e.otMins / 60).toFixed(2)}</td>
@@ -245,6 +248,7 @@ export function TimesheetReportForm({
             {teamMode && [...byStaff.entries()].map(([userId, staff]) => {
               const staffNormal = staff.entries.reduce((sum, e) => sum + e.normalMins, 0)
               const staffOt = staff.entries.reduce((sum, e) => sum + e.otMins, 0)
+              const staffCost = staff.entries.reduce((sum, e) => sum + (e.cost?.totalCost ?? 0), 0)
               const rowCount = Math.max(staff.entries.length, 1)
               return (
                 <Fragment key={userId}>
@@ -254,7 +258,7 @@ export function TimesheetReportForm({
                         {staff.name}
                         {staff.department && <div style={{ fontSize: 10, fontWeight: 400, color: 'var(--apex-muted)' }}>{staff.department}</div>}
                       </td>
-                      <td colSpan={showActionsCol ? 8 : 7} style={{ padding: '9px 14px', color: 'var(--apex-muted)', fontStyle: 'italic' }}>No entries logged for this range.</td>
+                      <td colSpan={showActionsCol ? 9 : 8} style={{ padding: '9px 14px', color: 'var(--apex-muted)', fontStyle: 'italic' }}>No entries logged for this range.</td>
                     </tr>
                   ) : (
                     staff.entries.map((e, i) => (
@@ -267,10 +271,11 @@ export function TimesheetReportForm({
                         )}
                         <td style={{ padding: '9px 14px' }}>{new Date(e.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                         <td style={{ padding: '9px 14px' }}>{e.eventType}</td>
-                        <td style={{ padding: '9px 14px' }}>{e.project ? `${e.project.code} — ${e.project.title}` : '—'}</td>
+                        <td style={{ padding: '9px 14px' }}>{e.project ? `${e.project.code} — ${e.project.shortName}` : '—'}</td>
                         <td style={{ padding: '9px 14px' }}>{[e.stage, e.task].filter(Boolean).join(' / ') || '—'}</td>
                         <td style={{ padding: '9px 14px' }}>{(e.normalMins / 60).toFixed(2)}</td>
                         <td style={{ padding: '9px 14px' }}>{(e.otMins / 60).toFixed(2)}</td>
+                        <td style={{ padding: '9px 14px' }}>{formatCurrency(e.cost?.totalCost ?? 0)}</td>
                         <td style={{ padding: '9px 14px' }}>{e.remarks || '—'}</td>
                         {showActionsCol && (
                           <td style={{ padding: '9px 14px' }}>
@@ -291,6 +296,7 @@ export function TimesheetReportForm({
                     <td colSpan={5} style={{ padding: '7px 14px', textAlign: 'right', fontWeight: 700, fontSize: 11 }}>{staff.name} Subtotal</td>
                     <td style={{ padding: '7px 14px', fontWeight: 700, fontSize: 11 }}>{(staffNormal / 60).toFixed(2)}</td>
                     <td style={{ padding: '7px 14px', fontWeight: 700, fontSize: 11 }}>{(staffOt / 60).toFixed(2)}</td>
+                    <td style={{ padding: '7px 14px', fontWeight: 700, fontSize: 11 }}>{formatCurrency(staffCost)}</td>
                     <td style={{ padding: '7px 14px' }} />
                     {showActionsCol && <td style={{ padding: '7px 14px' }} />}
                   </tr>
@@ -306,6 +312,7 @@ export function TimesheetReportForm({
                 </td>
                 <td style={{ padding: '9px 14px', fontWeight: 700 }}>{(totalNormalMins / 60).toFixed(2)}</td>
                 <td style={{ padding: '9px 14px', fontWeight: 700 }}>{(totalOtMins / 60).toFixed(2)}</td>
+                {teamMode && <td style={{ padding: '9px 14px', fontWeight: 700 }}>{formatCurrency(totalCost)}</td>}
                 <td style={{ padding: '9px 14px' }} />
                 {showActionsCol && <td style={{ padding: '9px 14px' }} />}
               </tr>

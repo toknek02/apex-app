@@ -63,7 +63,7 @@ export default async function PasswordResetsPage() {
                   <td style={{ padding: '9px 14px', fontSize: 12 }}>
                     {matched && (
                       <UserModal
-                        user={{ id: matched.id, name: matched.name, email: matched.email, department: matched.department, designation: matched.designation, roleId: matched.roleId, isActive: matched.isActive }}
+                        user={{ id: matched.id, name: matched.name, email: matched.email, department: matched.department, designation: matched.designation, roleId: matched.roleId, isActive: matched.isActive, hourlyRate: matched.hourlyRate, otRate: matched.otRate }}
                         roles={roles}
                         trigger={
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--apex-accent)', fontWeight: 600 }}>

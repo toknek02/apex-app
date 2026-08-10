@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 
 type Staff = { id: string; name: string; department: string | null }
 type Venue = { id: string; description: string }
-type Project = { id: string; code: string; title: string }
+type Project = { id: string; code: string; shortName: string }
 
 type ExistingEvent = {
   id: string
@@ -255,7 +255,7 @@ export function EventForm({
           <select style={inputStyle} value={projectId} onChange={(e) => setProjectId(e.target.value)}>
             <option value="">— None —</option>
             {projects.map((p) => (
-              <option key={p.id} value={p.id}>{p.code} — {p.title}</option>
+              <option key={p.id} value={p.id}>{p.code} — {p.shortName}</option>
             ))}
           </select>
         </div>

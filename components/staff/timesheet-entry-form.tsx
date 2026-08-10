@@ -6,7 +6,7 @@ import { EVENT_TYPES } from '@/lib/timesheet-event-types'
 import { STAGES } from '@/lib/logbook-stages'
 import { TASKS } from '@/lib/logbook-tasks'
 
-type Project = { id: string; code: string; title: string }
+type Project = { id: string; code: string; shortName: string }
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
@@ -110,7 +110,7 @@ export function TimesheetEntryForm({ projects }: { projects: Project[] }) {
           <select style={inputStyle} value={projectId} onChange={(e) => setProjectId(e.target.value)} disabled={!isProjectWork}>
             <option value="">— None —</option>
             {projects.map((p) => (
-              <option key={p.id} value={p.id}>{p.code} — {p.title}</option>
+              <option key={p.id} value={p.id}>{p.code} — {p.shortName}</option>
             ))}
           </select>
         </div>

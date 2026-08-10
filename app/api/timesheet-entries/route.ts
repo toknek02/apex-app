@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { EVENT_TYPES } from '@/lib/timesheet-event-types'
 import { buildTimesheetWorkbook } from '@/lib/timesheet-export'
+import { calcCost } from '@/lib/cost-calc'
 
 export async function GET(request: Request) {
   const session = await auth()
@@ -35,7 +36,7 @@ export async function GET(request: Request) {
             }
           : {}),
       },
-      include: { project: true, ...(teamScope ? { user: { select: { id: true, name: true, department: true } } } : {}) },
+      include: { project: true, ...(teamScope ? { user: { select: { id: true, name: true, department: true, hourlyRate: true, otRate: true } } } : {}) },
       orderBy: teamScope ? [{ userId: 'asc' }, { date: 'asc' }] : { date: 'asc' },
     }),
     teamScope
@@ -46,9 +47,20 @@ export async function GET(request: Request) {
       : Promise.resolve([]),
   ])
 
+  // Compute cost server-side from each entry's owner's rate, then strip the raw
+  // rate figures back out before this leaves the server — rates stay visible
+  // only to whoever can manage staff (see /api/staff), not every director who
+  // can view a cost report.
+  const entriesWithCost = entries.map((e) => {
+    const { user, ...rest } = e
+    if (!teamScope || !user) return rest
+    const { hourlyRate, otRate, ...userWithoutRates } = user
+    return { ...rest, user: userWithoutRates, cost: calcCost(e.normalMins, e.otMins, hourlyRate, otRate) }
+  })
+
   if (searchParams.get('format') === 'xlsx') {
     const buffer = await buildTimesheetWorkbook({
-      entries,
+      entries: entriesWithCost,
       members: members.map((m) => m.user),
       teamScope,
     })
@@ -61,7 +73,7 @@ export async function GET(request: Request) {
     })
   }
 
-  return NextResponse.json({ entries, ...(teamScope ? { members: members.map((m) => m.user) } : {}) })
+  return NextResponse.json({ entries: entriesWithCost, ...(teamScope ? { members: members.map((m) => m.user) } : {}) })
 }
 
 export async function POST(request: Request) {

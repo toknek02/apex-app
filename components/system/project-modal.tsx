@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { PROJECT_STATUSES } from '@/lib/project-statuses'
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
@@ -12,12 +13,13 @@ const inputStyle: React.CSSProperties = {
 }
 const labelStyle: React.CSSProperties = { display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 5 }
 
-type Project = { id: string; code: string; title: string; status: string; access: string }
+type Project = { id: string; code: string; shortName: string; title: string; status: string; access: string }
 
 export function ProjectModal({ project, trigger }: { project?: Project; trigger: React.ReactNode }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [code, setCode] = useState(project?.code ?? '')
+  const [shortName, setShortName] = useState(project?.shortName ?? '')
   const [title, setTitle] = useState(project?.title ?? '')
   const [status, setStatus] = useState(project?.status ?? 'Active')
   const [access, setAccess] = useState(project?.access ?? 'Team')
@@ -30,6 +32,10 @@ export function ProjectModal({ project, trigger }: { project?: Project; trigger:
       setError('Project code is required')
       return
     }
+    if (!shortName.trim()) {
+      setError('Short name is required')
+      return
+    }
     if (!title.trim()) {
       setError('Title is required')
       return
@@ -38,7 +44,7 @@ export function ProjectModal({ project, trigger }: { project?: Project; trigger:
     const res = await fetch(project ? `/api/projects/${project.id}` : '/api/projects', {
       method: project ? 'PATCH' : 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(project ? { title, status, access } : { code, title, status, access }),
+      body: JSON.stringify(project ? { shortName, title, status, access } : { code, shortName, title, status, access }),
     })
     setSaving(false)
     if (res.ok) {
@@ -75,15 +81,24 @@ export function ProjectModal({ project, trigger }: { project?: Project; trigger:
               <input style={inputStyle} value={code} onChange={(e) => setCode(e.target.value)} disabled={Boolean(project)} />
             </div>
             <div style={{ marginBottom: 12 }}>
-              <label style={labelStyle}>Title</label>
-              <input style={inputStyle} value={title} onChange={(e) => setTitle(e.target.value)} />
+              <label style={labelStyle}>*Title</label>
+              <textarea
+                style={{ ...inputStyle, minHeight: 60, resize: 'vertical', fontFamily: 'inherit' }}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Proposed Mixed Development on Lot 1959 & Lot 1996 at Lorong Medan Tuanku 2 & Persiaran Medan Tuanku, Kuala Lumpur"
+              />
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <label style={labelStyle}>*ShortName</label>
+              <input style={inputStyle} value={shortName} onChange={(e) => setShortName(e.target.value)} placeholder="e.g. Medan Tuanku 2" />
             </div>
             <div style={{ marginBottom: 12 }}>
               <label style={labelStyle}>Status</label>
               <select style={inputStyle} value={status} onChange={(e) => setStatus(e.target.value)}>
-                <option value="Active">Active</option>
-                <option value="Archived">Archived</option>
-                <option value="Suspended">Suspended</option>
+                {PROJECT_STATUSES.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
               </select>
             </div>
             <div style={{ marginBottom: 20 }}>

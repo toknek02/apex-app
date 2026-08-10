@@ -145,7 +145,7 @@ export default async function TimesheetPage({
                 <tr key={e.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
                   <td style={{ ...tdStyle, textAlign: 'left' }}>{e.date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</td>
                   <td style={{ ...tdStyle, textAlign: 'left' }}>{e.eventType}</td>
-                  <td style={{ ...tdStyle, textAlign: 'left' }}>{e.project ? `${e.project.code} — ${e.project.title}` : '—'}</td>
+                  <td style={{ ...tdStyle, textAlign: 'left' }}>{e.project ? `${e.project.code} — ${e.project.shortName}` : '—'}</td>
                   <td style={{ ...tdStyle, textAlign: 'left' }}>{[e.stage, e.task].filter(Boolean).join(' / ') || '—'}</td>
                   <td style={{ ...tdStyle, textAlign: 'left' }}>{(e.normalMins / 60).toFixed(2)}</td>
                   <td style={{ ...tdStyle, textAlign: 'left' }}>{(e.otMins / 60).toFixed(2)}</td>

@@ -130,7 +130,7 @@ export default async function StaffPage() {
                       {canManageUsers && (
                         <td style={{ padding: '9px 14px', fontSize: 12 }}>
                           <UserModal
-                            user={{ id: m.id, name: m.name, email: m.email, department: m.department, designation: m.designation, roleId: m.roleId, isActive: m.isActive }}
+                            user={{ id: m.id, name: m.name, email: m.email, department: m.department, designation: m.designation, roleId: m.roleId, isActive: m.isActive, hourlyRate: m.hourlyRate, otRate: m.otRate }}
                             roles={roles}
                             trigger={<Pencil size={14} color="var(--apex-accent)" />}
                           />

@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { PROJECT_STATUSES } from '@/lib/project-statuses'
+import { PROJECT_OFFICES } from '@/lib/project-offices'
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
@@ -14,9 +16,11 @@ const labelStyle: React.CSSProperties = { display: 'block', fontSize: 12, fontWe
 
 type ProjectDetail = {
   id: string
+  shortName: string
   title: string
   status: string
   access: string
+  offices: string[]
   client: string | null
   description: string | null
   startDate: string | null
@@ -29,9 +33,11 @@ function toDateInputValue(iso: string | null) {
 
 export function ProjectInfoForm({ project }: { project: ProjectDetail }) {
   const router = useRouter()
+  const [shortName, setShortName] = useState(project.shortName)
   const [title, setTitle] = useState(project.title)
   const [status, setStatus] = useState(project.status)
   const [access, setAccess] = useState(project.access)
+  const [offices, setOffices] = useState<string[]>(project.offices)
   const [client, setClient] = useState(project.client ?? '')
   const [description, setDescription] = useState(project.description ?? '')
   const [startDate, setStartDate] = useState(toDateInputValue(project.startDate))
@@ -40,9 +46,17 @@ export function ProjectInfoForm({ project }: { project: ProjectDetail }) {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
+  function toggleOffice(office: string) {
+    setOffices((prev) => (prev.includes(office) ? prev.filter((o) => o !== office) : [...prev, office]))
+  }
+
   async function handleSave() {
     setError('')
     setSaved(false)
+    if (!shortName.trim()) {
+      setError('Short name is required')
+      return
+    }
     if (!title.trim()) {
       setError('Title is required')
       return
@@ -52,9 +66,11 @@ export function ProjectInfoForm({ project }: { project: ProjectDetail }) {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        shortName,
         title,
         status,
         access,
+        offices,
         client,
         description,
         startDate: startDate || null,
@@ -80,8 +96,17 @@ export function ProjectInfoForm({ project }: { project: ProjectDetail }) {
       )}
 
       <div style={{ marginBottom: 12 }}>
-        <label style={labelStyle}>Title</label>
-        <input style={inputStyle} value={title} onChange={(e) => setTitle(e.target.value)} />
+        <label style={labelStyle}>*Title</label>
+        <textarea
+          style={{ ...inputStyle, minHeight: 60, resize: 'vertical', fontFamily: 'inherit' }}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+      </div>
+
+      <div style={{ marginBottom: 12 }}>
+        <label style={labelStyle}>*ShortName</label>
+        <input style={inputStyle} value={shortName} onChange={(e) => setShortName(e.target.value)} />
       </div>
 
       <div style={{ marginBottom: 12 }}>
@@ -103,9 +128,9 @@ export function ProjectInfoForm({ project }: { project: ProjectDetail }) {
         <div>
           <label style={labelStyle}>Status</label>
           <select style={inputStyle} value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="Active">Active</option>
-            <option value="Archived">Archived</option>
-            <option value="Suspended">Suspended</option>
+            {PROJECT_STATUSES.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
           </select>
         </div>
         <div>
@@ -114,6 +139,18 @@ export function ProjectInfoForm({ project }: { project: ProjectDetail }) {
             <option value="Team">Team</option>
             <option value="Private">Private</option>
           </select>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 12 }}>
+        <label style={labelStyle}>Offices Involved</label>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {PROJECT_OFFICES.map((office) => (
+            <label key={office} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+              <input type="checkbox" checked={offices.includes(office)} onChange={() => toggleOffice(office)} />
+              {office}
+            </label>
+          ))}
         </div>
       </div>
 

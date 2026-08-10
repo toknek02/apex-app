@@ -3,13 +3,14 @@ import ExcelJS from 'exceljs'
 type ExportEntry = {
   date: Date
   eventType: string
-  project: { code: string; title: string } | null
+  project: { code: string; shortName: string } | null
   stage: string | null
   task: string | null
   normalMins: number
   otMins: number
   remarks: string | null
   user?: { id: string; name: string; department: string | null } | null
+  cost?: { normalCost: number; otCost: number; totalCost: number }
 }
 
 type ExportMember = { id: string; name: string; department: string | null }
@@ -42,6 +43,7 @@ export async function buildTimesheetWorkbook({
     { header: 'Task', key: 'task', width: 20 },
     { header: 'Normal (hrs)', key: 'normal', width: 12 },
     { header: 'OT (hrs)', key: 'ot', width: 10 },
+    ...(teamScope ? [{ header: 'Cost (RM)', key: 'cost', width: 14 }] : []),
     { header: 'Remarks', key: 'remarks', width: 30 },
   ]
   sheet.columns = columns
@@ -52,11 +54,12 @@ export async function buildTimesheetWorkbook({
       ...(teamScope ? { staff: e.user?.name ?? 'Unknown', department: e.user?.department ?? '' } : {}),
       date: e.date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
       eventType: e.eventType,
-      project: e.project ? `${e.project.code} — ${e.project.title}` : '',
+      project: e.project ? `${e.project.code} — ${e.project.shortName}` : '',
       stage: e.stage ?? '',
       task: e.task ?? '',
       normal: Number((e.normalMins / 60).toFixed(2)),
       ot: Number((e.otMins / 60).toFixed(2)),
+      ...(teamScope ? { cost: Number((e.cost?.totalCost ?? 0).toFixed(2)) } : {}),
       remarks: e.remarks ?? '',
     })
   }
@@ -70,6 +73,7 @@ export async function buildTimesheetWorkbook({
     task: 'Total',
     normal: Number((entries.reduce((sum, e) => sum + e.normalMins, 0) / 60).toFixed(2)),
     ot: Number((entries.reduce((sum, e) => sum + e.otMins, 0) / 60).toFixed(2)),
+    ...(teamScope ? { cost: Number((entries.reduce((sum, e) => sum + (e.cost?.totalCost ?? 0), 0)).toFixed(2)) } : {}),
     remarks: '',
   })
   totalRow.font = { bold: true }
@@ -81,20 +85,22 @@ export async function buildTimesheetWorkbook({
       { header: 'Department', key: 'department', width: 18 },
       { header: 'Normal (hrs)', key: 'normal', width: 12 },
       { header: 'OT (hrs)', key: 'ot', width: 10 },
+      { header: 'Cost (RM)', key: 'cost', width: 14 },
     ]
     styleHeader(summarySheet.getRow(1))
 
-    const byStaff = new Map<string, { name: string; department: string | null; normalMins: number; otMins: number }>()
+    const byStaff = new Map<string, { name: string; department: string | null; normalMins: number; otMins: number; cost: number }>()
     for (const m of members) {
-      byStaff.set(m.id, { name: m.name, department: m.department, normalMins: 0, otMins: 0 })
+      byStaff.set(m.id, { name: m.name, department: m.department, normalMins: 0, otMins: 0, cost: 0 })
     }
     for (const e of entries) {
       const key = e.user?.id
       if (!key) continue
-      if (!byStaff.has(key)) byStaff.set(key, { name: e.user?.name ?? 'Unknown', department: e.user?.department ?? null, normalMins: 0, otMins: 0 })
+      if (!byStaff.has(key)) byStaff.set(key, { name: e.user?.name ?? 'Unknown', department: e.user?.department ?? null, normalMins: 0, otMins: 0, cost: 0 })
       const s = byStaff.get(key)!
       s.normalMins += e.normalMins
       s.otMins += e.otMins
+      s.cost += e.cost?.totalCost ?? 0
     }
     for (const s of byStaff.values()) {
       summarySheet.addRow({
@@ -102,6 +108,7 @@ export async function buildTimesheetWorkbook({
         department: s.department ?? '',
         normal: Number((s.normalMins / 60).toFixed(2)),
         ot: Number((s.otMins / 60).toFixed(2)),
+        cost: Number(s.cost.toFixed(2)),
       })
     }
     const summaryTotalRow = summarySheet.addRow({
@@ -109,6 +116,7 @@ export async function buildTimesheetWorkbook({
       department: '',
       normal: Number(([...byStaff.values()].reduce((sum, s) => sum + s.normalMins, 0) / 60).toFixed(2)),
       ot: Number(([...byStaff.values()].reduce((sum, s) => sum + s.otMins, 0) / 60).toFixed(2)),
+      cost: Number(([...byStaff.values()].reduce((sum, s) => sum + s.cost, 0)).toFixed(2)),
     })
     summaryTotalRow.font = { bold: true }
   }

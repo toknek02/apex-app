@@ -74,7 +74,7 @@ export default async function ActivitiesPage() {
                   const plannerEvent = plannerByUser.get(m.id)
                   const eventLabel = open ? 'Sign-in' : plannerEvent ? 'Planner' : null
                   const since = open?.signInAt ?? plannerEvent?.date
-                  const project = plannerEvent?.project ? `${plannerEvent.project.code} - ${plannerEvent.project.title}` : 'nil'
+                  const project = plannerEvent?.project ? `${plannerEvent.project.code} - ${plannerEvent.project.shortName}` : 'nil'
                   const remarks = plannerEvent?.remarks ?? plannerEvent?.title ?? 'nil'
 
                   return (

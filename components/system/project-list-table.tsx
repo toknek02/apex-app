@@ -4,20 +4,15 @@ import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Search, Users } from 'lucide-react'
 import { DeleteProjectButton } from '@/components/system/delete-project-button'
+import { PROJECT_STATUS_STYLES } from '@/lib/project-statuses'
 
 type ProjectRow = {
   id: string
   code: string
-  title: string
+  shortName: string
   status: string
   access: string
   memberCount: number
-}
-
-const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
-  Active: { bg: 'var(--apex-green-lt)', color: 'var(--apex-green)' },
-  Archived: { bg: 'var(--apex-row-alt)', color: 'var(--apex-muted)' },
-  Suspended: { bg: 'var(--apex-red-lt)', color: 'var(--apex-red)' },
 }
 
 const inputStyle: React.CSSProperties = {
@@ -35,7 +30,7 @@ export function ProjectListTable({ projects }: { projects: ProjectRow[] }) {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     if (!q) return projects
-    return projects.filter((p) => p.code.toLowerCase().includes(q) || p.title.toLowerCase().includes(q))
+    return projects.filter((p) => p.code.toLowerCase().includes(q) || p.shortName.toLowerCase().includes(q))
   }, [projects, search])
 
   return (
@@ -44,7 +39,7 @@ export function ProjectListTable({ projects }: { projects: ProjectRow[] }) {
         <Search size={14} color="var(--apex-muted)" style={{ position: 'absolute', left: 10, top: 10 }} />
         <input
           style={{ ...inputStyle, paddingLeft: 32 }}
-          placeholder="Search by code or title…"
+          placeholder="Search by code or short name…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -54,7 +49,7 @@ export function ProjectListTable({ projects }: { projects: ProjectRow[] }) {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
-              {['Project', 'Title', 'Status', 'Access', 'Team', 'Actions'].map((h) => (
+              {['Project', 'Short Name', 'Status', 'Access', 'Team', 'Actions'].map((h) => (
                 <th key={h} style={{ padding: '9px 14px', textAlign: 'left', color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em' }}>
                   {h}
                 </th>
@@ -70,7 +65,7 @@ export function ProjectListTable({ projects }: { projects: ProjectRow[] }) {
               </tr>
             ) : (
               filtered.map((p, i) => {
-                const s = STATUS_STYLES[p.status] ?? STATUS_STYLES.Active
+                const s = PROJECT_STATUS_STYLES[p.status] ?? PROJECT_STATUS_STYLES.Active
                 return (
                   <tr
                     key={p.id}
@@ -78,7 +73,7 @@ export function ProjectListTable({ projects }: { projects: ProjectRow[] }) {
                     style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff', cursor: 'pointer' }}
                   >
                     <td style={{ padding: '9px 14px', fontSize: 12, color: 'var(--apex-accent)', fontWeight: 600 }}>{p.code}</td>
-                    <td style={{ padding: '9px 14px', fontSize: 12 }}>{p.title || '—'}</td>
+                    <td style={{ padding: '9px 14px', fontSize: 12 }}>{p.shortName || '—'}</td>
                     <td style={{ padding: '9px 14px', fontSize: 12 }}>
                       <span style={{ padding: '2px 10px', borderRadius: 10, fontSize: 11, fontWeight: 600, backgroundColor: s.bg, color: s.color }}>
                         {p.status}

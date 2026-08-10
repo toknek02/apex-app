@@ -4,7 +4,7 @@ import { useState } from 'react'
 
 type Staff = { id: string; name: string }
 type Venue = { id: string; description: string }
-type Project = { id: string; code: string; title: string }
+type Project = { id: string; code: string; shortName: string }
 type EventResult = {
   id: string
   title: string
@@ -102,7 +102,7 @@ export function FindEventsForm({ staff, venues, projects }: { staff: Staff[]; ve
             <select style={inputStyle} value={projectId} onChange={(e) => setProjectId(e.target.value)}>
               <option value="">All</option>
               {projects.map((p) => (
-                <option key={p.id} value={p.id}>{p.code} — {p.title}</option>
+                <option key={p.id} value={p.id}>{p.code} — {p.shortName}</option>
               ))}
             </select>
           </div>

@@ -13,14 +13,14 @@ const VENUES = [
 ]
 
 const PROJECTS = [
-  { code: 'AR0100', title: 'Lowyat Group Feasibility Studies', status: 'Active', access: 'Team' },
-  { code: 'AR0101', title: 'Christine Resort Phase 1 (Lien Hoe)', status: 'Active', access: 'Team' },
-  { code: 'AR0102', title: 'Lot PT78710 Puchong (Lien Hoe)', status: 'Active', access: 'Team' },
-  { code: 'AR0CMY', title: 'CMY Tower', status: 'Active', access: 'Team' },
-  { code: 'KL2732', title: 'MPB Jln Ampang', status: 'Active', access: 'Team' },
-  { code: 'ID0MK-D', title: 'Mont Kiara Damai', status: 'Active', access: 'Team' },
-  { code: 'ID-DEL-101', title: 'ID Works for Plaza Best World, JB', status: 'Archived', access: 'Team' },
-  { code: 'ID-DEL-103', title: 'Prop. Interior Design - OCBC Cyber Jaya', status: 'Suspended', access: 'Team' },
+  { code: 'AR0100', shortName: 'Lowyat Feasibility', title: 'Lowyat Group Feasibility Studies', status: 'Active', access: 'Team' },
+  { code: 'AR0101', shortName: 'Christine Resort P1', title: 'Christine Resort Phase 1 (Lien Hoe)', status: 'Active', access: 'Team' },
+  { code: 'AR0102', shortName: 'PT78710 Puchong', title: 'Lot PT78710 Puchong (Lien Hoe)', status: 'Active', access: 'Team' },
+  { code: 'AR0CMY', shortName: 'CMY Tower', title: 'CMY Tower', status: 'Active', access: 'Team' },
+  { code: 'KL2732', shortName: 'MPB Jln Ampang', title: 'MPB Jln Ampang', status: 'Active', access: 'Team' },
+  { code: 'ID0MK-D', shortName: 'Mont Kiara Damai', title: 'Mont Kiara Damai', status: 'Active', access: 'Team' },
+  { code: 'ID-DEL-101', shortName: 'Plaza Best World JB', title: 'ID Works for Plaza Best World, JB', status: 'Archived', access: 'Team' },
+  { code: 'ID-DEL-103', shortName: 'OCBC Cyber Jaya', title: 'Prop. Interior Design - OCBC Cyber Jaya', status: 'Suspended', access: 'Team' },
 ]
 
 async function main() {
@@ -75,7 +75,7 @@ async function main() {
   for (const p of PROJECTS) {
     await prisma.project.upsert({
       where: { code: p.code },
-      update: {},
+      update: { shortName: p.shortName },
       create: p,
     })
   }

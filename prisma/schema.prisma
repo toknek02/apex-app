@@ -16,6 +16,8 @@ model User {
   designation     String?
   isActive        Boolean  @default(true)
   activeSessionId String?
+  hourlyRate      Float?
+  otRate          Float?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -67,9 +69,11 @@ model RolePermission {
 model Project {
   id          String    @id @default(cuid())
   code        String    @unique
+  shortName   String    @default("")
   title       String
   status      String    @default("Active")
   access      String    @default("Team")
+  offices     String[]  @default([])
   client      String?
   description String?
   startDate   DateTime?
