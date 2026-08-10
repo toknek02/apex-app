@@ -212,6 +212,19 @@ model ErrorLog {
   @@index([createdAt])
 }
 
+model PasswordResetRequest {
+  id             String    @id @default(cuid())
+  email          String
+  userId         String?
+  status         String    @default("pending")
+  createdAt      DateTime  @default(now())
+  resolvedAt     DateTime?
+  resolvedById   String?
+  resolvedByName String?
+
+  @@index([status, createdAt])
+}
+
 model TimesheetEntry {
   id         String   @id @default(cuid())
   userId     String

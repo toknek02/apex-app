@@ -43,6 +43,7 @@ const SUB: Record<string, { href: string; label: string; requires?: PermissionCo
     { href: '/system/venue', label: 'Venue' },
     { href: '/system/roles', label: 'Roles' },
     { href: '/system/settings', label: 'Settings', requires: 'MANAGE_SETTINGS' },
+    { href: '/system/password-resets', label: 'Password Resets', requires: 'MANAGE_USERS' },
     { href: '/system/audit', label: 'Audit Log', requires: 'VIEW_AUDIT_LOG' },
     { href: '/system/errors', label: 'Error Log', requires: 'VIEW_ERROR_LOG' },
   ],

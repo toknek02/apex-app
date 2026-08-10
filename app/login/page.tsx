@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { signIn } from 'next-auth/react'
 
 export default function LoginPage() {
@@ -143,7 +144,13 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p style={{ marginTop: 18, fontSize: 11, color: 'var(--apex-muted)' }}>
+        <p style={{ marginTop: 14, fontSize: 12, textAlign: 'center' }}>
+          <Link href="/forgot-password" style={{ color: 'var(--apex-accent)', textDecoration: 'none', fontWeight: 600 }}>
+            Forgot password?
+          </Link>
+        </p>
+
+        <p style={{ marginTop: 14, fontSize: 11, color: 'var(--apex-muted)' }}>
           Admin: admin@apex.local / admin123 &middot; Staff: any seeded staff email / staff123
         </p>
       </div>
