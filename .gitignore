@@ -9,3 +9,5 @@ next-env.d.ts
 prisma/dev.db
 prisma/dev.db-journal
 storage/
+backups/
+scripts/service-logs/
