@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
-import { saveAnnouncementFile } from '@/lib/announcement-storage'
+import { saveAnnouncementFile, ALLOWED_ATTACHMENT_EXTENSIONS, MAX_ATTACHMENT_BYTES } from '@/lib/announcement-storage'
+import { logAudit } from '@/lib/audit'
 
 export async function GET() {
   const session = await auth()
@@ -29,17 +30,38 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Title and body are required' }, { status: 400 })
   }
 
+  // Validate every file before creating anything, so a bad upload can't
+  // leave a half-created announcement with only some of its attachments.
+  for (const file of files) {
+    const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
+    if (!ALLOWED_ATTACHMENT_EXTENSIONS.includes(ext)) {
+      return NextResponse.json({ error: `File type .${ext} is not allowed for "${file.name}"` }, { status: 400 })
+    }
+    if (file.size > MAX_ATTACHMENT_BYTES) {
+      return NextResponse.json({ error: `"${file.name}" exceeds the ${MAX_ATTACHMENT_BYTES / (1024 * 1024)}MB limit` }, { status: 400 })
+    }
+  }
+
   const announcement = await prisma.announcement.create({
     data: { title, body, createdById: session.user.id },
   })
 
   for (const file of files) {
     const buffer = Buffer.from(await file.arrayBuffer())
-    const storagePath = await saveAnnouncementFile(buffer, announcement.id, file.name)
+    const { storagePath, fileName } = await saveAnnouncementFile(buffer, announcement.id, file.name)
     await prisma.announcementAttachment.create({
-      data: { announcementId: announcement.id, fileName: file.name, storagePath, fileSize: file.size },
+      data: { announcementId: announcement.id, fileName, storagePath, fileSize: file.size },
     })
   }
+
+  await logAudit({
+    actor: session.user,
+    action: 'announcement.create',
+    targetType: 'Announcement',
+    targetId: announcement.id,
+    targetLabel: title,
+    metadata: { attachmentCount: files.length },
+  })
 
   const full = await prisma.announcement.findUnique({
     where: { id: announcement.id },
