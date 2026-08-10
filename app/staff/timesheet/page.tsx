@@ -1,9 +1,11 @@
 import Link from 'next/link'
+import { Lock } from 'lucide-react'
 import { requireUser, hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import { DeleteTimesheetEntryButton } from '@/components/staff/delete-timesheet-entry-button'
 import { TimesheetStaffSelector } from '@/components/staff/timesheet-staff-selector'
+import { isEntryLocked, TIMESHEET_EDIT_WINDOW_DAYS } from '@/lib/timesheet-lock'
 
 function ymd(d: Date) {
   return d.toISOString().slice(0, 10)
@@ -164,7 +166,17 @@ export default async function TimesheetPage({
                   <td style={{ ...tdStyle, textAlign: 'left' }}>{(e.otMins / 60).toFixed(2)}</td>
                   <td style={{ ...tdStyle, textAlign: 'left' }}>{e.remarks || '—'}</td>
                   <td style={{ ...tdStyle, textAlign: 'left' }}>
-                    {(isOwnView || canManageEntries) && <DeleteTimesheetEntryButton entryId={e.id} />}
+                    {canManageEntries ? (
+                      <DeleteTimesheetEntryButton entryId={e.id} />
+                    ) : isOwnView ? (
+                      isEntryLocked(e.date) ? (
+                        <span title={`Entries older than ${TIMESHEET_EDIT_WINDOW_DAYS} days can no longer be self-deleted`}>
+                          <Lock size={13} color="var(--apex-muted)" />
+                        </span>
+                      ) : (
+                        <DeleteTimesheetEntryButton entryId={e.id} />
+                      )
+                    ) : null}
                   </td>
                 </tr>
               ))

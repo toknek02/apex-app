@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth'
 import { hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { logAudit } from '@/lib/audit'
+import { isEntryLocked, TIMESHEET_EDIT_WINDOW_DAYS } from '@/lib/timesheet-lock'
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -15,6 +16,12 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const isOwner = existing.userId === session.user.id
   const canManageEntries = hasPermission(session.user, 'MANAGE_TIMESHEET_ENTRIES')
   if (!isOwner && !canManageEntries) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (isOwner && !canManageEntries && isEntryLocked(existing.date)) {
+    return NextResponse.json(
+      { error: `This entry is more than ${TIMESHEET_EDIT_WINDOW_DAYS} days old and can no longer be self-deleted. Contact an administrator.` },
+      { status: 403 }
+    )
+  }
 
   await prisma.timesheetEntry.delete({ where: { id } })
   // Always logged, including self-deletes — this data feeds cost reports
