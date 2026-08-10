@@ -62,6 +62,11 @@ export default async function TimesheetPage({
   const today = new Date()
   const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month
 
+  // Without VIEW_TIMESHEET_REPORTS, only your own row belongs on this grid —
+  // it was previously showing every staff member's sign-in days to anyone
+  // logged in, regardless of permission.
+  const attendanceStaff = canViewOthers ? staff : staff.filter((s) => s.id === user.id)
+
   return (
     <AppShell user={{ name: user.name ?? '', roleName: user.roleName, permissions: user.permissions }}>
       <Breadcrumb items={['Staff', 'Timesheet']} />
@@ -109,7 +114,7 @@ export default async function TimesheetPage({
             </tr>
           </thead>
           <tbody>
-            {staff.map((s, i) => {
+            {attendanceStaff.map((s, i) => {
               const days = signedDays.get(s.id) ?? new Set<number>()
               return (
                 <tr key={s.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
