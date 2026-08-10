@@ -149,10 +149,6 @@ export default function LoginPage() {
             Forgot password?
           </Link>
         </p>
-
-        <p style={{ marginTop: 14, fontSize: 11, color: 'var(--apex-muted)' }}>
-          Admin: admin@apex.local / admin123 &middot; Staff: any seeded staff email / staff123
-        </p>
       </div>
     </div>
   )
