@@ -185,6 +185,20 @@ model OrgSettings {
   updatedAt      DateTime @updatedAt
 }
 
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorId     String
+  actorName   String
+  action      String
+  targetType  String
+  targetId    String?
+  targetLabel String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+}
+
 model TimesheetEntry {
   id         String   @id @default(cuid())
   userId     String

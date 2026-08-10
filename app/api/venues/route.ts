@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
+import { logAudit } from '@/lib/audit'
 
 export async function GET() {
   const session = await auth()
@@ -21,6 +22,13 @@ export async function POST(req: NextRequest) {
 
   const venue = await prisma.venue.create({
     data: { description, collisionCheck: Boolean(collisionCheck) },
+  })
+  await logAudit({
+    actor: session.user,
+    action: 'venue.create',
+    targetType: 'Venue',
+    targetId: venue.id,
+    targetLabel: venue.description,
   })
   return NextResponse.json({ venue }, { status: 201 })
 }

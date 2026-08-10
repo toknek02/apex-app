@@ -8,6 +8,7 @@ export type PermissionCode =
   | 'VIEW_TIMESHEET_REPORTS'
   | 'MANAGE_TIMESHEET_ENTRIES'
   | 'MANAGE_SETTINGS'
+  | 'VIEW_AUDIT_LOG'
 
 export type PermissionMeta = {
   code: PermissionCode
@@ -25,4 +26,5 @@ export const PERMISSIONS: PermissionMeta[] = [
   { code: 'VIEW_TIMESHEET_REPORTS', label: 'View timesheet reports', description: 'View timesheet entries for all staff on a project, for cost evaluation.' },
   { code: 'MANAGE_TIMESHEET_ENTRIES', label: 'Manage timesheet entries', description: 'Delete timesheet entries submitted by other staff, for corrections.' },
   { code: 'MANAGE_SETTINGS', label: 'Manage settings', description: 'Configure system-wide settings such as the office location used for attendance sign-in.' },
+  { code: 'VIEW_AUDIT_LOG', label: 'View audit log', description: 'View the history of administrative actions: user, role, venue, project, and settings changes.' },
 ]

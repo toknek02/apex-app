@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
+import { logAudit } from '@/lib/audit'
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -33,6 +34,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     },
     include: { rolePermissions: { include: { permission: true } } },
   })
+  await logAudit({
+    actor: session.user,
+    action: 'role.update',
+    targetType: 'Role',
+    targetId: role.id,
+    targetLabel: role.name,
+    metadata: { name, description, permissionCodes },
+  })
   return NextResponse.json({ role })
 }
 
@@ -50,5 +59,12 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   }
 
   await prisma.role.delete({ where: { id } })
+  await logAudit({
+    actor: session.user,
+    action: 'role.delete',
+    targetType: 'Role',
+    targetId: id,
+    targetLabel: existing.name,
+  })
   return NextResponse.json({ success: true })
 }

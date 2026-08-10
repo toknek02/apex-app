@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import { auth } from '@/lib/auth'
 import { hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
+import { logAudit } from '@/lib/audit'
 
 export async function GET() {
   const session = await auth()
@@ -44,6 +45,14 @@ export async function POST(req: NextRequest) {
       roleId,
     },
     select: { id: true, name: true, department: true, designation: true, roleId: true, role: { select: { name: true } } },
+  })
+  await logAudit({
+    actor: session.user,
+    action: 'user.create',
+    targetType: 'User',
+    targetId: user.id,
+    targetLabel: user.name,
+    metadata: { email, roleId, roleName: user.role.name },
   })
   return NextResponse.json({ user }, { status: 201 })
 }

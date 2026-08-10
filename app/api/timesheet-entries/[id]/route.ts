@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
+import { logAudit } from '@/lib/audit'
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -16,5 +17,14 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   if (!isOwner && !canManageEntries) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   await prisma.timesheetEntry.delete({ where: { id } })
+  if (!isOwner) {
+    await logAudit({
+      actor: session.user,
+      action: 'timesheet_entry.delete',
+      targetType: 'TimesheetEntry',
+      targetId: id,
+      metadata: { ownerId: existing.userId, date: existing.date, normalMins: existing.normalMins, otMins: existing.otMins },
+    })
+  }
   return NextResponse.json({ success: true })
 }

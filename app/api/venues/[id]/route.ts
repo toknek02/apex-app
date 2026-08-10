@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
+import { logAudit } from '@/lib/audit'
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -17,6 +18,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ...(description !== undefined ? { description } : {}),
       ...(collisionCheck !== undefined ? { collisionCheck: Boolean(collisionCheck) } : {}),
     },
+  })
+  await logAudit({
+    actor: session.user,
+    action: 'venue.update',
+    targetType: 'Venue',
+    targetId: venue.id,
+    targetLabel: venue.description,
+    metadata: { description, collisionCheck },
   })
   return NextResponse.json({ venue })
 }

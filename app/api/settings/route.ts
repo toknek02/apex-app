@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requirePermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
+import { logAudit } from '@/lib/audit'
 
 async function getOrCreateSettings() {
   return prisma.orgSettings.upsert({
@@ -17,7 +18,7 @@ export async function GET() {
 }
 
 export async function PATCH(req: Request) {
-  await requirePermission('MANAGE_SETTINGS')
+  const user = await requirePermission('MANAGE_SETTINGS')
   const body = await req.json()
 
   const officeLat = body.officeLat === '' || body.officeLat === null ? null : Number(body.officeLat)
@@ -35,6 +36,13 @@ export async function PATCH(req: Request) {
   const settings = await prisma.orgSettings.update({
     where: { id: 'singleton' },
     data: { officeLat, officeLng, officeRadiusM },
+  })
+  await logAudit({
+    actor: user,
+    action: 'settings.update',
+    targetType: 'OrgSettings',
+    targetId: 'singleton',
+    metadata: { officeLat, officeLng, officeRadiusM },
   })
   return NextResponse.json(settings)
 }

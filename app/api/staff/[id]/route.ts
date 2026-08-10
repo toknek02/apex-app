@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import { auth } from '@/lib/auth'
 import { hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
+import { logAudit } from '@/lib/audit'
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -32,6 +33,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ...(password ? { passwordHash: await bcrypt.hash(password, 10) } : {}),
     },
     select: { id: true, name: true, department: true, designation: true, roleId: true, role: { select: { name: true } }, isActive: true },
+  })
+  await logAudit({
+    actor: session.user,
+    action: password ? 'user.update_with_password_reset' : 'user.update',
+    targetType: 'User',
+    targetId: user.id,
+    targetLabel: user.name,
+    metadata: { name, department, designation, roleId, isActive, passwordReset: Boolean(password) },
   })
   return NextResponse.json({ user })
 }

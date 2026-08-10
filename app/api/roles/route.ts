@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
+import { logAudit } from '@/lib/audit'
 
 export async function GET() {
   const session = await auth()
@@ -37,6 +38,14 @@ export async function POST(req: NextRequest) {
       rolePermissions: { create: permissions.map((p) => ({ permissionId: p.id })) },
     },
     include: { rolePermissions: { include: { permission: true } } },
+  })
+  await logAudit({
+    actor: session.user,
+    action: 'role.create',
+    targetType: 'Role',
+    targetId: role.id,
+    targetLabel: role.name,
+    metadata: { permissionCodes: codes },
   })
   return NextResponse.json({ role }, { status: 201 })
 }
