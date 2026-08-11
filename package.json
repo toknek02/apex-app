@@ -8,7 +8,8 @@
     "start": "next start --hostname 0.0.0.0 --port 3002",
     "lint": "eslint",
     "seed": "ts-node -P scripts/tsconfig.json prisma/seed.ts",
-    "eod-signout": "ts-node -P scripts/tsconfig.json scripts/eod-signout.ts"
+    "eod-signout": "ts-node -P scripts/tsconfig.json scripts/eod-signout.ts",
+    "prune-audit-log": "ts-node -P scripts/tsconfig.json scripts/prune-audit-log.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

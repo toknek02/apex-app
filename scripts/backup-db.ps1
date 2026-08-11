@@ -45,6 +45,11 @@ try {
     Remove-Item $_.FullName -Force
     Log "Pruned old backup: $($_.Name)"
   }
+
+  Push-Location $ProjectRoot
+  $pruneOutput = npm run prune-audit-log 2>&1 | Out-String
+  Pop-Location
+  Log "Audit log prune: $($pruneOutput.Trim())"
 } catch {
   Log "ERROR: $_"
   if (Test-Path Env:\PGPASSWORD) { Remove-Item Env:\PGPASSWORD }
