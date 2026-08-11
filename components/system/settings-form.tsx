@@ -50,8 +50,9 @@ export function SettingsForm({ settings }: { settings: Settings }) {
     <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 24, maxWidth: 560 }}>
       <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>Office Location</h2>
       <p style={{ fontSize: 12, color: 'var(--apex-muted)', marginBottom: 16 }}>
-        Used to restrict office attendance sign-in to staff physically near the office. This is not enforced
-        yet — geolocation requires the app to be served over HTTPS, which is planned for a later launch step.
+        Used to restrict login to staff physically near the office (attendance is now tied to
+        login/logout). This is not enforced yet — geolocation requires the app to be served over
+        HTTPS, which is planned for a later launch step.
       </p>
 
       {error && (
