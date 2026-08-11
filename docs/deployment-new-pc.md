@@ -1,4 +1,4 @@
-# Deploying APEX to a new host PC (target: <NEW_PC_IP>)
+# Deploying APEX to a new host PC (target: 192.168.1.18)
 
 This is a runbook to run **on the new PC itself** (this session can't reach it directly).
 Run everything in an **elevated PowerShell** unless noted otherwise. Steps assume Windows.
@@ -8,7 +8,7 @@ see the last section for how to decommission hosting here.
 
 ---
 
-## 1. Set the static IP to <NEW_PC_IP>
+## 1. Set the static IP to 192.168.1.18
 
 Check the adapter name first:
 
@@ -20,11 +20,11 @@ Then set a static IP on it (replace `"Ethernet"` with the real adapter name, and
 `192.168.1.1` with your router's actual gateway IP if different):
 
 ```powershell
-New-NetIPAddress -InterfaceAlias "Ethernet" -IPAddress <NEW_PC_IP> -PrefixLength 24 -DefaultGateway 192.168.1.1
+New-NetIPAddress -InterfaceAlias "Ethernet" -IPAddress 192.168.1.18 -PrefixLength 24 -DefaultGateway 192.168.1.1
 Set-DnsClientServerAddress -InterfaceAlias "Ethernet" -ServerAddresses ("192.168.1.1","1.1.1.1")
 ```
 
-**Better long-term option:** instead of a static IP set on the PC, reserve <NEW_PC_IP>
+**Better long-term option:** instead of a static IP set on the PC, reserve 192.168.1.18
 for this PC's MAC address in your router's DHCP settings. Same result, but survives
 network adapter resets and is easier to change later. Either works — pick whichever
 you're comfortable managing.
@@ -92,7 +92,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 
 Leave `AUTH_URL` unset, same reasoning as this dev PC's `.env` — `trustHost: true`
 derives the origin per-request, so login works whether it's reached via
-`<NEW_PC_IP>`, `localhost`, or later a real domain.
+`192.168.1.18`, `localhost`, or later a real domain.
 
 ---
 
@@ -210,7 +210,7 @@ Start-Sleep -Seconds 5
 Invoke-WebRequest -Uri "http://localhost:3002/login" -UseBasicParsing | Select-Object StatusCode
 ```
 
-Then from a phone or another PC on the same network, open `http://<NEW_PC_IP>:3002`
+Then from a phone or another PC on the same network, open `http://192.168.1.18:3002`
 and confirm the login page loads and you can sign in.
 
 ---
