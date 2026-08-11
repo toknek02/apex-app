@@ -1,4 +1,4 @@
-# Deploying APEX to a new host PC (target: 192.168.1.18)
+# Deploying APEX to a new host PC (target: <NEW_PC_IP>)
 
 This is a runbook to run **on the new PC itself** (this session can't reach it directly).
 Run everything in an **elevated PowerShell** unless noted otherwise. Steps assume Windows.
@@ -8,7 +8,7 @@ see the last section for how to decommission hosting here.
 
 ---
 
-## 1. Set the static IP to 192.168.1.18
+## 1. Set the static IP to <NEW_PC_IP>
 
 Check the adapter name first:
 
@@ -20,11 +20,11 @@ Then set a static IP on it (replace `"Ethernet"` with the real adapter name, and
 `192.168.1.1` with your router's actual gateway IP if different):
 
 ```powershell
-New-NetIPAddress -InterfaceAlias "Ethernet" -IPAddress 192.168.1.18 -PrefixLength 24 -DefaultGateway 192.168.1.1
+New-NetIPAddress -InterfaceAlias "Ethernet" -IPAddress <NEW_PC_IP> -PrefixLength 24 -DefaultGateway 192.168.1.1
 Set-DnsClientServerAddress -InterfaceAlias "Ethernet" -ServerAddresses ("192.168.1.1","1.1.1.1")
 ```
 
-**Better long-term option:** instead of a static IP set on the PC, reserve 192.168.1.18
+**Better long-term option:** instead of a static IP set on the PC, reserve <NEW_PC_IP>
 for this PC's MAC address in your router's DHCP settings. Same result, but survives
 network adapter resets and is easier to change later. Either works — pick whichever
 you're comfortable managing.
@@ -92,7 +92,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 
 Leave `AUTH_URL` unset, same reasoning as this dev PC's `.env` — `trustHost: true`
 derives the origin per-request, so login works whether it's reached via
-`192.168.1.18`, `localhost`, or later a real domain.
+`<NEW_PC_IP>`, `localhost`, or later a real domain.
 
 ---
 
@@ -171,7 +171,14 @@ $backupAction = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '-No
 $backupTrigger = New-ScheduledTaskTrigger -Daily -At '2:00AM'
 $backupSettings = New-ScheduledTaskSettingsSet -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Hours 1)
 Register-ScheduledTask -TaskName "APEX DB Backup" -Action $backupAction -Trigger $backupTrigger -Settings $backupSettings -Description "Daily pg_dump of the APEX database, retained 14 days, to C:\APEX_APP\backups." -Force
+
+$eodAction = New-ScheduledTaskAction -Execute 'C:\APEX_APP\scripts\eod-signout.cmd' -WorkingDirectory 'C:\APEX_APP'
+$eodTrigger = New-ScheduledTaskTrigger -Daily -At '6:30PM'
+$eodSettings = New-ScheduledTaskSettingsSet -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Minutes 15)
+Register-ScheduledTask -TaskName "APEX EOD Signout" -Action $eodAction -Trigger $eodTrigger -Settings $eodSettings -Description "Closes any still-open attendance records and force-ends all active sessions daily at 6:30pm." -Force
 ```
+
+Note this one affects real users the moment it fires — don't trigger it manually to test unless you're fine being logged out immediately.
 
 If you want this to survive an unattended reboot with nobody logged in, that needs
 boot-level registration from an elevated prompt (same caveat as the dev PC):
@@ -203,7 +210,7 @@ Start-Sleep -Seconds 5
 Invoke-WebRequest -Uri "http://localhost:3002/login" -UseBasicParsing | Select-Object StatusCode
 ```
 
-Then from a phone or another PC on the same network, open `http://192.168.1.18:3002`
+Then from a phone or another PC on the same network, open `http://<NEW_PC_IP>:3002`
 and confirm the login page loads and you can sign in.
 
 ---
@@ -236,6 +243,7 @@ On **this dev PC**:
 Stop-ScheduledTask -TaskName "APEX App"
 Unregister-ScheduledTask -TaskName "APEX App" -Confirm:$false
 Unregister-ScheduledTask -TaskName "APEX DB Backup" -Confirm:$false
+Unregister-ScheduledTask -TaskName "APEX EOD Signout" -Confirm:$false
 ```
 
 Leave PostgreSQL installed here if you still want a local DB for development/testing,
