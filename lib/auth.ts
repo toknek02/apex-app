@@ -10,6 +10,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   pages: {
     signIn: '/login',
   },
+  events: {
+    // Logging in is now what starts an office attendance record — there's
+    // no separate manual "sign in" button anymore. Signing out of the app
+    // ends it. This only fires on an explicit signOut() call; a session
+    // that gets silently invalidated by a newer login elsewhere is instead
+    // handled in authorize() below, which closes out the old record when
+    // the new one opens.
+    async signOut(message) {
+      const userId = 'token' in message ? message.token?.id : undefined
+      if (typeof userId !== 'string') return
+      await prisma.signInRecord.updateMany({
+        where: { userId, signOutAt: null },
+        data: { signOutAt: new Date() },
+      })
+    },
+  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
@@ -71,6 +87,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         // login immediately supersedes any session already active elsewhere.
         const sessionId = randomUUID()
         await prisma.user.update({ where: { id: user.id }, data: { activeSessionId: sessionId } })
+
+        // Logging in is the attendance sign-in. Close out any record left open
+        // by a previous session (e.g. the device that just got superseded, or
+        // one that was never cleanly signed out of) before opening a fresh one.
+        await prisma.signInRecord.updateMany({
+          where: { userId: user.id, signOutAt: null },
+          data: { signOutAt: new Date() },
+        })
+        await prisma.signInRecord.create({ data: { userId: user.id } })
 
         return {
           id: user.id,

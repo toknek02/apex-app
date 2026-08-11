@@ -3,7 +3,6 @@ import { Pencil } from 'lucide-react'
 import { requireUser, hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
-import { SignInButton } from '@/components/staff/sign-in-button'
 import { UserModal } from '@/components/staff/user-modal'
 
 export default async function StaffPage() {
@@ -56,8 +55,6 @@ export default async function StaffPage() {
     <AppShell user={{ name: user.name ?? '', roleName: user.roleName, permissions: user.permissions }}>
       <Breadcrumb items={['Staff', 'Directory']} />
       <h1 style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700, marginBottom: 16 }}>Staff Directory</h1>
-
-      <SignInButton />
 
       {canManageUsers && (
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
