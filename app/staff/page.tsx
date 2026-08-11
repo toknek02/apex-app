@@ -48,7 +48,6 @@ export default async function StaffPage() {
     grouped.get(dept)!.push(s)
   }
 
-  const myOpenRecord = openByUser.get(user.id)
   const columns = canManageUsers
     ? ['Name', 'Designation', 'Role', 'Status', 'Sign-in', 'Actions']
     : ['Name', 'Designation', 'Role', 'Status', 'Sign-in']
@@ -58,14 +57,7 @@ export default async function StaffPage() {
       <Breadcrumb items={['Staff', 'Directory']} />
       <h1 style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700, marginBottom: 16 }}>Staff Directory</h1>
 
-      <SignInButton
-        signedIn={Boolean(myOpenRecord)}
-        signInAt={
-          myOpenRecord
-            ? myOpenRecord.signInAt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
-            : null
-        }
-      />
+      <SignInButton />
 
       {canManageUsers && (
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>

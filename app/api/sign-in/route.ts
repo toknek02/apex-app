@@ -2,6 +2,18 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
+export async function GET() {
+  const session = await auth()
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const open = await prisma.signInRecord.findFirst({
+    where: { userId: session.user.id, signOutAt: null },
+    orderBy: { signInAt: 'desc' },
+  })
+
+  return NextResponse.json({ signedIn: Boolean(open), signInAt: open?.signInAt ?? null })
+}
+
 export async function POST() {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { signOut } from 'next-auth/react'
 import { LayoutDashboard, BookOpen, Users, Settings, Megaphone, LogOut, ChevronLeft, ChevronRight, Menu, X } from 'lucide-react'
 import type { PermissionCode } from '@/lib/permissions'
+import { SignInStatusPill } from '@/components/layout/sign-in-status-pill'
 
 type NavUser = {
   name: string
@@ -130,6 +131,7 @@ function Header({
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
         {!isMobile && <Clock />}
+        <SignInStatusPill isMobile={isMobile} />
         <div
           style={{
             display: 'flex',
