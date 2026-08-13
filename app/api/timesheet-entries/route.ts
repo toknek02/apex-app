@@ -95,10 +95,25 @@ export async function POST(request: Request) {
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await request.json()
-  const { date, eventType, projectId, stage, task, normalMins, otMins, remarks } = body
+  const { date, eventType, projectId, stage, task, normalMins, otMins, remarks, startMins, endMins } = body
 
   if (!date || !eventType || !EVENT_TYPES.includes(eventType)) {
     return NextResponse.json({ error: 'Missing or invalid required fields' }, { status: 400 })
+  }
+  const hasStart = startMins !== null && startMins !== undefined && startMins !== ''
+  const hasEnd = endMins !== null && endMins !== undefined && endMins !== ''
+  if (hasStart !== hasEnd) {
+    return NextResponse.json({ error: 'Start Time and End Time must both be set, or both left blank' }, { status: 400 })
+  }
+  let normalizedStartMins: number | null = null
+  let normalizedEndMins: number | null = null
+  if (hasStart && hasEnd) {
+    normalizedStartMins = Number(startMins)
+    normalizedEndMins = Number(endMins)
+    const inRange = (n: number) => Number.isInteger(n) && n >= 0 && n < 24 * 60
+    if (!inRange(normalizedStartMins) || !inRange(normalizedEndMins) || normalizedEndMins <= normalizedStartMins) {
+      return NextResponse.json({ error: 'End Time must be after Start Time' }, { status: 400 })
+    }
   }
   const parsedDate = new Date(date)
   if (Number.isNaN(parsedDate.getTime())) {
@@ -139,6 +154,8 @@ export async function POST(request: Request) {
       task: task || null,
       normalMins: normalizedNormalMins,
       otMins: normalizedOtMins,
+      startMins: normalizedStartMins,
+      endMins: normalizedEndMins,
       remarks: remarks || null,
     },
   })

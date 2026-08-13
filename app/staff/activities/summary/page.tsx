@@ -16,15 +16,55 @@ function ymd(d: Date) {
   return `${y}-${m}-${day}`
 }
 
-function entryLabel(e: { eventType: string; project: { code: string; shortName: string } | null; normalMins: number; otMins: number; remarks: string | null }) {
-  const totalHrs = (e.normalMins + e.otMins) / 60
+const GANTT_START = 9 * 60 // 9am
+const GANTT_END = 18 * 60 // 6pm
+const GANTT_SPAN = GANTT_END - GANTT_START
+const HOUR_TICKS = Array.from({ length: 10 }, (_, i) => 9 + i) // 9..18
+
+function formatHour(h: number) {
+  const period = h < 12 || h === 24 ? 'am' : 'pm'
+  const hour12 = h % 12 === 0 ? 12 : h % 12
+  return `${hour12}${period}`
+}
+
+function formatHrs(totalMins: number) {
+  const hrs = totalMins / 60
+  return hrs.toFixed(hrs % 1 === 0 ? 0 : 1)
+}
+
+type Entry = {
+  id: string
+  eventType: string
+  project: { code: string; shortName: string } | null
+  normalMins: number
+  otMins: number
+  startMins: number | null
+  endMins: number | null
+  remarks: string | null
+}
+
+function entryColor(eventType: string) {
+  if (LEAVE_EVENT_TYPES.includes(eventType)) return 'var(--apex-red)'
+  if (eventType === 'Project Work') return 'var(--apex-accent)'
+  if (eventType === 'Admin Work') return 'var(--apex-navy)'
+  if (eventType === 'Marketing') return 'var(--apex-green)'
+  return 'var(--apex-muted)'
+}
+
+function entryTitle(e: Entry) {
   const isLeave = LEAVE_EVENT_TYPES.includes(e.eventType)
+  const totalHrs = e.normalMins + e.otMins
   const parts = [e.eventType]
   if (e.project) parts.push(`— ${e.project.code}`)
-  if (!isLeave && totalHrs > 0) parts.push(`(${totalHrs.toFixed(totalHrs % 1 === 0 ? 0 : 1)}h)`)
-  let label = parts.join(' ')
-  if (e.remarks) label += `: ${e.remarks}`
-  return label
+  if (e.startMins !== null && e.endMins !== null) {
+    const fmt = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`
+    parts.push(`(${fmt(e.startMins)}–${fmt(e.endMins)})`)
+  } else if (!isLeave && totalHrs > 0) {
+    parts.push(`(${formatHrs(totalHrs)}h)`)
+  }
+  let title = parts.join(' ')
+  if (e.remarks) title += `: ${e.remarks}`
+  return title
 }
 
 export default async function ActivitiesSummaryPage({
@@ -72,7 +112,7 @@ export default async function ActivitiesSummaryPage({
 
   const staff = isPrivileged ? allStaff : allStaff.filter((s) => s.id === user.id)
 
-  const entriesByUser = new Map<string, typeof entries>()
+  const entriesByUser = new Map<string, Entry[]>()
   for (const e of entries) {
     if (!entriesByUser.has(e.userId)) entriesByUser.set(e.userId, [])
     entriesByUser.get(e.userId)!.push(e)
@@ -104,15 +144,37 @@ export default async function ActivitiesSummaryPage({
 
       <ActivitiesTabs active="summary" />
 
+      <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 12, fontSize: 11, color: 'var(--apex-muted)' }}>
+        {[
+          ['Project Work', entryColor('Project Work')],
+          ['Admin Work', entryColor('Admin Work')],
+          ['Marketing', entryColor('Marketing')],
+          ['Leave', entryColor('Annual Leave')],
+        ].map(([label, color]) => (
+          <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: color, display: 'inline-block' }} />
+            {label}
+          </span>
+        ))}
+      </div>
+
       <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
-              {['Staff', 'Whereabouts', 'Total Hrs'].map((h) => (
-                <th key={h} style={{ padding: '9px 14px', textAlign: 'left', color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em' }}>
-                  {h}
-                </th>
-              ))}
+              <th style={{ padding: '9px 14px', textAlign: 'left', color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', width: 160 }}>
+                Staff
+              </th>
+              <th style={{ padding: '9px 14px', color: '#fff', fontSize: 10, fontWeight: 600 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  {HOUR_TICKS.map((h) => (
+                    <span key={h}>{formatHour(h)}</span>
+                  ))}
+                </div>
+              </th>
+              <th style={{ padding: '9px 14px', textAlign: 'right', color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', width: 70 }}>
+                Total Hrs
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -125,18 +187,71 @@ export default async function ActivitiesSummaryPage({
                 </tr>
                 {members.map((m, i) => {
                   const myEntries = entriesByUser.get(m.id) ?? []
-                  const totalHrs = myEntries.reduce((sum, e) => sum + e.normalMins + e.otMins, 0) / 60
+                  const totalMins = myEntries.reduce((sum, e) => sum + e.normalMins + e.otMins, 0)
+
+                  const placed = myEntries.filter((e) => e.startMins !== null && e.endMins !== null || LEAVE_EVENT_TYPES.includes(e.eventType))
+                  const unplaced = myEntries.filter((e) => e.startMins === null && e.endMins === null && !LEAVE_EVENT_TYPES.includes(e.eventType))
 
                   return (
                     <tr key={m.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
-                      <td style={{ padding: '9px 14px', fontSize: 12, fontWeight: 600 }}>{m.name}</td>
-                      <td style={{ padding: '9px 14px', fontSize: 12, color: myEntries.length ? 'var(--apex-text)' : 'var(--apex-muted)', fontStyle: myEntries.length ? 'normal' : 'italic' }}>
-                        {myEntries.length === 0
-                          ? 'No entries'
-                          : myEntries.map((e) => <div key={e.id}>{entryLabel(e)}</div>)}
+                      <td style={{ padding: '9px 14px', fontSize: 12, fontWeight: 600, verticalAlign: 'top' }}>{m.name}</td>
+                      <td style={{ padding: '9px 14px', verticalAlign: 'top' }}>
+                        {placed.length === 0 && unplaced.length === 0 ? (
+                          <div style={{ fontSize: 12, fontStyle: 'italic', color: 'var(--apex-muted)' }}>No entries</div>
+                        ) : (
+                          <div style={{ position: 'relative' }}>
+                            {/* hour gridlines behind the bars */}
+                            <div style={{ position: 'absolute', inset: 0, display: 'flex', justifyContent: 'space-between', pointerEvents: 'none' }}>
+                              {HOUR_TICKS.map((h) => (
+                                <span key={h} style={{ width: 1, backgroundColor: 'var(--apex-border)' }} />
+                              ))}
+                            </div>
+                            {placed.map((e) => {
+                              const isFullDayLeave = e.startMins === null && LEAVE_EVENT_TYPES.includes(e.eventType)
+                              const left = isFullDayLeave ? 0 : Math.max(0, Math.min(1, (e.startMins! - GANTT_START) / GANTT_SPAN)) * 100
+                              const right = isFullDayLeave ? 100 : Math.max(0, Math.min(1, (e.endMins! - GANTT_START) / GANTT_SPAN)) * 100
+                              const width = Math.max(right - left, 1.5)
+                              return (
+                                <div
+                                  key={e.id}
+                                  title={entryTitle(e)}
+                                  style={{
+                                    position: 'relative',
+                                    height: 22,
+                                    marginBottom: 4,
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      position: 'absolute',
+                                      left: `${left}%`,
+                                      width: `${width}%`,
+                                      height: '100%',
+                                      backgroundColor: entryColor(e.eventType),
+                                      borderRadius: 4,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      padding: '0 6px',
+                                      overflow: 'hidden',
+                                    }}
+                                  >
+                                    <span style={{ fontSize: 10, color: '#fff', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      {isFullDayLeave ? e.eventType : entryTitle(e)}
+                                    </span>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                            {unplaced.map((e) => (
+                              <div key={e.id} style={{ fontSize: 11, color: 'var(--apex-muted)', marginTop: 4 }}>
+                                {e.eventType}{e.project ? ` — ${e.project.code}` : ''} ({formatHrs(e.normalMins + e.otMins)}h) — no time set
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </td>
-                      <td style={{ padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>
-                        {totalHrs > 0 ? totalHrs.toFixed(totalHrs % 1 === 0 ? 0 : 1) : ''}
+                      <td style={{ padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)', textAlign: 'right', verticalAlign: 'top' }}>
+                        {totalMins > 0 ? formatHrs(totalMins) : ''}
                       </td>
                     </tr>
                   )

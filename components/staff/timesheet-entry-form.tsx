@@ -37,6 +37,8 @@ export function TimesheetEntryForm({ projects }: { projects: Project[] }) {
   const [normalMin, setNormalMin] = useState(0)
   const [otHr, setOtHr] = useState(0)
   const [otMin, setOtMin] = useState(0)
+  const [startTime, setStartTime] = useState('')
+  const [endTime, setEndTime] = useState('')
   const [remarks, setRemarks] = useState('')
   const [errors, setErrors] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
@@ -45,11 +47,19 @@ export function TimesheetEntryForm({ projects }: { projects: Project[] }) {
   const normalMins = normalHr * 60 + normalMin
   const otMins = otHr * 60 + otMin
 
+  function timeToMins(t: string): number | null {
+    if (!t) return null
+    const [h, m] = t.split(':').map(Number)
+    return h * 60 + m
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const missing: string[] = []
     if (!date) missing.push('Date')
     if (isProjectWork && !projectId) missing.push('Project')
+    if ((startTime && !endTime) || (!startTime && endTime)) missing.push('Start Time and End Time (both or neither)')
+    if (startTime && endTime && timeToMins(endTime)! <= timeToMins(startTime)!) missing.push('End Time must be after Start Time')
     setErrors(missing)
     if (missing.length > 0) return
 
@@ -65,6 +75,8 @@ export function TimesheetEntryForm({ projects }: { projects: Project[] }) {
         task: isProjectWork ? task : null,
         normalMins,
         otMins,
+        startMins: timeToMins(startTime),
+        endMins: timeToMins(endTime),
         remarks,
       }),
     })
@@ -130,6 +142,20 @@ export function TimesheetEntryForm({ projects }: { projects: Project[] }) {
             ))}
           </select>
         </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+        <div>
+          <label style={labelStyle}>Start Time</label>
+          <input type="time" style={inputStyle} value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+        </div>
+        <div>
+          <label style={labelStyle}>End Time</label>
+          <input type="time" style={inputStyle} value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+        </div>
+      </div>
+      <div style={{ fontSize: 11, color: 'var(--apex-muted)', marginTop: -12, marginBottom: 16 }}>
+        Optional — set both to show this entry on the Activities Summary timeline. Leave blank for whole-day entries like Leave.
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>

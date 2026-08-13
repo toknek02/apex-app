@@ -241,6 +241,11 @@ model TimesheetEntry {
   task       String?
   normalMins Int      @default(0)
   otMins     Int      @default(0)
+  // Minutes since midnight, local time. Optional and independent of
+  // normalMins/otMins (which drive payroll hours) — these are purely so the
+  // Activities Summary Gantt chart can place the entry on a timeline.
+  startMins  Int?
+  endMins    Int?
   remarks    String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
