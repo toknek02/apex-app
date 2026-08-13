@@ -69,31 +69,34 @@ export function RoleModal({ role, allPermissions, trigger }: { role?: Role; allP
           style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300 }}
           onClick={() => setOpen(false)}
         >
-          <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: '#fff', borderRadius: 10, padding: 24, width: 440 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{role ? 'Edit Role' : 'New Role'}</h2>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ backgroundColor: '#fff', borderRadius: 10, padding: 24, width: 440, maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}
+          >
+            <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 4, flexShrink: 0 }}>{role ? 'Edit Role' : 'New Role'}</h2>
             {locked && (
-              <p style={{ fontSize: 12, color: 'var(--apex-muted)', marginBottom: 16 }}>
+              <p style={{ fontSize: 12, color: 'var(--apex-muted)', marginBottom: 16, flexShrink: 0 }}>
                 This is a protected role and cannot be edited or deleted.
               </p>
             )}
 
             {error && (
-              <div style={{ marginTop: 12, marginBottom: 12, padding: '8px 12px', borderRadius: 6, backgroundColor: 'var(--apex-red-lt)', color: 'var(--apex-red)', fontSize: 12 }}>
+              <div style={{ marginTop: 12, marginBottom: 12, padding: '8px 12px', borderRadius: 6, backgroundColor: 'var(--apex-red-lt)', color: 'var(--apex-red)', fontSize: 12, flexShrink: 0 }}>
                 {error}
               </div>
             )}
 
-            <div style={{ marginTop: 16, marginBottom: 12 }}>
+            <div style={{ marginTop: 16, marginBottom: 12, flexShrink: 0 }}>
               <label style={labelStyle}>Name</label>
               <input style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} disabled={locked} />
             </div>
-            <div style={{ marginBottom: 16 }}>
+            <div style={{ marginBottom: 16, flexShrink: 0 }}>
               <label style={labelStyle}>Description</label>
               <input style={inputStyle} value={description ?? ''} onChange={(e) => setDescription(e.target.value)} disabled={locked} />
             </div>
 
-            <label style={labelStyle}>Permissions</label>
-            <div style={{ border: '1px solid var(--apex-border)', borderRadius: 6, padding: 10, marginBottom: 20 }}>
+            <label style={{ ...labelStyle, flexShrink: 0 }}>Permissions</label>
+            <div style={{ border: '1px solid var(--apex-border)', borderRadius: 6, padding: 10, marginBottom: 20, overflowY: 'auto', flex: '1 1 auto', minHeight: 0 }}>
               {allPermissions.map((p) => (
                 <label key={p.code} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '6px 2px' }}>
                   <input
@@ -111,7 +114,7 @@ export function RoleModal({ role, allPermissions, trigger }: { role?: Role; allP
               ))}
             </div>
 
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexShrink: 0 }}>
               <button onClick={() => setOpen(false)} style={{ padding: '8px 16px', border: '1px solid var(--apex-border)', backgroundColor: '#fff', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
                 {locked ? 'Close' : 'Cancel'}
               </button>
