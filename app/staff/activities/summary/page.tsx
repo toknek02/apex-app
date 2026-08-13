@@ -1,11 +1,12 @@
 import { Fragment } from 'react'
 import Link from 'next/link'
-import { requireUser, hasPermission } from '@/lib/rbac'
+import { requireUser } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import { ActivitiesTabs } from '@/components/staff/activities-tabs'
 import { GanttRangeControl } from '@/components/staff/gantt-range-control'
 import { DepartmentFilter } from '@/components/staff/department-filter'
+import { LeaveGroupFilter } from '@/components/staff/leave-group-filter'
 import { LEAVE_EVENT_TYPES } from '@/lib/timesheet-event-types'
 
 // Local calendar date, not UTC — toISOString() would roll back a day for any
@@ -70,7 +71,7 @@ function entryTitle(e: Entry) {
 export default async function ActivitiesSummaryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string; startHour?: string; endHour?: string; onlyWithEntries?: string; department?: string }>
+  searchParams: Promise<{ date?: string; startHour?: string; endHour?: string; onlyWithEntries?: string; department?: string; leaveGroup?: string }>
 }) {
   const user = await requireUser()
   const sp = await searchParams
@@ -100,26 +101,18 @@ export default async function ActivitiesSummaryPage({
   const nextDay = new Date(dayStart)
   nextDay.setDate(nextDay.getDate() + 1)
 
-  // Same tiering as the "Current" tab — company-wide whereabouts is only
-  // meaningful to someone with oversight responsibility.
-  const isPrivileged =
-    hasPermission(user, 'VIEW_TIMESHEET_REPORTS') ||
-    hasPermission(user, 'MANAGE_PROJECTS') ||
-    hasPermission(user, 'MANAGE_USERS')
-
-  const [allStaff, entries] = await Promise.all([
+  // Whereabouts visibility is open to everyone — narrow it down with the
+  // Department / Leave Group / "only with entries" filters below instead
+  // of gating the whole page behind a permission.
+  const [staff, entries, leaveGroups] = await Promise.all([
     prisma.user.findMany({ where: { isActive: true }, orderBy: [{ department: 'asc' }, { name: 'asc' }] }),
     prisma.timesheetEntry.findMany({
-      where: {
-        date: { gte: dayStart, lte: dayEnd },
-        ...(isPrivileged ? {} : { userId: user.id }),
-      },
+      where: { date: { gte: dayStart, lte: dayEnd } },
       include: { project: true },
       orderBy: { createdAt: 'asc' },
     }),
+    prisma.leaveGroup.findMany({ orderBy: { name: 'asc' }, select: { id: true, name: true } }),
   ])
-
-  const staff = isPrivileged ? allStaff : allStaff.filter((s) => s.id === user.id)
 
   const entriesByUser = new Map<string, Entry[]>()
   for (const e of entries) {
@@ -129,11 +122,13 @@ export default async function ActivitiesSummaryPage({
 
   const departments = [...new Set(staff.map((s) => s.department ?? 'UNASSIGNED'))].sort()
   const selectedDepartment = sp.department && departments.includes(sp.department) ? sp.department : ''
+  const selectedLeaveGroup = sp.leaveGroup && leaveGroups.some((g) => g.id === sp.leaveGroup) ? sp.leaveGroup : ''
 
   const onlyWithEntries = sp.onlyWithEntries === '1'
   const visibleStaff = staff
     .filter((s) => !onlyWithEntries || (entriesByUser.get(s.id)?.length ?? 0) > 0)
     .filter((s) => !selectedDepartment || (s.department ?? 'UNASSIGNED') === selectedDepartment)
+    .filter((s) => !selectedLeaveGroup || s.leaveGroupId === selectedLeaveGroup)
 
   const grouped = new Map<string, typeof staff>()
   for (const s of visibleStaff) {
@@ -149,8 +144,9 @@ export default async function ActivitiesSummaryPage({
   const hourQuery = (startHour !== DEFAULT_START_HOUR || endHour !== DEFAULT_END_HOUR) ? `&startHour=${startHour}&endHour=${endHour}` : ''
   const onlyQuery = onlyWithEntries ? '&onlyWithEntries=1' : ''
   const deptQuery = selectedDepartment ? `&department=${encodeURIComponent(selectedDepartment)}` : ''
-  const persistedQuery = `${hourQuery}${onlyQuery}${deptQuery}`
-  const toggleOnlyHref = `/staff/activities/summary?date=${ymd(selectedDate)}${hourQuery}${deptQuery}${onlyWithEntries ? '' : '&onlyWithEntries=1'}`
+  const groupQuery = selectedLeaveGroup ? `&leaveGroup=${encodeURIComponent(selectedLeaveGroup)}` : ''
+  const persistedQuery = `${hourQuery}${onlyQuery}${deptQuery}${groupQuery}`
+  const toggleOnlyHref = `/staff/activities/summary?date=${ymd(selectedDate)}${hourQuery}${deptQuery}${groupQuery}${onlyWithEntries ? '' : '&onlyWithEntries=1'}`
 
   return (
     <AppShell user={{ name: user.name ?? '', roleName: user.roleName, permissions: user.permissions }}>
@@ -187,6 +183,7 @@ export default async function ActivitiesSummaryPage({
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <DepartmentFilter departments={departments} selected={selectedDepartment} />
+          <LeaveGroupFilter leaveGroups={leaveGroups} selected={selectedLeaveGroup} />
           <GanttRangeControl startHour={startHour} endHour={endHour} />
         </div>
       </div>
@@ -214,7 +211,7 @@ export default async function ActivitiesSummaryPage({
             {grouped.size === 0 && (
               <tr>
                 <td colSpan={3} style={{ padding: '20px 14px', textAlign: 'center', fontSize: 12, fontStyle: 'italic', color: 'var(--apex-muted)' }}>
-                  {selectedDepartment ? `No staff in ${selectedDepartment} match the current filters.` : 'No staff have entries for this day.'}
+                  {selectedDepartment || selectedLeaveGroup ? 'No staff match the current filters.' : 'No staff have entries for this day.'}
                 </td>
               </tr>
             )}
