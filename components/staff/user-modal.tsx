@@ -15,7 +15,8 @@ const labelStyle: React.CSSProperties = { display: 'block', fontSize: 12, fontWe
 type User = {
   id: string
   name: string
-  email: string
+  username: string | null
+  email: string | null
   department: string | null
   designation: string | null
   roleId: string
@@ -32,6 +33,7 @@ export function UserModal({ user, roles, leaveGroups, trigger }: { user?: User; 
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState(user?.name ?? '')
+  const [username, setUsername] = useState(user?.username ?? '')
   const [email, setEmail] = useState(user?.email ?? '')
   const [password, setPassword] = useState('')
   const [department, setDepartment] = useState(user?.department ?? '')
@@ -46,8 +48,12 @@ export function UserModal({ user, roles, leaveGroups, trigger }: { user?: User; 
 
   async function handleSave() {
     setError('')
-    if (!name.trim() || (!user && !email.trim())) {
-      setError('Name and email are required')
+    if (!name.trim()) {
+      setError('Full Name is required')
+      return
+    }
+    if (!user && !username.trim()) {
+      setError('Name (used to log in) is required')
       return
     }
     if (!roleId) {
@@ -69,8 +75,8 @@ export function UserModal({ user, roles, leaveGroups, trigger }: { user?: User; 
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(
         user
-          ? { name, department, designation, roleId, isActive, hourlyRate, otRate, leaveGroupId, ...(password ? { password } : {}) }
-          : { name, email, password, department, designation, roleId, hourlyRate, otRate, leaveGroupId }
+          ? { name, username, email, department, designation, roleId, isActive, hourlyRate, otRate, leaveGroupId, ...(password ? { password } : {}) }
+          : { name, username, email, password, department, designation, roleId, hourlyRate, otRate, leaveGroupId }
       ),
     })
     setSaving(false)
@@ -105,17 +111,24 @@ export function UserModal({ user, roles, leaveGroups, trigger }: { user?: User; 
             )}
 
             <div style={{ marginBottom: 12 }}>
-              <label style={labelStyle}>Name</label>
+              <label style={labelStyle}>Full Name</label>
               <input style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} />
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <label style={labelStyle}>Name</label>
+              <input style={inputStyle} value={username} onChange={(e) => setUsername(e.target.value)} placeholder="e.g. azmi" />
+              <div style={{ fontSize: 11, color: 'var(--apex-muted)', marginTop: 5 }}>
+                Short name used to log in. Set once by HR/Admin.
+              </div>
             </div>
             <div style={{ marginBottom: 12 }}>
               <label style={labelStyle}>Email</label>
               <input
                 type="email"
-                style={{ ...inputStyle, ...(user ? { backgroundColor: 'var(--apex-row-alt)', color: 'var(--apex-muted)' } : {}) }}
+                style={inputStyle}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                disabled={Boolean(user)}
+                placeholder="Optional — can be added later"
               />
             </div>
             <div style={{ marginBottom: 12 }}>

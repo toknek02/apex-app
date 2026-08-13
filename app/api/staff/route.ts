@@ -29,8 +29,9 @@ export async function POST(req: NextRequest) {
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!hasPermission(session.user, 'MANAGE_USERS')) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { name, email, password, department, designation, roleId, hourlyRate, otRate, leaveGroupId } = await req.json()
-  if (!name || !email || !roleId) return NextResponse.json({ error: 'Name, email, and role are required' }, { status: 400 })
+  const { name, username, email, password, department, designation, roleId, hourlyRate, otRate, leaveGroupId } = await req.json()
+  if (!name || !username || !roleId) return NextResponse.json({ error: 'Full Name, Name, and role are required' }, { status: 400 })
+  if (/\s/.test(username)) return NextResponse.json({ error: 'Name (login) cannot contain spaces' }, { status: 400 })
   if (!password || password.length < 6) {
     return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 })
   }
@@ -41,8 +42,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Rates must be non-negative numbers' }, { status: 400 })
   }
 
-  const existing = await prisma.user.findUnique({ where: { email } })
-  if (existing) return NextResponse.json({ error: 'A user with this email already exists' }, { status: 409 })
+  const existingUsername = await prisma.user.findUnique({ where: { username } })
+  if (existingUsername) return NextResponse.json({ error: 'A user with this Name already exists' }, { status: 409 })
+
+  if (email) {
+    const existingEmail = await prisma.user.findUnique({ where: { email } })
+    if (existingEmail) return NextResponse.json({ error: 'A user with this email already exists' }, { status: 409 })
+  }
 
   const role = await prisma.role.findUnique({ where: { id: roleId } })
   if (!role) return NextResponse.json({ error: 'Role not found' }, { status: 400 })
@@ -56,7 +62,8 @@ export async function POST(req: NextRequest) {
   const user = await prisma.user.create({
     data: {
       name,
-      email,
+      username,
+      email: email || null,
       passwordHash,
       department: department || null,
       designation: designation || null,
@@ -65,7 +72,7 @@ export async function POST(req: NextRequest) {
       otRate: parsedOtRate.rate,
       leaveGroupId: leaveGroupId || null,
     },
-    select: { id: true, name: true, department: true, designation: true, roleId: true, role: { select: { name: true } }, leaveGroupId: true },
+    select: { id: true, name: true, username: true, department: true, designation: true, roleId: true, role: { select: { name: true } }, leaveGroupId: true },
   })
   await logAudit({
     actor: session.user,
@@ -73,7 +80,7 @@ export async function POST(req: NextRequest) {
     targetType: 'User',
     targetId: user.id,
     targetLabel: user.name,
-    metadata: { email, roleId, roleName: user.role.name },
+    metadata: { username, email, roleId, roleName: user.role.name },
   })
   return NextResponse.json({ user }, { status: 201 })
 }

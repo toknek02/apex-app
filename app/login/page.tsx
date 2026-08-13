@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { signIn } from 'next-auth/react'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -15,7 +15,7 @@ export default function LoginPage() {
     setError('')
     setLoading(true)
 
-    const result = await signIn('credentials', { email, password, redirect: false })
+    const result = await signIn('credentials', { identifier, password, redirect: false })
 
     setLoading(false)
 
@@ -24,7 +24,7 @@ export default function LoginPage() {
       return
     }
 
-    setError('Invalid email or password.')
+    setError('Invalid name/email or password.')
   }
 
   return (
@@ -70,16 +70,15 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 5 }}>Email</label>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 5 }}>Name or Email</label>
             <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="text"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
               required
               autoFocus
               autoComplete="username"
-              inputMode="email"
-              placeholder="you@apex.local"
+              placeholder="e.g. azmi"
               style={{
                 width: '100%',
                 padding: '12px',

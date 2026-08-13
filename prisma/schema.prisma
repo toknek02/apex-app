@@ -10,7 +10,13 @@ datasource db {
 model User {
   id              String   @id @default(cuid())
   name            String
-  email           String   @unique
+  // Short handle set by HR/Admin, used to log in — distinct from `name`
+  // (the full display name). Nullable so existing accounts created before
+  // this field existed keep working via email until an admin sets one.
+  username        String?  @unique
+  // Optional now — HR/Admin can create a new hire with just a Name and
+  // password, and add their email later from Staff Directory.
+  email           String?  @unique
   passwordHash    String
   department      String?
   designation     String?

@@ -65,17 +65,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     Credentials({
       name: 'credentials',
       credentials: {
-        email: { label: 'Email', type: 'email' },
+        identifier: { label: 'Name or Email', type: 'text' },
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null
+        if (!credentials?.identifier || !credentials?.password) return null
 
-        const email = credentials.email as string
+        const identifier = (credentials.identifier as string).trim()
         const password = credentials.password as string
 
-        const user = await prisma.user.findUnique({
-          where: { email },
+        // Login is by username (the short Name set by HR/Admin) going
+        // forward, but falls back to matching email too — accounts created
+        // before this field existed have no username yet and keep working
+        // via the email they already have.
+        const user = await prisma.user.findFirst({
+          where: { OR: [{ username: identifier }, { email: identifier }] },
           include: { role: { include: { rolePermissions: { include: { permission: true } } } } },
         })
         if (!user || !user.isActive) return null
