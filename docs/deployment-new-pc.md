@@ -96,11 +96,11 @@ derives the origin per-request, so login works whether it's reached via
 
 ---
 
-## 6. Bring in the database
+## 6. Bring in the database and uploaded files
 
 You have two options — pick based on whether the data on this dev PC (staff records,
-timesheet entries, LogBook events, etc.) is real data you want to keep, or just test
-data you're fine leaving behind.
+timesheet entries, LogBook events, announcement attachments, etc.) is real data you
+want to keep, or just test data you're fine leaving behind.
 
 ### Option A — carry over existing data (recommended if you've been testing real records)
 
@@ -110,15 +110,18 @@ On **this dev PC**, take a fresh backup:
 powershell -NoProfile -ExecutionPolicy Bypass -File "C:\APEX_APP\scripts\backup-db.ps1"
 ```
 
-This drops a `.dump` file in `C:\APEX_APP\backups\`. Copy the newest one to the new
-PC (USB drive, network share, whatever's easiest), then on the **new PC**:
+This drops a combined `apex_backup_<timestamp>.zip` in `C:\APEX_APP\backups\`,
+containing both the database dump and the uploaded-files `storage\` folder. Copy the
+newest one to the new PC (USB drive, network share, whatever's easiest), then on the
+**new PC**:
 
 ```powershell
 npx prisma migrate deploy
-& "C:\Program Files\PostgreSQL\18\bin\pg_restore.exe" -h localhost -U apex_user -d apex_db --clean --if-exists "C:\path\to\apex_db_<timestamp>.dump"
+powershell -NoProfile -ExecutionPolicy Bypass -File "C:\APEX_APP\scripts\restore-backup.ps1" -BackupFile "C:\path\to\apex_backup_<timestamp>.zip"
 ```
 
-(It'll prompt for the `apex_user` password you set in step 4.)
+(It'll prompt for confirmation, then for the `apex_user` password you set in step 4.)
+This restores both the database and the `storage\` folder — no separate file copy needed.
 
 ### Option B — start fresh
 

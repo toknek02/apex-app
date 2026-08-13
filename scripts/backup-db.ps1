@@ -1,12 +1,15 @@
-# Dumps the APEX Postgres database to backups/, and prunes dumps older than
+# Bundles a Postgres dump and the uploaded-files storage folder into a single
+# apex_backup_<timestamp>.zip in backups/, and prunes zips older than
 # $RetentionDays. Reads connection details from .env at runtime so no
-# credentials live in this script or in Task Scheduler.
+# credentials live in this script or in Task Scheduler. Restoring from one of
+# these zips is scripts\restore-backup.ps1.
 
 $ErrorActionPreference = 'Stop'
 $RetentionDays = 14
 $ProjectRoot = 'C:\APEX_APP'
 $PgBin = 'C:\Program Files\PostgreSQL\18\bin\pg_dump.exe'
 $BackupDir = Join-Path $ProjectRoot 'backups'
+$StorageDir = Join-Path $ProjectRoot 'storage'
 $LogFile = Join-Path $ProjectRoot 'scripts\service-logs\backup.log'
 
 New-Item -ItemType Directory -Force -Path $BackupDir | Out-Null
@@ -31,17 +34,25 @@ try {
   $dbName = $matches[5]
 
   $timestamp = (Get-Date).ToString('yyyyMMdd_HHmmss')
-  $outFile = Join-Path $BackupDir "apex_db_$timestamp.dump"
+  $dumpFile = Join-Path $BackupDir "apex_db_$timestamp.dump"
+  $zipFile = Join-Path $BackupDir "apex_backup_$timestamp.zip"
 
   $env:PGPASSWORD = $dbPassword
-  & $PgBin -h $dbHost -p $dbPort -U $dbUser -Fc -f $outFile $dbName
+  & $PgBin -h $dbHost -p $dbPort -U $dbUser -Fc -f $dumpFile $dbName
   Remove-Item Env:\PGPASSWORD
 
   if ($LASTEXITCODE -ne 0) { throw "pg_dump exited with code $LASTEXITCODE" }
-  Log "OK: backed up to $outFile ($((Get-Item $outFile).Length) bytes)"
+
+  # storage/ may not exist yet on a brand-new install with no uploads.
+  $pathsToZip = @($dumpFile)
+  if (Test-Path $StorageDir) { $pathsToZip += $StorageDir }
+  Compress-Archive -Path $pathsToZip -DestinationPath $zipFile -Force
+  Remove-Item $dumpFile -Force
+
+  Log "OK: backed up to $zipFile ($((Get-Item $zipFile).Length) bytes)"
 
   $cutoff = (Get-Date).AddDays(-$RetentionDays)
-  Get-ChildItem $BackupDir -Filter 'apex_db_*.dump' | Where-Object { $_.LastWriteTime -lt $cutoff } | ForEach-Object {
+  Get-ChildItem $BackupDir -Filter 'apex_backup_*.zip' | Where-Object { $_.LastWriteTime -lt $cutoff } | ForEach-Object {
     Remove-Item $_.FullName -Force
     Log "Pruned old backup: $($_.Name)"
   }
