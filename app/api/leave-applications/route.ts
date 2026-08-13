@@ -107,6 +107,6 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     application,
-    warning: directorId ? undefined : 'You are not assigned to a leave group yet, so only HR was notified — no director could be notified automatically.',
+    warning: directorId ? undefined : 'You are not assigned to a group yet, so only HR was notified — no director could be notified automatically.',
   }, { status: 201 })
 }

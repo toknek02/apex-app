@@ -31,7 +31,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   if (leaveGroupId) {
     const leaveGroup = await prisma.leaveGroup.findUnique({ where: { id: leaveGroupId } })
-    if (!leaveGroup) return NextResponse.json({ error: 'Leave group not found' }, { status: 400 })
+    if (!leaveGroup) return NextResponse.json({ error: 'Group not found' }, { status: 400 })
   }
 
   const parsedHourlyRate = hourlyRate !== undefined ? parseRate(hourlyRate) : undefined

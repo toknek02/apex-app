@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
 
   if (leaveGroupId) {
     const leaveGroup = await prisma.leaveGroup.findUnique({ where: { id: leaveGroupId } })
-    if (!leaveGroup) return NextResponse.json({ error: 'Leave group not found' }, { status: 400 })
+    if (!leaveGroup) return NextResponse.json({ error: 'Group not found' }, { status: 400 })
   }
 
   const passwordHash = await bcrypt.hash(password, 10)

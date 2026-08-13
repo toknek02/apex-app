@@ -145,7 +145,7 @@ export function UserModal({ user, roles, leaveGroups, trigger }: { user?: User; 
               </select>
             </div>
             <div style={{ marginBottom: 12 }}>
-              <label style={labelStyle}>Leave Group</label>
+              <label style={labelStyle}>Group</label>
               <select style={inputStyle} value={leaveGroupId} onChange={(e) => setLeaveGroupId(e.target.value)}>
                 <option value="">— None —</option>
                 {leaveGroups.map((g) => (

@@ -45,7 +45,7 @@ const SUB: Record<string, { href: string; label: string; requires?: PermissionCo
   system: [
     { href: '/system/venue', label: 'Venue' },
     { href: '/system/roles', label: 'Roles' },
-    { href: '/system/leave-groups', label: 'Leave Groups', requires: 'MANAGE_LEAVE_GROUPS' },
+    { href: '/system/leave-groups', label: 'Groups', requires: 'MANAGE_LEAVE_GROUPS' },
     { href: '/system/settings', label: 'Settings', requires: 'MANAGE_SETTINGS' },
     { href: '/system/password-resets', label: 'Password Resets', requires: 'MANAGE_USERS' },
     { href: '/system/audit', label: 'Audit Log', requires: 'VIEW_AUDIT_LOG' },
@@ -70,7 +70,7 @@ const SECTION_TITLES: Record<string, string> = {
   '/announcements/new': 'New Announcement',
   '/system/venue': 'Venue',
   '/system/roles': 'Roles',
-  '/system/leave-groups': 'Leave Groups',
+  '/system/leave-groups': 'Groups',
 }
 
 function Clock() {

@@ -31,6 +31,6 @@ export const PERMISSIONS: PermissionMeta[] = [
   { code: 'MANAGE_SETTINGS', label: 'Manage settings', description: 'Configure system-wide settings such as the office location used for attendance sign-in.' },
   { code: 'VIEW_AUDIT_LOG', label: 'View audit log', description: 'View the history of administrative actions: user, role, venue, project, and settings changes.' },
   { code: 'VIEW_ERROR_LOG', label: 'View error log', description: 'View server and browser errors captured by the application for troubleshooting.' },
-  { code: 'RECEIVE_HR_LEAVE_NOTIFICATIONS', label: 'Receive HR leave notifications', description: 'Get notified whenever any staff member applies for leave or has a leave application decided, regardless of leave group.' },
-  { code: 'MANAGE_LEAVE_GROUPS', label: 'Manage leave groups', description: 'Create leave groups and assign each one a director — the person who approves that group’s leave applications.' },
+  { code: 'RECEIVE_HR_LEAVE_NOTIFICATIONS', label: 'Receive HR leave notifications', description: 'Get notified whenever any staff member applies for leave or has a leave application decided, regardless of group.' },
+  { code: 'MANAGE_LEAVE_GROUPS', label: 'Manage groups', description: 'Create groups and assign each one a director — the person who approves that group’s leave applications.' },
 ]

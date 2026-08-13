@@ -18,9 +18,9 @@ export default async function LeaveGroupsPage() {
 
   return (
     <AppShell user={{ name: user.name ?? '', roleName: user.roleName, permissions: user.permissions }}>
-      <Breadcrumb items={['System', 'Leave Groups']} />
+      <Breadcrumb items={['System', 'Groups']} />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <h1 style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700 }}>Leave Groups</h1>
+        <h1 style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700 }}>Groups</h1>
         <LeaveGroupModal
           staff={staff}
           trigger={
@@ -50,7 +50,7 @@ export default async function LeaveGroupsPage() {
             {leaveGroups.length === 0 ? (
               <tr>
                 <td colSpan={4} style={{ padding: '20px 14px', textAlign: 'center', fontSize: 12, fontStyle: 'italic', color: 'var(--apex-muted)' }}>
-                  No leave groups yet.
+                  No groups yet.
                 </td>
               </tr>
             ) : (

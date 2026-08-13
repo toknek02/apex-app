@@ -65,7 +65,7 @@ export function LeaveGroupMembersModal({
           <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: '#fff', borderRadius: 10, padding: 24, width: 420, maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
             <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Members — {groupName}</h2>
             <p style={{ fontSize: 11, color: 'var(--apex-muted)', marginBottom: 12 }}>
-              A staff member checked in another group here will be moved into this one — everyone belongs to at most one leave group.
+              A staff member checked in another group here will be moved into this one — everyone belongs to at most one group.
             </p>
 
             {error && (

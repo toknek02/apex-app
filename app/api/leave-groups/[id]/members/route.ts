@@ -16,7 +16,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   const leaveGroup = await prisma.leaveGroup.findUnique({ where: { id }, include: { members: { select: { id: true, name: true } } } })
-  if (!leaveGroup) return NextResponse.json({ error: 'Leave group not found' }, { status: 404 })
+  if (!leaveGroup) return NextResponse.json({ error: 'Group not found' }, { status: 404 })
 
   const currentIds = new Set(leaveGroup.members.map((m) => m.id))
   const nextIds = new Set(memberIds)

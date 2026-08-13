@@ -24,7 +24,7 @@ export function LeaveGroupFilter({ leaveGroups, selected }: { leaveGroups: Leave
       onChange={(e) => handleChange(e.target.value)}
       style={{ padding: '5px 8px', border: '1px solid var(--apex-border)', borderRadius: 6, fontSize: 12 }}
     >
-      <option value="">All Leave Groups</option>
+      <option value="">All Groups</option>
       {leaveGroups.map((g) => (
         <option key={g.id} value={g.id}>{g.name}</option>
       ))}

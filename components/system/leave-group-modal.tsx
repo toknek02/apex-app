@@ -45,7 +45,7 @@ export function LeaveGroupModal({ leaveGroup, staff, trigger }: { leaveGroup?: L
       router.refresh()
     } else {
       const data = await res.json().catch(() => ({}))
-      setError(data.error ?? 'Failed to save leave group')
+      setError(data.error ?? 'Failed to save group')
     }
   }
 
@@ -61,7 +61,7 @@ export function LeaveGroupModal({ leaveGroup, staff, trigger }: { leaveGroup?: L
           onClick={() => setOpen(false)}
         >
           <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: '#fff', borderRadius: 10, padding: 24, width: 380 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>{leaveGroup ? 'Edit Leave Group' : 'New Leave Group'}</h2>
+            <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>{leaveGroup ? 'Edit Group' : 'New Group'}</h2>
 
             {error && (
               <div style={{ marginBottom: 12, padding: '8px 12px', borderRadius: 6, backgroundColor: 'var(--apex-red-lt)', color: 'var(--apex-red)', fontSize: 12 }}>

@@ -102,7 +102,7 @@ export default async function ActivitiesSummaryPage({
   nextDay.setDate(nextDay.getDate() + 1)
 
   // Whereabouts visibility is open to everyone — narrow it down with the
-  // Department / Leave Group / "only with entries" filters below instead
+  // Department / Group / "only with entries" filters below instead
   // of gating the whole page behind a permission.
   const [staff, entries, leaveGroups] = await Promise.all([
     prisma.user.findMany({ where: { isActive: true }, orderBy: [{ department: 'asc' }, { name: 'asc' }] }),
