@@ -69,7 +69,7 @@ function entryTitle(e: Entry) {
 export default async function ActivitiesSummaryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string; startHour?: string; endHour?: string }>
+  searchParams: Promise<{ date?: string; startHour?: string; endHour?: string; onlyWithEntries?: string }>
 }) {
   const user = await requireUser()
   const sp = await searchParams
@@ -126,8 +126,11 @@ export default async function ActivitiesSummaryPage({
     entriesByUser.get(e.userId)!.push(e)
   }
 
+  const onlyWithEntries = sp.onlyWithEntries === '1'
+  const visibleStaff = onlyWithEntries ? staff.filter((s) => (entriesByUser.get(s.id)?.length ?? 0) > 0) : staff
+
   const grouped = new Map<string, typeof staff>()
-  for (const s of staff) {
+  for (const s of visibleStaff) {
     const dept = s.department ?? 'UNASSIGNED'
     if (!grouped.has(dept)) grouped.set(dept, [])
     grouped.get(dept)!.push(s)
@@ -135,9 +138,12 @@ export default async function ActivitiesSummaryPage({
 
   const dateLabel = selectedDate.toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })
   const isToday = ymd(selectedDate) === ymd(today)
-  // Preserve the chosen chart range across day navigation, otherwise it'd
-  // silently reset to the 9-6 default every time you click Prev/Next Day.
+  // Preserve the chosen chart range and filter across day navigation,
+  // otherwise they'd silently reset every time you click Prev/Next Day.
   const hourQuery = (startHour !== DEFAULT_START_HOUR || endHour !== DEFAULT_END_HOUR) ? `&startHour=${startHour}&endHour=${endHour}` : ''
+  const onlyQuery = onlyWithEntries ? '&onlyWithEntries=1' : ''
+  const persistedQuery = `${hourQuery}${onlyQuery}`
+  const toggleOnlyHref = `/staff/activities/summary?date=${ymd(selectedDate)}${hourQuery}${onlyWithEntries ? '' : '&onlyWithEntries=1'}`
 
   return (
     <AppShell user={{ name: user.name ?? '', roleName: user.roleName, permissions: user.permissions }}>
@@ -145,11 +151,11 @@ export default async function ActivitiesSummaryPage({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
         <h1 style={{ fontFamily: 'Sora, sans-serif', fontSize: 18, fontWeight: 700 }}>WHEREABOUTS SUMMARY — {dateLabel}</h1>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <Link href={`/staff/activities/summary?date=${ymd(prevDay)}${hourQuery}`} style={navBtn}>&lt; Prev Day</Link>
+          <Link href={`/staff/activities/summary?date=${ymd(prevDay)}${persistedQuery}`} style={navBtn}>&lt; Prev Day</Link>
           {!isToday && (
-            <Link href={`/staff/activities/summary?date=${ymd(today)}${hourQuery}`} style={navBtn}>Today</Link>
+            <Link href={`/staff/activities/summary?date=${ymd(today)}${persistedQuery}`} style={navBtn}>Today</Link>
           )}
-          <Link href={`/staff/activities/summary?date=${ymd(nextDay)}${hourQuery}`} style={navBtn}>Next Day &gt;</Link>
+          <Link href={`/staff/activities/summary?date=${ymd(nextDay)}${persistedQuery}`} style={navBtn}>Next Day &gt;</Link>
         </div>
       </div>
 
@@ -168,6 +174,9 @@ export default async function ActivitiesSummaryPage({
             {label}
           </span>
         ))}
+        <Link href={toggleOnlyHref} style={{ fontSize: 11, color: onlyWithEntries ? 'var(--apex-accent)' : 'var(--apex-muted)', fontWeight: onlyWithEntries ? 700 : 400 }}>
+          {onlyWithEntries ? '✓ Only staff with entries' : 'Only staff with entries'}
+        </Link>
         </div>
         <GanttRangeControl startHour={startHour} endHour={endHour} />
       </div>
@@ -192,6 +201,13 @@ export default async function ActivitiesSummaryPage({
             </tr>
           </thead>
           <tbody>
+            {grouped.size === 0 && (
+              <tr>
+                <td colSpan={3} style={{ padding: '20px 14px', textAlign: 'center', fontSize: 12, fontStyle: 'italic', color: 'var(--apex-muted)' }}>
+                  No staff have entries for this day.
+                </td>
+              </tr>
+            )}
             {[...grouped.entries()].map(([dept, members]) => (
               <Fragment key={dept}>
                 <tr>
