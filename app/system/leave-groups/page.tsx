@@ -1,18 +1,19 @@
-import { Pencil } from 'lucide-react'
+import { Pencil, Users } from 'lucide-react'
 import { requirePermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import { LeaveGroupModal } from '@/components/system/leave-group-modal'
+import { LeaveGroupMembersModal } from '@/components/system/leave-group-members-modal'
 
 export default async function LeaveGroupsPage() {
   const user = await requirePermission('MANAGE_LEAVE_GROUPS')
 
   const [leaveGroups, staff] = await Promise.all([
     prisma.leaveGroup.findMany({
-      include: { director: { select: { id: true, name: true } }, _count: { select: { members: true } } },
+      include: { director: { select: { id: true, name: true } }, members: { select: { id: true } } },
       orderBy: { name: 'asc' },
     }),
-    prisma.user.findMany({ where: { isActive: true }, orderBy: { name: 'asc' }, select: { id: true, name: true } }),
+    prisma.user.findMany({ where: { isActive: true }, orderBy: { name: 'asc' }, select: { id: true, name: true, leaveGroupId: true } }),
   ])
 
   return (
@@ -31,7 +32,7 @@ export default async function LeaveGroupsPage() {
       </div>
       <p style={{ fontSize: 12, color: 'var(--apex-muted)', marginBottom: 16, maxWidth: 640 }}>
         Each group has one director, who approves or rejects leave applications from that group's members.
-        Assign staff to a group from their profile in the Staff Directory.
+        Click a group's member count to manage who's in it.
       </p>
 
       <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'hidden' }}>
@@ -57,9 +58,21 @@ export default async function LeaveGroupsPage() {
                 <tr key={g.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
                   <td style={{ padding: '9px 14px', fontSize: 12, fontWeight: 600 }}>{g.name}</td>
                   <td style={{ padding: '9px 14px', fontSize: 12 }}>{g.director.name}</td>
-                  <td style={{ padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>{g._count.members}</td>
                   <td style={{ padding: '9px 14px', fontSize: 12 }}>
-                    <LeaveGroupModal leaveGroup={g} staff={staff} trigger={<Pencil size={14} color="var(--apex-accent)" />} />
+                    <LeaveGroupMembersModal
+                      groupId={g.id}
+                      groupName={g.name}
+                      staff={staff}
+                      currentMemberIds={g.members.map((m) => m.id)}
+                      trigger={
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--apex-accent)', fontWeight: 600 }}>
+                          <Users size={13} /> {g.members.length}
+                        </span>
+                      }
+                    />
+                  </td>
+                  <td style={{ padding: '9px 14px', fontSize: 12 }}>
+                    <LeaveGroupModal leaveGroup={g} staff={staff.map((s) => ({ id: s.id, name: s.name }))} trigger={<Pencil size={14} color="var(--apex-accent)" />} />
                   </td>
                 </tr>
               ))
