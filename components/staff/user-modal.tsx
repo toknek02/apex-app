@@ -22,11 +22,13 @@ type User = {
   isActive: boolean
   hourlyRate?: number | null
   otRate?: number | null
+  leaveGroupId?: string | null
 }
 
 type RoleOption = { id: string; name: string }
+type LeaveGroupOption = { id: string; name: string }
 
-export function UserModal({ user, roles, trigger }: { user?: User; roles: RoleOption[]; trigger: React.ReactNode }) {
+export function UserModal({ user, roles, leaveGroups, trigger }: { user?: User; roles: RoleOption[]; leaveGroups: LeaveGroupOption[]; trigger: React.ReactNode }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState(user?.name ?? '')
@@ -38,6 +40,7 @@ export function UserModal({ user, roles, trigger }: { user?: User; roles: RoleOp
   const [isActive, setIsActive] = useState(user?.isActive ?? true)
   const [hourlyRate, setHourlyRate] = useState(user?.hourlyRate?.toString() ?? '')
   const [otRate, setOtRate] = useState(user?.otRate?.toString() ?? '')
+  const [leaveGroupId, setLeaveGroupId] = useState(user?.leaveGroupId ?? '')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -66,8 +69,8 @@ export function UserModal({ user, roles, trigger }: { user?: User; roles: RoleOp
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(
         user
-          ? { name, department, designation, roleId, isActive, hourlyRate, otRate, ...(password ? { password } : {}) }
-          : { name, email, password, department, designation, roleId, hourlyRate, otRate }
+          ? { name, department, designation, roleId, isActive, hourlyRate, otRate, leaveGroupId, ...(password ? { password } : {}) }
+          : { name, email, password, department, designation, roleId, hourlyRate, otRate, leaveGroupId }
       ),
     })
     setSaving(false)
@@ -138,6 +141,15 @@ export function UserModal({ user, roles, trigger }: { user?: User; roles: RoleOp
               <select style={inputStyle} value={roleId} onChange={(e) => setRoleId(e.target.value)}>
                 {roles.map((r) => (
                   <option key={r.id} value={r.id}>{r.name}</option>
+                ))}
+              </select>
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <label style={labelStyle}>Leave Group</label>
+              <select style={inputStyle} value={leaveGroupId} onChange={(e) => setLeaveGroupId(e.target.value)}>
+                <option value="">— None —</option>
+                {leaveGroups.map((g) => (
+                  <option key={g.id} value={g.id}>{g.name}</option>
                 ))}
               </select>
             </div>

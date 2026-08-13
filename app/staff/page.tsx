@@ -14,13 +14,14 @@ export default async function StaffPage() {
   const endOfDay = new Date(now)
   endOfDay.setHours(23, 59, 59, 999)
 
-  const [staff, roles, openRecords, todaysAttendance] = await Promise.all([
+  const [staff, roles, leaveGroups, openRecords, todaysAttendance] = await Promise.all([
     prisma.user.findMany({
       where: canManageUsers ? {} : { isActive: true },
       include: { role: true },
       orderBy: [{ department: 'asc' }, { name: 'asc' }],
     }),
     canManageUsers ? prisma.role.findMany({ orderBy: { name: 'asc' } }) : Promise.resolve([]),
+    canManageUsers ? prisma.leaveGroup.findMany({ orderBy: { name: 'asc' } }) : Promise.resolve([]),
     prisma.signInRecord.findMany({ where: { signOutAt: null } }),
     prisma.eventAttendee.findMany({
       where: { event: { date: { gte: startOfDay, lte: endOfDay } } },
@@ -60,6 +61,7 @@ export default async function StaffPage() {
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
           <UserModal
             roles={roles}
+            leaveGroups={leaveGroups}
             trigger={
               <span style={{ padding: '8px 16px', backgroundColor: 'var(--apex-accent)', color: '#fff', borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
                 New Staff
@@ -119,8 +121,9 @@ export default async function StaffPage() {
                       {canManageUsers && (
                         <td style={{ padding: '9px 14px', fontSize: 12 }}>
                           <UserModal
-                            user={{ id: m.id, name: m.name, email: m.email, department: m.department, designation: m.designation, roleId: m.roleId, isActive: m.isActive, hourlyRate: m.hourlyRate, otRate: m.otRate }}
+                            user={{ id: m.id, name: m.name, email: m.email, department: m.department, designation: m.designation, roleId: m.roleId, isActive: m.isActive, hourlyRate: m.hourlyRate, otRate: m.otRate, leaveGroupId: m.leaveGroupId }}
                             roles={roles}
+                            leaveGroups={leaveGroups}
                             trigger={<Pencil size={14} color="var(--apex-accent)" />}
                           />
                         </td>

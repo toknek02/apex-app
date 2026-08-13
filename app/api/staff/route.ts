@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!hasPermission(session.user, 'MANAGE_USERS')) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { name, email, password, department, designation, roleId, hourlyRate, otRate } = await req.json()
+  const { name, email, password, department, designation, roleId, hourlyRate, otRate, leaveGroupId } = await req.json()
   if (!name || !email || !roleId) return NextResponse.json({ error: 'Name, email, and role are required' }, { status: 400 })
   if (!password || password.length < 6) {
     return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 })
@@ -47,6 +47,11 @@ export async function POST(req: NextRequest) {
   const role = await prisma.role.findUnique({ where: { id: roleId } })
   if (!role) return NextResponse.json({ error: 'Role not found' }, { status: 400 })
 
+  if (leaveGroupId) {
+    const leaveGroup = await prisma.leaveGroup.findUnique({ where: { id: leaveGroupId } })
+    if (!leaveGroup) return NextResponse.json({ error: 'Leave group not found' }, { status: 400 })
+  }
+
   const passwordHash = await bcrypt.hash(password, 10)
   const user = await prisma.user.create({
     data: {
@@ -58,8 +63,9 @@ export async function POST(req: NextRequest) {
       roleId,
       hourlyRate: parsedHourlyRate.rate,
       otRate: parsedOtRate.rate,
+      leaveGroupId: leaveGroupId || null,
     },
-    select: { id: true, name: true, department: true, designation: true, roleId: true, role: { select: { name: true } } },
+    select: { id: true, name: true, department: true, designation: true, roleId: true, role: { select: { name: true } }, leaveGroupId: true },
   })
   await logAudit({
     actor: session.user,

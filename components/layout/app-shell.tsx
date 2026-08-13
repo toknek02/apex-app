@@ -7,6 +7,7 @@ import { signOut } from 'next-auth/react'
 import { LayoutDashboard, BookOpen, Users, Settings, Megaphone, LogOut, ChevronLeft, ChevronRight, Menu, X } from 'lucide-react'
 import type { PermissionCode } from '@/lib/permissions'
 import { SignInStatusPill } from '@/components/layout/sign-in-status-pill'
+import { NotificationBell } from '@/components/layout/notification-bell'
 
 type NavUser = {
   name: string
@@ -25,7 +26,7 @@ const NAV: {
   { key: 'logbook', href: '/logbook', label: 'LogBook', Icon: BookOpen },
   { key: 'staff', href: '/staff', label: 'Staff', Icon: Users },
   { key: 'announcements', href: '/announcements', label: 'Announcements', Icon: Megaphone },
-  { key: 'system', href: '/system', label: 'System', Icon: Settings, requiresAnyOf: ['MANAGE_USERS', 'MANAGE_ROLES', 'MANAGE_VENUES', 'MANAGE_PROJECTS', 'MANAGE_SETTINGS', 'VIEW_AUDIT_LOG', 'VIEW_ERROR_LOG'] },
+  { key: 'system', href: '/system', label: 'System', Icon: Settings, requiresAnyOf: ['MANAGE_USERS', 'MANAGE_ROLES', 'MANAGE_VENUES', 'MANAGE_PROJECTS', 'MANAGE_SETTINGS', 'VIEW_AUDIT_LOG', 'VIEW_ERROR_LOG', 'MANAGE_LEAVE_GROUPS'] },
 ]
 
 const SUB: Record<string, { href: string; label: string; requires?: PermissionCode }[]> = {
@@ -38,11 +39,13 @@ const SUB: Record<string, { href: string; label: string; requires?: PermissionCo
     { href: '/staff', label: 'Directory' },
     { href: '/staff/timesheet', label: 'Timesheet' },
     { href: '/staff/activities', label: 'Activities' },
+    { href: '/staff/leave', label: 'Leave' },
     { href: '/staff/project', label: 'Project', requires: 'MANAGE_PROJECTS' },
   ],
   system: [
     { href: '/system/venue', label: 'Venue' },
     { href: '/system/roles', label: 'Roles' },
+    { href: '/system/leave-groups', label: 'Leave Groups', requires: 'MANAGE_LEAVE_GROUPS' },
     { href: '/system/settings', label: 'Settings', requires: 'MANAGE_SETTINGS' },
     { href: '/system/password-resets', label: 'Password Resets', requires: 'MANAGE_USERS' },
     { href: '/system/audit', label: 'Audit Log', requires: 'VIEW_AUDIT_LOG' },
@@ -59,12 +62,14 @@ const SECTION_TITLES: Record<string, string> = {
   '/staff/timesheet': 'Timesheet',
   '/staff/activities': 'Activities',
   '/staff/activities/summary': 'Activities Summary',
+  '/staff/leave': 'Leave',
   '/staff/project': 'Project',
   '/staff/project/archive': 'Project Archive',
   '/announcements': 'Announcements',
   '/announcements/new': 'New Announcement',
   '/system/venue': 'Venue',
   '/system/roles': 'Roles',
+  '/system/leave-groups': 'Leave Groups',
 }
 
 function Clock() {
@@ -133,6 +138,7 @@ function Header({
       <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
         {!isMobile && <Clock />}
         <SignInStatusPill isMobile={isMobile} />
+        <NotificationBell />
         <div
           style={{
             display: 'flex',

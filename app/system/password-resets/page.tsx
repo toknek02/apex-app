@@ -8,12 +8,13 @@ import { PasswordResetActions } from '@/components/system/password-reset-actions
 export default async function PasswordResetsPage() {
   const user = await requirePermission('MANAGE_USERS')
 
-  const [pending, roles] = await Promise.all([
+  const [pending, roles, leaveGroups] = await Promise.all([
     prisma.passwordResetRequest.findMany({
       where: { status: 'pending' },
       orderBy: { createdAt: 'asc' },
     }),
     prisma.role.findMany({ orderBy: { name: 'asc' } }),
+    prisma.leaveGroup.findMany({ orderBy: { name: 'asc' } }),
   ])
 
   const userIds = pending.map((r) => r.userId).filter((id): id is string => Boolean(id))
@@ -63,8 +64,9 @@ export default async function PasswordResetsPage() {
                   <td style={{ padding: '9px 14px', fontSize: 12 }}>
                     {matched && (
                       <UserModal
-                        user={{ id: matched.id, name: matched.name, email: matched.email, department: matched.department, designation: matched.designation, roleId: matched.roleId, isActive: matched.isActive, hourlyRate: matched.hourlyRate, otRate: matched.otRate }}
+                        user={{ id: matched.id, name: matched.name, email: matched.email, department: matched.department, designation: matched.designation, roleId: matched.roleId, isActive: matched.isActive, hourlyRate: matched.hourlyRate, otRate: matched.otRate, leaveGroupId: matched.leaveGroupId }}
                         roles={roles}
+                        leaveGroups={leaveGroups}
                         trigger={
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--apex-accent)', fontWeight: 600 }}>
                             <Pencil size={13} /> Reset

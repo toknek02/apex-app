@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { EVENT_TYPES } from '@/lib/timesheet-event-types'
+import { SELF_SERVICE_EVENT_TYPES } from '@/lib/timesheet-event-types'
 import { STAGES } from '@/lib/logbook-stages'
 import { TASKS } from '@/lib/logbook-tasks'
 
@@ -29,7 +29,7 @@ export function TimesheetEntryForm({ projects }: { projects: Project[] }) {
   const today = new Date().toISOString().slice(0, 10)
 
   const [date, setDate] = useState(today)
-  const [eventType, setEventType] = useState(EVENT_TYPES[0])
+  const [eventType, setEventType] = useState(SELF_SERVICE_EVENT_TYPES[0])
   const [projectId, setProjectId] = useState('')
   const [stage, setStage] = useState('')
   const [task, setTask] = useState('')
@@ -109,10 +109,13 @@ export function TimesheetEntryForm({ projects }: { projects: Project[] }) {
         <div>
           <label style={labelStyle}>Event Type<Required /></label>
           <select style={inputStyle} value={eventType} onChange={(e) => setEventType(e.target.value)}>
-            {EVENT_TYPES.map((t) => (
+            {SELF_SERVICE_EVENT_TYPES.map((t) => (
               <option key={t} value={t}>{t}</option>
             ))}
           </select>
+          <div style={{ fontSize: 11, color: 'var(--apex-muted)', marginTop: 5 }}>
+            Applying for leave? Use <a href="/staff/leave/new" style={{ color: 'var(--apex-accent)' }}>Staff → Leave</a> instead — it goes to your director for approval.
+          </div>
         </div>
       </div>
 
@@ -155,7 +158,7 @@ export function TimesheetEntryForm({ projects }: { projects: Project[] }) {
         </div>
       </div>
       <div style={{ fontSize: 11, color: 'var(--apex-muted)', marginTop: -12, marginBottom: 16 }}>
-        Optional — set both to show this entry on the Activities Summary timeline. Leave blank for whole-day entries like Leave.
+        Optional — set both to show this entry on the Activities Summary timeline.
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>

@@ -31,8 +31,68 @@ model User {
   timesheetEntries   TimesheetEntry[]
   projectMemberships ProjectMember[]
 
+  // Leave approval groups: each employee belongs to at most one group, and
+  // a group's director is whoever approves/rejects that group's leave
+  // applications. Kept independent of `department` on purpose — a
+  // director's reports don't necessarily match a department boundary.
+  leaveGroupId          String?
+  leaveGroup            LeaveGroup?        @relation("LeaveGroupMembers", fields: [leaveGroupId], references: [id])
+  directedLeaveGroups   LeaveGroup[]       @relation("LeaveGroupDirector")
+  leaveApplications     LeaveApplication[] @relation("LeaveApplicant")
+  reviewedLeaveApplications LeaveApplication[] @relation("LeaveReviewer")
+  notifications         Notification[]
+
   @@index([department])
   @@index([roleId])
+  @@index([leaveGroupId])
+}
+
+model LeaveGroup {
+  id         String   @id @default(cuid())
+  name       String   @unique
+  directorId String
+  director   User     @relation("LeaveGroupDirector", fields: [directorId], references: [id])
+  members    User[]   @relation("LeaveGroupMembers")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model LeaveApplication {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation("LeaveApplicant", fields: [userId], references: [id])
+  leaveType      String
+  startDate      DateTime
+  endDate        DateTime
+  reason         String?
+  // PENDING | APPROVED | REJECTED
+  status         String    @default("PENDING")
+  reviewedById   String?
+  reviewedByName String?
+  reviewRemarks  String?
+  reviewedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  reviewedBy User? @relation("LeaveReviewer", fields: [reviewedById], references: [id])
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String
+  title     String
+  body      String?
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+  @@index([createdAt])
 }
 
 model Role {

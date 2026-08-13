@@ -1,0 +1,131 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { LEAVE_EVENT_TYPES } from '@/lib/timesheet-event-types'
+
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '8px 10px',
+  border: '1px solid var(--apex-border)',
+  borderRadius: 6,
+  fontSize: 13,
+}
+const labelStyle: React.CSSProperties = { display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 5 }
+
+function Required() {
+  return <span style={{ color: 'var(--apex-red)' }}> *</span>
+}
+
+export function LeaveApplicationForm() {
+  const router = useRouter()
+  const today = new Date().toISOString().slice(0, 10)
+
+  const [leaveType, setLeaveType] = useState(LEAVE_EVENT_TYPES[0])
+  const [startDate, setStartDate] = useState(today)
+  const [endDate, setEndDate] = useState(today)
+  const [reason, setReason] = useState('')
+  const [errors, setErrors] = useState<string[]>([])
+  const [warning, setWarning] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const missing: string[] = []
+    if (!startDate) missing.push('Start Date')
+    if (!endDate) missing.push('End Date')
+    if (startDate && endDate && endDate < startDate) missing.push('End Date must be on or after Start Date')
+    setErrors(missing)
+    if (missing.length > 0) return
+
+    setSubmitting(true)
+    const res = await fetch('/api/leave-applications', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ leaveType, startDate, endDate, reason }),
+    })
+    setSubmitting(false)
+    if (res.ok) {
+      const data = await res.json()
+      if (data.warning) {
+        setWarning(data.warning)
+        setTimeout(() => {
+          router.push('/staff/leave')
+          router.refresh()
+        }, 2500)
+      } else {
+        router.push('/staff/leave')
+        router.refresh()
+      }
+    } else {
+      const data = await res.json().catch(() => ({}))
+      setErrors([data.error ?? 'Failed to submit leave application'])
+    }
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 24, maxWidth: 560, margin: '0 auto' }}
+    >
+      {errors.length > 0 && (
+        <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 6, backgroundColor: 'var(--apex-red-lt)', color: 'var(--apex-red)', fontSize: 12 }}>
+          Please fill in: {errors.join(', ')}
+        </div>
+      )}
+      {warning && (
+        <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 6, backgroundColor: 'var(--apex-accent-lt)', color: 'var(--apex-accent)', fontSize: 12 }}>
+          Application submitted. {warning}
+        </div>
+      )}
+
+      <div style={{ marginBottom: 16 }}>
+        <label style={labelStyle}>Leave Type<Required /></label>
+        <select style={inputStyle} value={leaveType} onChange={(e) => setLeaveType(e.target.value)}>
+          {LEAVE_EVENT_TYPES.map((t) => (
+            <option key={t} value={t}>{t}</option>
+          ))}
+        </select>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+        <div>
+          <label style={labelStyle}>Start Date<Required /></label>
+          <input type="date" style={inputStyle} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+        </div>
+        <div>
+          <label style={labelStyle}>End Date<Required /></label>
+          <input type="date" style={inputStyle} value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 20 }}>
+        <label style={labelStyle}>Reason</label>
+        <textarea
+          style={{ ...inputStyle, minHeight: 70, resize: 'vertical', fontFamily: 'inherit' }}
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="Optional — visible to your director and HR"
+        />
+      </div>
+
+      <button
+        type="submit"
+        disabled={submitting}
+        style={{
+          padding: '10px 22px',
+          backgroundColor: 'var(--apex-navy)',
+          color: '#fff',
+          border: 'none',
+          borderRadius: 6,
+          fontSize: 13,
+          fontWeight: 600,
+          cursor: submitting ? 'not-allowed' : 'pointer',
+          opacity: submitting ? 0.6 : 1,
+        }}
+      >
+        {submitting ? 'Submitting…' : 'Submit Application'}
+      </button>
+    </form>
+  )
+}

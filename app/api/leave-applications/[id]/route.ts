@@ -1,0 +1,89 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@/lib/auth'
+import { hasPermission } from '@/lib/rbac'
+import { prisma } from '@/lib/prisma'
+import { logAudit } from '@/lib/audit'
+import { notifyUsers } from '@/lib/notifications'
+import { enumerateDaysInclusive } from '@/lib/date-utils'
+
+async function getHrRecipientIds(excludeUserId?: string) {
+  const hrUsers = await prisma.user.findMany({
+    where: { isActive: true, role: { rolePermissions: { some: { permission: { code: 'RECEIVE_HR_LEAVE_NOTIFICATIONS' } } } } },
+    select: { id: true },
+  })
+  return hrUsers.map((u) => u.id).filter((id) => id !== excludeUserId)
+}
+
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth()
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { id } = await params
+  const { status, reviewRemarks } = await req.json()
+  if (status !== 'APPROVED' && status !== 'REJECTED') {
+    return NextResponse.json({ error: 'Status must be APPROVED or REJECTED' }, { status: 400 })
+  }
+
+  const application = await prisma.leaveApplication.findUnique({
+    where: { id },
+    include: { user: { include: { leaveGroup: { select: { directorId: true } } } } },
+  })
+  if (!application) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  if (application.status !== 'PENDING') {
+    return NextResponse.json({ error: 'This application has already been decided' }, { status: 409 })
+  }
+  // Approval authority is whoever directs the applicant's leave group — not
+  // a permission. Only the Administrator escape hatch (MANAGE_LEAVE_GROUPS)
+  // can also act, for cases where a group's director is unavailable.
+  const isDirector = application.user.leaveGroup?.directorId === session.user.id
+  const isOverride = hasPermission(session.user, 'MANAGE_LEAVE_GROUPS')
+  if (!isDirector && !isOverride) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const updated = await prisma.leaveApplication.update({
+    where: { id },
+    data: {
+      status,
+      reviewedById: session.user.id,
+      reviewedByName: session.user.name,
+      reviewedAt: new Date(),
+      reviewRemarks: reviewRemarks || null,
+    },
+  })
+
+  if (status === 'APPROVED') {
+    const days = enumerateDaysInclusive(application.startDate, application.endDate)
+    await prisma.timesheetEntry.createMany({
+      data: days.map((date) => ({
+        userId: application.userId,
+        date,
+        eventType: application.leaveType,
+        normalMins: 0,
+        otMins: 0,
+        remarks: application.reason ?? 'Approved leave application',
+      })),
+    })
+  }
+
+  await logAudit({
+    actor: session.user,
+    action: status === 'APPROVED' ? 'leave_application.approve' : 'leave_application.reject',
+    targetType: 'LeaveApplication',
+    targetId: application.id,
+    targetLabel: application.user.name,
+    metadata: { leaveType: application.leaveType, startDate: application.startDate, endDate: application.endDate, reviewRemarks },
+  })
+
+  const hrIds = await getHrRecipientIds(session.user.id)
+  await notifyUsers([application.userId, ...hrIds], {
+    type: status === 'APPROVED' ? 'leave_application.approved' : 'leave_application.rejected',
+    title: status === 'APPROVED'
+      ? `Your ${application.leaveType} application was approved`
+      : `Your ${application.leaveType} application was rejected`,
+    body: reviewRemarks || undefined,
+    link: '/staff/leave',
+  })
+
+  return NextResponse.json({ application: updated })
+}

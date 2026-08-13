@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { EVENT_TYPES } from '@/lib/timesheet-event-types'
+import { EVENT_TYPES, LEAVE_EVENT_TYPES } from '@/lib/timesheet-event-types'
 import { STAGES } from '@/lib/logbook-stages'
 import { TASKS } from '@/lib/logbook-tasks'
 import { buildTimesheetWorkbook } from '@/lib/timesheet-export'
@@ -99,6 +99,12 @@ export async function POST(request: Request) {
 
   if (!date || !eventType || !EVENT_TYPES.includes(eventType)) {
     return NextResponse.json({ error: 'Missing or invalid required fields' }, { status: 400 })
+  }
+  // Leave entries can only be created by the leave-application approval flow
+  // (POST /api/leave-applications -> approve), not logged directly here —
+  // otherwise leave would bypass the director approval step entirely.
+  if (LEAVE_EVENT_TYPES.includes(eventType)) {
+    return NextResponse.json({ error: 'Leave must be requested via Staff → Leave, not logged directly on the timesheet' }, { status: 400 })
   }
   const hasStart = startMins !== null && startMins !== undefined && startMins !== ''
   const hasEnd = endMins !== null && endMins !== undefined && endMins !== ''
