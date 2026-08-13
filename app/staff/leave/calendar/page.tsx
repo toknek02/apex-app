@@ -8,19 +8,28 @@ import { LeaveCalendarMonthPicker } from '@/components/staff/leave-calendar-mont
 import { enumerateDaysInclusive } from '@/lib/date-utils'
 import { LEAVE_EVENT_TYPES } from '@/lib/timesheet-event-types'
 
+// 13 categories need more than a single-letter alphabet and the app's
+// handful of semantic --apex- colors can distinguish, so this is its own
+// qualitative palette (colors chosen for mutual distinctness, not tied to
+// error/success semantics elsewhere in the app).
+const LEAVE_TYPE_META: Record<string, { code: string; color: string }> = {
+  'Annual Leave': { code: 'AL', color: '#4263eb' },
+  'Medical Leave (MC)': { code: 'MC', color: '#e03131' },
+  'Emergency Leave': { code: 'EL', color: '#862e9c' },
+  'Unpaid Leave': { code: 'UL', color: '#495057' },
+  'Marriage Leave': { code: 'MR', color: '#e64980' },
+  'Maternity Leave': { code: 'MT', color: '#d9a441' },
+  'Paternity Leave': { code: 'PT', color: '#ff8787' },
+  'Compassionate Leave': { code: 'CL', color: '#1a1a1a' },
+  'Study/Exam Leave': { code: 'SE', color: '#adb5bd' },
+  'Business Leave': { code: 'BL', color: '#1c7ed6' },
+  'Time-off': { code: 'TO', color: '#12b886' },
+  'Hospitalisation Leave': { code: 'HL', color: '#fa5252' },
+  'Seminar Leave': { code: 'SM', color: '#2b8a3e' },
+}
+
 function leaveTypeMeta(leaveType: string) {
-  switch (leaveType) {
-    case 'Annual Leave':
-      return { letter: 'A', color: 'var(--apex-accent)' }
-    case 'Medical Leave (MC)':
-      return { letter: 'M', color: 'var(--apex-red)' }
-    case 'Emergency Leave':
-      return { letter: 'E', color: 'var(--apex-navy)' }
-    case 'Unpaid Leave':
-      return { letter: 'U', color: 'var(--apex-muted)' }
-    default:
-      return { letter: '?', color: 'var(--apex-muted)' }
-  }
+  return LEAVE_TYPE_META[leaveType] ?? { code: '??', color: 'var(--apex-muted)' }
 }
 
 export default async function LeaveCalendarPage({
@@ -123,7 +132,7 @@ export default async function LeaveCalendarPage({
               {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
                 const isToday = isCurrentMonth && today.getDate() === day
                 return (
-                  <th key={day} style={{ ...thStyle, backgroundColor: isToday ? 'var(--apex-accent)' : 'var(--apex-tbl-hdr)', minWidth: 26 }}>
+                  <th key={day} style={{ ...thStyle, backgroundColor: isToday ? 'var(--apex-accent)' : 'var(--apex-tbl-hdr)', minWidth: 32 }}>
                     {day}
                   </th>
                 )
@@ -151,7 +160,7 @@ export default async function LeaveCalendarPage({
                         if (!app) {
                           return <td key={day} style={{ ...tdStyle, backgroundColor: isToday ? 'var(--apex-accent-lt)' : undefined }} />
                         }
-                        const { letter, color } = leaveTypeMeta(app.leaveType)
+                        const { code, color } = leaveTypeMeta(app.leaveType)
                         const isPending = app.status === 'PENDING'
                         return (
                           <td key={day} style={{ ...tdStyle, backgroundColor: isToday ? 'var(--apex-accent-lt)' : undefined, padding: 3 }}>
@@ -161,17 +170,17 @@ export default async function LeaveCalendarPage({
                                 display: 'inline-flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                width: 20,
+                                width: 26,
                                 height: 20,
                                 borderRadius: 4,
-                                fontSize: 10,
+                                fontSize: 9,
                                 fontWeight: 700,
                                 color: isPending ? color : '#fff',
                                 backgroundColor: isPending ? '#fff' : color,
                                 border: isPending ? `1.5px dashed ${color}` : 'none',
                               }}
                             >
-                              {letter}
+                              {code}
                             </span>
                           </td>
                         )
@@ -187,11 +196,11 @@ export default async function LeaveCalendarPage({
 
       <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginTop: 12, flexWrap: 'wrap', fontSize: 11, color: 'var(--apex-muted)' }}>
         {LEAVE_EVENT_TYPES.map((t) => {
-          const { letter, color } = leaveTypeMeta(t)
+          const { code, color } = leaveTypeMeta(t)
           return (
             <span key={t} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 16, height: 16, borderRadius: 4, fontSize: 9, fontWeight: 700, color: '#fff', backgroundColor: color }}>
-                {letter}
+              <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 16, borderRadius: 4, fontSize: 8, fontWeight: 700, color: '#fff', backgroundColor: color }}>
+                {code}
               </span>
               {t}
             </span>
