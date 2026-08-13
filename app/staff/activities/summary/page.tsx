@@ -4,6 +4,7 @@ import { requireUser, hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import { ActivitiesTabs } from '@/components/staff/activities-tabs'
+import { GanttRangeControl } from '@/components/staff/gantt-range-control'
 import { LEAVE_EVENT_TYPES } from '@/lib/timesheet-event-types'
 
 // Local calendar date, not UTC — toISOString() would roll back a day for any
@@ -16,10 +17,8 @@ function ymd(d: Date) {
   return `${y}-${m}-${day}`
 }
 
-const GANTT_START = 9 * 60 // 9am
-const GANTT_END = 18 * 60 // 6pm
-const GANTT_SPAN = GANTT_END - GANTT_START
-const HOUR_TICKS = Array.from({ length: 10 }, (_, i) => 9 + i) // 9..18
+const DEFAULT_START_HOUR = 9
+const DEFAULT_END_HOUR = 18
 
 function formatHour(h: number) {
   const period = h < 12 || h === 24 ? 'am' : 'pm'
@@ -70,10 +69,19 @@ function entryTitle(e: Entry) {
 export default async function ActivitiesSummaryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string }>
+  searchParams: Promise<{ date?: string; startHour?: string; endHour?: string }>
 }) {
   const user = await requireUser()
   const sp = await searchParams
+
+  const parsedStartHour = Number(sp.startHour)
+  const parsedEndHour = Number(sp.endHour)
+  const startHour = Number.isInteger(parsedStartHour) && parsedStartHour >= 0 && parsedStartHour < 24 ? parsedStartHour : DEFAULT_START_HOUR
+  const endHour = Number.isInteger(parsedEndHour) && parsedEndHour > startHour && parsedEndHour <= 24 ? parsedEndHour : DEFAULT_END_HOUR
+  const GANTT_START = startHour * 60
+  const GANTT_END = endHour * 60
+  const GANTT_SPAN = GANTT_END - GANTT_START
+  const HOUR_TICKS = Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i)
 
   const today = new Date()
   // Parse date-only query params as local calendar components, not via
@@ -127,6 +135,9 @@ export default async function ActivitiesSummaryPage({
 
   const dateLabel = selectedDate.toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })
   const isToday = ymd(selectedDate) === ymd(today)
+  // Preserve the chosen chart range across day navigation, otherwise it'd
+  // silently reset to the 9-6 default every time you click Prev/Next Day.
+  const hourQuery = (startHour !== DEFAULT_START_HOUR || endHour !== DEFAULT_END_HOUR) ? `&startHour=${startHour}&endHour=${endHour}` : ''
 
   return (
     <AppShell user={{ name: user.name ?? '', roleName: user.roleName, permissions: user.permissions }}>
@@ -134,17 +145,18 @@ export default async function ActivitiesSummaryPage({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
         <h1 style={{ fontFamily: 'Sora, sans-serif', fontSize: 18, fontWeight: 700 }}>WHEREABOUTS SUMMARY — {dateLabel}</h1>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <Link href={`/staff/activities/summary?date=${ymd(prevDay)}`} style={navBtn}>&lt; Prev Day</Link>
+          <Link href={`/staff/activities/summary?date=${ymd(prevDay)}${hourQuery}`} style={navBtn}>&lt; Prev Day</Link>
           {!isToday && (
-            <Link href={`/staff/activities/summary?date=${ymd(today)}`} style={navBtn}>Today</Link>
+            <Link href={`/staff/activities/summary?date=${ymd(today)}${hourQuery}`} style={navBtn}>Today</Link>
           )}
-          <Link href={`/staff/activities/summary?date=${ymd(nextDay)}`} style={navBtn}>Next Day &gt;</Link>
+          <Link href={`/staff/activities/summary?date=${ymd(nextDay)}${hourQuery}`} style={navBtn}>Next Day &gt;</Link>
         </div>
       </div>
 
       <ActivitiesTabs active="summary" />
 
-      <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 12, fontSize: 11, color: 'var(--apex-muted)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 12 }}>
+        <div style={{ display: 'flex', gap: 16, alignItems: 'center', fontSize: 11, color: 'var(--apex-muted)' }}>
         {[
           ['Project Work', entryColor('Project Work')],
           ['Admin Work', entryColor('Admin Work')],
@@ -156,6 +168,8 @@ export default async function ActivitiesSummaryPage({
             {label}
           </span>
         ))}
+        </div>
+        <GanttRangeControl startHour={startHour} endHour={endHour} />
       </div>
 
       <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'hidden' }}>
