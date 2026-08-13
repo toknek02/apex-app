@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import { ActivitiesTabs } from '@/components/staff/activities-tabs'
 import { GanttRangeControl } from '@/components/staff/gantt-range-control'
+import { DepartmentFilter } from '@/components/staff/department-filter'
 import { LEAVE_EVENT_TYPES } from '@/lib/timesheet-event-types'
 
 // Local calendar date, not UTC — toISOString() would roll back a day for any
@@ -69,7 +70,7 @@ function entryTitle(e: Entry) {
 export default async function ActivitiesSummaryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string; startHour?: string; endHour?: string; onlyWithEntries?: string }>
+  searchParams: Promise<{ date?: string; startHour?: string; endHour?: string; onlyWithEntries?: string; department?: string }>
 }) {
   const user = await requireUser()
   const sp = await searchParams
@@ -126,8 +127,13 @@ export default async function ActivitiesSummaryPage({
     entriesByUser.get(e.userId)!.push(e)
   }
 
+  const departments = [...new Set(staff.map((s) => s.department ?? 'UNASSIGNED'))].sort()
+  const selectedDepartment = sp.department && departments.includes(sp.department) ? sp.department : ''
+
   const onlyWithEntries = sp.onlyWithEntries === '1'
-  const visibleStaff = onlyWithEntries ? staff.filter((s) => (entriesByUser.get(s.id)?.length ?? 0) > 0) : staff
+  const visibleStaff = staff
+    .filter((s) => !onlyWithEntries || (entriesByUser.get(s.id)?.length ?? 0) > 0)
+    .filter((s) => !selectedDepartment || (s.department ?? 'UNASSIGNED') === selectedDepartment)
 
   const grouped = new Map<string, typeof staff>()
   for (const s of visibleStaff) {
@@ -142,8 +148,9 @@ export default async function ActivitiesSummaryPage({
   // otherwise they'd silently reset every time you click Prev/Next Day.
   const hourQuery = (startHour !== DEFAULT_START_HOUR || endHour !== DEFAULT_END_HOUR) ? `&startHour=${startHour}&endHour=${endHour}` : ''
   const onlyQuery = onlyWithEntries ? '&onlyWithEntries=1' : ''
-  const persistedQuery = `${hourQuery}${onlyQuery}`
-  const toggleOnlyHref = `/staff/activities/summary?date=${ymd(selectedDate)}${hourQuery}${onlyWithEntries ? '' : '&onlyWithEntries=1'}`
+  const deptQuery = selectedDepartment ? `&department=${encodeURIComponent(selectedDepartment)}` : ''
+  const persistedQuery = `${hourQuery}${onlyQuery}${deptQuery}`
+  const toggleOnlyHref = `/staff/activities/summary?date=${ymd(selectedDate)}${hourQuery}${deptQuery}${onlyWithEntries ? '' : '&onlyWithEntries=1'}`
 
   return (
     <AppShell user={{ name: user.name ?? '', roleName: user.roleName, permissions: user.permissions }}>
@@ -178,7 +185,10 @@ export default async function ActivitiesSummaryPage({
           {onlyWithEntries ? '✓ Only staff with entries' : 'Only staff with entries'}
         </Link>
         </div>
-        <GanttRangeControl startHour={startHour} endHour={endHour} />
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <DepartmentFilter departments={departments} selected={selectedDepartment} />
+          <GanttRangeControl startHour={startHour} endHour={endHour} />
+        </div>
       </div>
 
       <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'hidden' }}>
@@ -204,7 +214,7 @@ export default async function ActivitiesSummaryPage({
             {grouped.size === 0 && (
               <tr>
                 <td colSpan={3} style={{ padding: '20px 14px', textAlign: 'center', fontSize: 12, fontStyle: 'italic', color: 'var(--apex-muted)' }}>
-                  No staff have entries for this day.
+                  {selectedDepartment ? `No staff in ${selectedDepartment} match the current filters.` : 'No staff have entries for this day.'}
                 </td>
               </tr>
             )}
