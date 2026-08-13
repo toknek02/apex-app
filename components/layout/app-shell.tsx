@@ -58,6 +58,7 @@ const SECTION_TITLES: Record<string, string> = {
   '/staff': 'Staff Directory',
   '/staff/timesheet': 'Timesheet',
   '/staff/activities': 'Activities',
+  '/staff/activities/summary': 'Activities Summary',
   '/staff/project': 'Project',
   '/staff/project/archive': 'Project Archive',
   '/announcements': 'Announcements',
