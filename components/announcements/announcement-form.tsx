@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { RecipientPicker } from '@/components/announcements/recipient-picker'
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
@@ -12,13 +13,15 @@ const inputStyle: React.CSSProperties = {
 }
 const labelStyle: React.CSSProperties = { display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 5 }
 
-type Announcement = { id: string; title: string; body: string }
+type Announcement = { id: string; title: string; body: string; recipientIds: string[] }
+type StaffOption = { id: string; name: string; department: string | null }
 
-export function AnnouncementForm({ announcement }: { announcement?: Announcement }) {
+export function AnnouncementForm({ announcement, staff }: { announcement?: Announcement; staff: StaffOption[] }) {
   const router = useRouter()
   const [title, setTitle] = useState(announcement?.title ?? '')
   const [body, setBody] = useState(announcement?.body ?? '')
   const [files, setFiles] = useState<FileList | null>(null)
+  const [recipientIds, setRecipientIds] = useState<Set<string>>(new Set(announcement?.recipientIds ?? []))
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -36,12 +39,13 @@ export function AnnouncementForm({ announcement }: { announcement?: Announcement
       res = await fetch(`/api/announcements/${announcement.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, body }),
+        body: JSON.stringify({ title, body, recipientIds: [...recipientIds] }),
       })
     } else {
       const formData = new FormData()
       formData.set('title', title)
       formData.set('body', body)
+      formData.set('recipientIds', JSON.stringify([...recipientIds]))
       if (files) {
         for (const file of Array.from(files)) formData.append('files', file)
       }
@@ -78,6 +82,8 @@ export function AnnouncementForm({ announcement }: { announcement?: Announcement
         <label style={labelStyle}>Body</label>
         <textarea style={{ ...inputStyle, minHeight: 140 }} value={body} onChange={(e) => setBody(e.target.value)} />
       </div>
+
+      <RecipientPicker staff={staff} selected={recipientIds} onChange={setRecipientIds} />
 
       {!announcement && (
         <div style={{ marginBottom: 20 }}>

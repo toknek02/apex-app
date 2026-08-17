@@ -66,7 +66,12 @@ export default async function DashboardPage() {
     isPrivileged ? Promise.resolve(null) : prisma.signInRecord.findFirst({ where: { userId: user.id, signOutAt: null } }),
     isPrivileged
       ? Promise.resolve([])
-      : prisma.announcement.findMany({ orderBy: { createdAt: 'desc' }, take: 5, select: { id: true, title: true, createdAt: true } }),
+      : prisma.announcement.findMany({
+          where: { OR: [{ recipients: { none: {} } }, { recipients: { some: { userId: user.id } } }] },
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+          select: { id: true, title: true, createdAt: true },
+        }),
   ])
 
   const myMonthMins = myMonthEntries.reduce((sum, e) => sum + e.normalMins + e.otMins, 0)

@@ -34,6 +34,7 @@ model User {
   eventAttendees     EventAttendee[]
   signInRecords      SignInRecord[]
   announcements      Announcement[]
+  announcementReceipts AnnouncementRecipient[]
   timesheetEntries   TimesheetEntry[]
   projectMemberships ProjectMember[]
 
@@ -233,8 +234,22 @@ model Announcement {
   updatedAt   DateTime @updatedAt
 
   attachments AnnouncementAttachment[]
+  // No rows here means company-wide — everyone can see it. One or more
+  // rows means only those specific people (plus anyone with
+  // MANAGE_ANNOUNCEMENTS, for oversight) can see it.
+  recipients  AnnouncementRecipient[]
 
   @@index([createdAt])
+}
+
+model AnnouncementRecipient {
+  id             String       @id @default(cuid())
+  announcementId String
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+
+  @@unique([announcementId, userId])
 }
 
 model AnnouncementAttachment {

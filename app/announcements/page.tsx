@@ -10,7 +10,8 @@ export default async function AnnouncementsPage() {
   const canManage = hasPermission(user, 'MANAGE_ANNOUNCEMENTS')
 
   const announcements = await prisma.announcement.findMany({
-    include: { attachments: true, createdBy: { select: { name: true } } },
+    where: canManage ? {} : { OR: [{ recipients: { none: {} } }, { recipients: { some: { userId: user.id } } }] },
+    include: { attachments: true, createdBy: { select: { name: true } }, recipients: { select: { user: { select: { name: true } } } } },
     orderBy: { createdAt: 'desc' },
   })
 
@@ -51,6 +52,9 @@ export default async function AnnouncementsPage() {
               <div style={{ fontSize: 11, color: 'var(--apex-muted)', marginBottom: 12 }}>
                 Posted by {a.createdBy.name} on {a.createdAt.toLocaleDateString('en-GB')}
                 {a.updatedAt.getTime() !== a.createdAt.getTime() ? ' (edited)' : ''}
+                {canManage && a.recipients.length > 0 && (
+                  <> — sent to {a.recipients.map((r) => r.user.name).join(', ')}</>
+                )}
               </div>
               <p style={{ fontSize: 13, whiteSpace: 'pre-wrap', marginBottom: a.attachments.length > 0 ? 14 : 0 }}>{a.body}</p>
               {a.attachments.length > 0 && (
