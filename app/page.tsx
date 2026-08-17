@@ -114,6 +114,7 @@ export default async function DashboardPage() {
           {todaysEvents.length === 0 ? (
             <div style={{ padding: 20, fontSize: 13, color: 'var(--apex-muted)' }}>No events scheduled today.</div>
           ) : (
+            <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <tbody>
                 {todaysEvents.map((e, i) => (
@@ -133,6 +134,7 @@ export default async function DashboardPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
 

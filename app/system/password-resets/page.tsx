@@ -31,7 +31,7 @@ export default async function PasswordResetsPage() {
         Requests submitted via the login page&apos;s &quot;Forgot password?&quot; link. Reset the user&apos;s password from Staff, then mark the request resolved.
       </p>
 
-      <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'hidden' }}>
+      <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
