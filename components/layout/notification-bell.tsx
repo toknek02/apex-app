@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Bell } from 'lucide-react'
-import { useNotifications, type NotificationItem } from '@/lib/hooks/use-notifications'
+import type { NotificationItem } from '@/lib/hooks/use-notifications'
 
 function timeAgo(iso: string) {
   const diffMs = Date.now() - new Date(iso).getTime()
@@ -16,9 +16,18 @@ function timeAgo(iso: string) {
   return `${days}d ago`
 }
 
-export function NotificationBell() {
+export function NotificationBell({
+  notifications,
+  unreadCount,
+  markRead,
+  markAllRead,
+}: {
+  notifications: NotificationItem[]
+  unreadCount: number
+  markRead: (id: string) => Promise<void>
+  markAllRead: () => Promise<void>
+}) {
   const router = useRouter()
-  const { notifications, unreadCount, markRead, markAllRead } = useNotifications()
   const [open, setOpen] = useState(false)
 
   async function handleClick(n: NotificationItem) {

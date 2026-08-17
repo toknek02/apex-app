@@ -4,6 +4,7 @@ import { requireUser, hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import { DeleteAnnouncementButton } from '@/components/announcements/delete-announcement-button'
+import { MarkAnnouncementsRead } from '@/components/announcements/mark-announcements-read'
 
 export default async function AnnouncementsPage() {
   const user = await requireUser()
@@ -17,6 +18,7 @@ export default async function AnnouncementsPage() {
 
   return (
     <AppShell user={{ name: user.name ?? '', roleName: user.roleName, permissions: user.permissions }}>
+      <MarkAnnouncementsRead />
       <Breadcrumb items={['Announcements']} />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <h1 style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700 }}>Announcements</h1>

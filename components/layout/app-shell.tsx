@@ -8,6 +8,7 @@ import { LayoutDashboard, BookOpen, Users, Settings, Megaphone, LogOut, ChevronL
 import type { PermissionCode } from '@/lib/permissions'
 import { SignInStatusPill } from '@/components/layout/sign-in-status-pill'
 import { NotificationBell } from '@/components/layout/notification-bell'
+import { useNotifications } from '@/lib/hooks/use-notifications'
 
 type NavUser = {
   name: string
@@ -92,12 +93,14 @@ function Header({
   isMobile,
   mobileOpen,
   onMobileToggle,
+  notifications,
 }: {
   user: NavUser
   pathname: string
   isMobile: boolean
   mobileOpen: boolean
   onMobileToggle: () => void
+  notifications: ReturnType<typeof useNotifications>
 }) {
   return (
     <header
@@ -139,7 +142,12 @@ function Header({
       <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
         {!isMobile && <Clock />}
         <SignInStatusPill isMobile={isMobile} />
-        <NotificationBell />
+        <NotificationBell
+          notifications={notifications.notifications}
+          unreadCount={notifications.unreadCount}
+          markRead={notifications.markRead}
+          markAllRead={notifications.markAllRead}
+        />
         <div
           style={{
             display: 'flex',
@@ -205,6 +213,7 @@ function Sidebar({
   isMobile,
   mobileOpen,
   onNavigate,
+  navBadges,
 }: {
   user: NavUser
   pathname: string
@@ -213,6 +222,7 @@ function Sidebar({
   isMobile: boolean
   mobileOpen: boolean
   onNavigate: () => void
+  navBadges: Record<string, number>
 }) {
   const effectiveCollapsed = isMobile ? false : collapsed
   const activeMain = NAV.find((n) => pathname === n.href || (n.href !== '/' && pathname.startsWith(n.href)))
@@ -240,6 +250,7 @@ function Sidebar({
     >
       {NAV.filter((n) => !n.requiresAnyOf || n.requiresAnyOf.some((code) => user.permissions.includes(code))).map(({ key, href, label, Icon }) => {
         const active = pathname === href || (href !== '/' && pathname.startsWith(href))
+        const badgeCount = navBadges[key] ?? 0
         const style: React.CSSProperties = {
           display: 'flex',
           alignItems: 'center',
@@ -256,11 +267,60 @@ function Sidebar({
           fontWeight: active ? 600 : 400,
           width: '100%',
           whiteSpace: 'nowrap',
+          position: 'relative',
         }
         return (
           <Link key={key} href={href} style={style} title={effectiveCollapsed ? label : undefined} onClick={isMobile ? onNavigate : undefined}>
-            <Icon size={16} />
-            {!effectiveCollapsed && label}
+            <span style={{ position: 'relative', display: 'inline-flex' }}>
+              <Icon size={16} />
+              {badgeCount > 0 && effectiveCollapsed && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: -5,
+                    right: -7,
+                    minWidth: 13,
+                    height: 13,
+                    padding: '0 2px',
+                    borderRadius: 99,
+                    backgroundColor: 'var(--apex-red)',
+                    color: '#fff',
+                    fontSize: 8,
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {badgeCount > 9 ? '9+' : badgeCount}
+                </span>
+              )}
+            </span>
+            {!effectiveCollapsed && (
+              <>
+                {label}
+                {badgeCount > 0 && (
+                  <span
+                    style={{
+                      marginLeft: 'auto',
+                      minWidth: 17,
+                      height: 17,
+                      padding: '0 5px',
+                      borderRadius: 99,
+                      backgroundColor: 'var(--apex-red)',
+                      color: '#fff',
+                      fontSize: 10,
+                      fontWeight: 700,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {badgeCount > 9 ? '9+' : badgeCount}
+                  </span>
+                )}
+              </>
+            )}
           </Link>
         )
       })}
@@ -332,6 +392,11 @@ export function AppShell({ user, children }: { user: NavUser; children: React.Re
   const [collapsed, setCollapsed] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  // Called once here rather than inside NotificationBell, so the sidebar's
+  // per-nav-item badges (e.g. Announcements) and the header bell share one
+  // poll instead of each fetching independently.
+  const notifications = useNotifications()
+  const navBadges = { announcements: notifications.unreadByType['announcement.posted'] ?? 0 }
 
   useEffect(() => {
     setCollapsed(localStorage.getItem(SIDEBAR_STORAGE_KEY) === 'true')
@@ -370,6 +435,7 @@ export function AppShell({ user, children }: { user: NavUser; children: React.Re
         isMobile={isMobile}
         mobileOpen={mobileOpen}
         onMobileToggle={() => setMobileOpen((prev) => !prev)}
+        notifications={notifications}
       />
       <Sidebar
         user={user}
@@ -379,6 +445,7 @@ export function AppShell({ user, children }: { user: NavUser; children: React.Re
         isMobile={isMobile}
         mobileOpen={mobileOpen}
         onNavigate={() => setMobileOpen(false)}
+        navBadges={navBadges}
       />
       {isMobile && mobileOpen && (
         <div
