@@ -185,7 +185,7 @@ export default async function LeaveCalendarPage({
                                 borderRadius: 4,
                                 fontSize: 9,
                                 fontWeight: 700,
-                                color: isPending ? color : (isHalfDay ? color : '#fff'),
+                                color: isPending ? color : (isHalfDay ? '#000' : '#fff'),
                                 backgroundColor: isPending ? '#fff' : (isHalfDay ? undefined : color),
                                 background: halfDayBackground,
                                 border: isPending ? `1.5px dashed ${color}` : (isHalfDay ? `1px solid ${color}` : 'none'),
@@ -242,11 +242,12 @@ const thStyle: React.CSSProperties = {
   fontSize: 10,
   fontWeight: 600,
   textAlign: 'center',
+  border: '1px solid var(--apex-border)',
 }
 
 const tdStyle: React.CSSProperties = {
   padding: '6px 4px',
   fontSize: 11,
   textAlign: 'center',
-  borderBottom: '1px solid var(--apex-border)',
+  border: '1px solid var(--apex-border)',
 }
