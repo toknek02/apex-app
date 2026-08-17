@@ -71,6 +71,9 @@ model LeaveApplication {
   leaveType      String
   startDate      DateTime
   endDate        DateTime
+  // FULL | AM | PM — AM/PM only valid when startDate == endDate (half-day
+  // is single-day only) and only for HALF_DAY_ELIGIBLE_LEAVE_TYPES.
+  dayPortion     String    @default("FULL")
   reason         String?
   // PENDING | APPROVED | REJECTED
   status         String    @default("PENDING")

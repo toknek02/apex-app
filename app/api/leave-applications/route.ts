@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth'
 import { hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { notifyUsers } from '@/lib/notifications'
-import { LEAVE_EVENT_TYPES } from '@/lib/timesheet-event-types'
+import { LEAVE_EVENT_TYPES, HALF_DAY_ELIGIBLE_LEAVE_TYPES } from '@/lib/timesheet-event-types'
 import { parseLocalDate } from '@/lib/date-utils'
 
 async function getHrRecipientIds(excludeUserId?: string) {
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { leaveType, startDate, endDate, reason } = await req.json()
+  const { leaveType, startDate, endDate, reason, dayPortion } = await req.json()
 
   if (!leaveType || !LEAVE_EVENT_TYPES.includes(leaveType)) {
     return NextResponse.json({ error: 'Invalid leave type' }, { status: 400 })
@@ -73,6 +73,16 @@ export async function POST(req: NextRequest) {
   if (!parsedStart || !parsedEnd) return NextResponse.json({ error: 'Invalid start or end date' }, { status: 400 })
   if (parsedEnd.getTime() < parsedStart.getTime()) {
     return NextResponse.json({ error: 'End date must be on or after start date' }, { status: 400 })
+  }
+
+  const portion = dayPortion === 'AM' || dayPortion === 'PM' ? dayPortion : 'FULL'
+  if (portion !== 'FULL') {
+    if (!HALF_DAY_ELIGIBLE_LEAVE_TYPES.includes(leaveType)) {
+      return NextResponse.json({ error: 'Half day is not available for this leave type' }, { status: 400 })
+    }
+    if (parsedStart.getTime() !== parsedEnd.getTime()) {
+      return NextResponse.json({ error: 'Half day applications must be a single day' }, { status: 400 })
+    }
   }
 
   const applicant = await prisma.user.findUnique({
@@ -87,6 +97,7 @@ export async function POST(req: NextRequest) {
       leaveType,
       startDate: parsedStart,
       endDate: parsedEnd,
+      dayPortion: portion,
       reason: reason || null,
     },
   })

@@ -66,6 +66,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   if (status === 'APPROVED') {
     const days = enumerateDaysInclusive(application.startDate, application.endDate)
+    // AM = 9am-1pm, PM = 1pm-6pm, matching the Activities Summary Gantt
+    // chart's minute-since-midnight convention. FULL day leaves these null.
+    const [startMins, endMins] = application.dayPortion === 'AM'
+      ? [540, 780]
+      : application.dayPortion === 'PM'
+        ? [780, 1080]
+        : [null, null]
     // Approved leave supersedes anything already logged for these dates,
     // rather than adding a second entry on top of it.
     await prisma.timesheetEntry.deleteMany({
@@ -78,6 +85,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         eventType: application.leaveType,
         normalMins: 0,
         otMins: 0,
+        startMins,
+        endMins,
         remarks: application.reason ?? 'Approved leave application',
       })),
     })

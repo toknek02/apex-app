@@ -16,7 +16,8 @@ const LEAVE_TYPE_META: Record<string, { code: string; color: string }> = {
   'Annual Leave': { code: 'AL', color: '#4263eb' },
   'Medical Leave (MC)': { code: 'MC', color: '#e03131' },
   'Emergency Leave': { code: 'EL', color: '#862e9c' },
-  'Unpaid Leave': { code: 'UL', color: '#495057' },
+  'Unpaid Annual Leave': { code: 'UA', color: '#495057' },
+  'Unpaid Emergency Leave': { code: 'UE', color: '#5c5f66' },
   'Marriage Leave': { code: 'MR', color: '#e64980' },
   'Maternity Leave': { code: 'MT', color: '#d9a441' },
   'Paternity Leave': { code: 'PT', color: '#ff8787' },
@@ -162,10 +163,19 @@ export default async function LeaveCalendarPage({
                         }
                         const { code, color } = leaveTypeMeta(app.leaveType)
                         const isPending = app.status === 'PENDING'
+                        // Half-day is only visualized on approved (solid) badges —
+                        // combining the dashed pending outline with a half-white
+                        // fill reads as cluttered, so pending stays a plain outline.
+                        const isHalfDay = !isPending && (app.dayPortion === 'AM' || app.dayPortion === 'PM')
+                        const halfDayBackground = isHalfDay
+                          ? app.dayPortion === 'AM'
+                            ? `linear-gradient(to right, #fff 50%, ${color} 50%)`
+                            : `linear-gradient(to right, ${color} 50%, #fff 50%)`
+                          : undefined
                         return (
                           <td key={day} style={{ ...tdStyle, backgroundColor: isToday ? 'var(--apex-accent-lt)' : undefined, padding: 3 }}>
                             <span
-                              title={`${app.leaveType}${isPending ? ' — Awaiting Approval' : ''}`}
+                              title={`${app.leaveType}${isHalfDay ? ` — Half Day (${app.dayPortion})` : ''}${isPending ? ' — Awaiting Approval' : ''}`}
                               style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
@@ -175,9 +185,10 @@ export default async function LeaveCalendarPage({
                                 borderRadius: 4,
                                 fontSize: 9,
                                 fontWeight: 700,
-                                color: isPending ? color : '#fff',
-                                backgroundColor: isPending ? '#fff' : color,
-                                border: isPending ? `1.5px dashed ${color}` : 'none',
+                                color: isPending ? color : (isHalfDay ? color : '#fff'),
+                                backgroundColor: isPending ? '#fff' : (isHalfDay ? undefined : color),
+                                background: halfDayBackground,
+                                border: isPending ? `1.5px dashed ${color}` : (isHalfDay ? `1px solid ${color}` : 'none'),
                               }}
                             >
                               {code}

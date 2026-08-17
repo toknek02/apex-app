@@ -9,8 +9,9 @@ function fmtDate(d: Date) {
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-function dateRangeLabel(start: Date, end: Date) {
-  return start.getTime() === end.getTime() ? fmtDate(start) : `${fmtDate(start)} – ${fmtDate(end)}`
+function dateRangeLabel(start: Date, end: Date, dayPortion: string) {
+  const range = start.getTime() === end.getTime() ? fmtDate(start) : `${fmtDate(start)} – ${fmtDate(end)}`
+  return dayPortion === 'AM' || dayPortion === 'PM' ? `${range} (${dayPortion} half-day)` : range
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -103,7 +104,7 @@ export default async function LeavePage() {
                     <tr key={a.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
                       <td style={{ ...tdStyle, fontWeight: 600 }}>{a.user.name}</td>
                       <td style={tdStyle}>{a.leaveType}</td>
-                      <td style={tdStyle}>{dateRangeLabel(a.startDate, a.endDate)}</td>
+                      <td style={tdStyle}>{dateRangeLabel(a.startDate, a.endDate, a.dayPortion)}</td>
                       <td style={{ ...tdStyle, color: 'var(--apex-muted)' }}>{a.reason || '—'}</td>
                       <td style={tdStyle}>
                         <LeaveApprovalActions applicationId={a.id} />
@@ -141,7 +142,7 @@ export default async function LeavePage() {
                     <tr key={a.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
                       <td style={{ ...tdStyle, fontWeight: 600 }}>{a.user.name}</td>
                       <td style={tdStyle}>{a.leaveType}</td>
-                      <td style={tdStyle}>{dateRangeLabel(a.startDate, a.endDate)}</td>
+                      <td style={tdStyle}>{dateRangeLabel(a.startDate, a.endDate, a.dayPortion)}</td>
                       <td style={tdStyle}><StatusBadge status={a.status} /></td>
                       <td style={{ ...tdStyle, color: 'var(--apex-muted)' }}>{a.reviewedByName || '—'}</td>
                     </tr>
@@ -174,7 +175,7 @@ export default async function LeavePage() {
               myApplications.map((a, i) => (
                 <tr key={a.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
                   <td style={tdStyle}>{a.leaveType}</td>
-                  <td style={tdStyle}>{dateRangeLabel(a.startDate, a.endDate)}</td>
+                  <td style={tdStyle}>{dateRangeLabel(a.startDate, a.endDate, a.dayPortion)}</td>
                   <td style={{ ...tdStyle, color: 'var(--apex-muted)' }}>{a.reason || '—'}</td>
                   <td style={tdStyle}><StatusBadge status={a.status} /></td>
                   <td style={{ ...tdStyle, color: 'var(--apex-muted)' }}>{a.reviewRemarks || '—'}</td>

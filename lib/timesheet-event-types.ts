@@ -4,7 +4,8 @@ export const LEAVE_EVENT_TYPES = [
   'Annual Leave',
   'Medical Leave (MC)',
   'Emergency Leave',
-  'Unpaid Leave',
+  'Unpaid Annual Leave',
+  'Unpaid Emergency Leave',
   'Marriage Leave',
   'Maternity Leave',
   'Paternity Leave',
@@ -15,6 +16,10 @@ export const LEAVE_EVENT_TYPES = [
   'Hospitalisation Leave',
   'Seminar Leave',
 ]
+
+// Only these can be applied for as a half-day (with an AM/PM portion) —
+// everything else is whole-day only.
+export const HALF_DAY_ELIGIBLE_LEAVE_TYPES = ['Annual Leave', 'Medical Leave (MC)', 'Emergency Leave', 'Unpaid Annual Leave', 'Unpaid Emergency Leave']
 
 export const EVENT_TYPES = ['Project Work', 'Admin Work', 'Marketing', ...LEAVE_EVENT_TYPES]
 

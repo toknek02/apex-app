@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { LEAVE_EVENT_TYPES } from '@/lib/timesheet-event-types'
+import { LEAVE_EVENT_TYPES, HALF_DAY_ELIGIBLE_LEAVE_TYPES } from '@/lib/timesheet-event-types'
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
@@ -24,10 +24,30 @@ export function LeaveApplicationForm() {
   const [leaveType, setLeaveType] = useState(LEAVE_EVENT_TYPES[0])
   const [startDate, setStartDate] = useState(today)
   const [endDate, setEndDate] = useState(today)
+  const [dayLength, setDayLength] = useState<'FULL' | 'HALF'>('FULL')
+  const [halfPortion, setHalfPortion] = useState<'AM' | 'PM'>('AM')
   const [reason, setReason] = useState('')
   const [errors, setErrors] = useState<string[]>([])
   const [warning, setWarning] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  const halfDayEligible = HALF_DAY_ELIGIBLE_LEAVE_TYPES.includes(leaveType)
+  const dayPortion = dayLength === 'HALF' && halfDayEligible ? halfPortion : 'FULL'
+
+  function handleLeaveTypeChange(value: string) {
+    setLeaveType(value)
+    if (!HALF_DAY_ELIGIBLE_LEAVE_TYPES.includes(value)) setDayLength('FULL')
+  }
+
+  function handleDayLengthChange(value: 'FULL' | 'HALF') {
+    setDayLength(value)
+    if (value === 'HALF') setEndDate(startDate)
+  }
+
+  function handleStartDateChange(value: string) {
+    setStartDate(value)
+    if (dayLength === 'HALF') setEndDate(value)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -35,6 +55,7 @@ export function LeaveApplicationForm() {
     if (!startDate) missing.push('Start Date')
     if (!endDate) missing.push('End Date')
     if (startDate && endDate && endDate < startDate) missing.push('End Date must be on or after Start Date')
+    if (dayLength === 'HALF' && startDate && endDate && startDate !== endDate) missing.push('Half Day applications must be a single day')
     setErrors(missing)
     if (missing.length > 0) return
 
@@ -42,7 +63,7 @@ export function LeaveApplicationForm() {
     const res = await fetch('/api/leave-applications', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ leaveType, startDate, endDate, reason }),
+      body: JSON.stringify({ leaveType, startDate, endDate, reason, dayPortion }),
     })
     setSubmitting(false)
     if (res.ok) {
@@ -81,21 +102,41 @@ export function LeaveApplicationForm() {
 
       <div style={{ marginBottom: 16 }}>
         <label style={labelStyle}>Leave Type<Required /></label>
-        <select style={inputStyle} value={leaveType} onChange={(e) => setLeaveType(e.target.value)}>
+        <select style={inputStyle} value={leaveType} onChange={(e) => handleLeaveTypeChange(e.target.value)}>
           {LEAVE_EVENT_TYPES.map((t) => (
             <option key={t} value={t}>{t}</option>
           ))}
         </select>
       </div>
 
+      {halfDayEligible && (
+        <div style={{ marginBottom: 16 }}>
+          <label style={labelStyle}>Duration<Required /></label>
+          <div style={{ display: 'flex', gap: 16 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+              <input type="radio" checked={dayLength === 'FULL'} onChange={() => handleDayLengthChange('FULL')} /> Full Day
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+              <input type="radio" checked={dayLength === 'HALF'} onChange={() => handleDayLengthChange('HALF')} /> Half Day
+            </label>
+            {dayLength === 'HALF' && (
+              <select style={{ ...inputStyle, width: 'auto' }} value={halfPortion} onChange={(e) => setHalfPortion(e.target.value as 'AM' | 'PM')}>
+                <option value="AM">AM (9:00 – 13:00)</option>
+                <option value="PM">PM (13:00 – 18:00)</option>
+              </select>
+            )}
+          </div>
+        </div>
+      )}
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
         <div>
           <label style={labelStyle}>Start Date<Required /></label>
-          <input type="date" style={inputStyle} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+          <input type="date" style={inputStyle} value={startDate} onChange={(e) => handleStartDateChange(e.target.value)} />
         </div>
         <div>
           <label style={labelStyle}>End Date<Required /></label>
-          <input type="date" style={inputStyle} value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+          <input type="date" style={inputStyle} value={endDate} disabled={dayLength === 'HALF'} onChange={(e) => setEndDate(e.target.value)} />
         </div>
       </div>
 
