@@ -217,7 +217,7 @@ export function TimesheetReportForm({
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
               {[...(teamMode ? ['Staff'] : []), 'Date', 'Event Type', 'Project', 'Stage / Task', 'Normal', 'OT', ...(teamMode ? ['Cost'] : []), 'Remarks', ...(showActionsCol ? ['Actions'] : [])].map((h) => (
-                <th key={h} style={{ padding: '9px 14px', textAlign: 'left', color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em' }}>
+                <th key={h} style={{ border: '1px solid #000', padding: '9px 14px', textAlign: 'left', color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em' }}>
                   {h}
                 </th>
               ))}
@@ -236,13 +236,13 @@ export function TimesheetReportForm({
             )}
             {!teamMode && results?.map((e, i) => (
               <tr key={e.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
-                <td style={{ padding: '9px 14px' }}>{new Date(e.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
-                <td style={{ padding: '9px 14px' }}>{e.eventType}</td>
-                <td style={{ padding: '9px 14px' }}>{e.project ? `${e.project.code} — ${e.project.shortName}` : '—'}</td>
-                <td style={{ padding: '9px 14px' }}>{[e.stage, e.task].filter(Boolean).join(' / ') || '—'}</td>
-                <td style={{ padding: '9px 14px' }}>{(e.normalMins / 60).toFixed(2)}</td>
-                <td style={{ padding: '9px 14px' }}>{(e.otMins / 60).toFixed(2)}</td>
-                <td style={{ padding: '9px 14px' }}>{e.remarks || '—'}</td>
+                <td style={{ border: '1px solid #000', padding: '9px 14px' }}>{new Date(e.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                <td style={{ border: '1px solid #000', padding: '9px 14px' }}>{e.eventType}</td>
+                <td style={{ border: '1px solid #000', padding: '9px 14px' }}>{e.project ? `${e.project.code} — ${e.project.shortName}` : '—'}</td>
+                <td style={{ border: '1px solid #000', padding: '9px 14px' }}>{[e.stage, e.task].filter(Boolean).join(' / ') || '—'}</td>
+                <td style={{ border: '1px solid #000', padding: '9px 14px' }}>{(e.normalMins / 60).toFixed(2)}</td>
+                <td style={{ border: '1px solid #000', padding: '9px 14px' }}>{(e.otMins / 60).toFixed(2)}</td>
+                <td style={{ border: '1px solid #000', padding: '9px 14px' }}>{e.remarks || '—'}</td>
               </tr>
             ))}
             {teamMode && [...byStaff.entries()].map(([userId, staff]) => {
@@ -254,31 +254,31 @@ export function TimesheetReportForm({
                 <Fragment key={userId}>
                   {staff.entries.length === 0 ? (
                     <tr style={{ backgroundColor: '#fff' }}>
-                      <td style={{ padding: '9px 14px', verticalAlign: 'top', fontWeight: 600 }}>
+                      <td style={{ border: '1px solid #000', padding: '9px 14px', verticalAlign: 'top', fontWeight: 600 }}>
                         {staff.name}
                         {staff.department && <div style={{ fontSize: 10, fontWeight: 400, color: 'var(--apex-muted)' }}>{staff.department}</div>}
                       </td>
-                      <td colSpan={showActionsCol ? 9 : 8} style={{ padding: '9px 14px', color: 'var(--apex-muted)', fontStyle: 'italic' }}>No entries logged for this range.</td>
+                      <td colSpan={showActionsCol ? 9 : 8} style={{ border: '1px solid #000', padding: '9px 14px', color: 'var(--apex-muted)', fontStyle: 'italic' }}>No entries logged for this range.</td>
                     </tr>
                   ) : (
                     staff.entries.map((e, i) => (
                       <tr key={e.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
                         {i === 0 && (
-                          <td rowSpan={rowCount} style={{ padding: '9px 14px', verticalAlign: 'top', fontWeight: 600 }}>
+                          <td rowSpan={rowCount} style={{ border: '1px solid #000', padding: '9px 14px', verticalAlign: 'top', fontWeight: 600 }}>
                             {staff.name}
                             {staff.department && <div style={{ fontSize: 10, fontWeight: 400, color: 'var(--apex-muted)' }}>{staff.department}</div>}
                           </td>
                         )}
-                        <td style={{ padding: '9px 14px' }}>{new Date(e.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
-                        <td style={{ padding: '9px 14px' }}>{e.eventType}</td>
-                        <td style={{ padding: '9px 14px' }}>{e.project ? `${e.project.code} — ${e.project.shortName}` : '—'}</td>
-                        <td style={{ padding: '9px 14px' }}>{[e.stage, e.task].filter(Boolean).join(' / ') || '—'}</td>
-                        <td style={{ padding: '9px 14px' }}>{(e.normalMins / 60).toFixed(2)}</td>
-                        <td style={{ padding: '9px 14px' }}>{(e.otMins / 60).toFixed(2)}</td>
-                        <td style={{ padding: '9px 14px' }}>{formatCurrency(e.cost?.totalCost ?? 0)}</td>
-                        <td style={{ padding: '9px 14px' }}>{e.remarks || '—'}</td>
+                        <td style={{ border: '1px solid #000', padding: '9px 14px' }}>{new Date(e.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                        <td style={{ border: '1px solid #000', padding: '9px 14px' }}>{e.eventType}</td>
+                        <td style={{ border: '1px solid #000', padding: '9px 14px' }}>{e.project ? `${e.project.code} — ${e.project.shortName}` : '—'}</td>
+                        <td style={{ border: '1px solid #000', padding: '9px 14px' }}>{[e.stage, e.task].filter(Boolean).join(' / ') || '—'}</td>
+                        <td style={{ border: '1px solid #000', padding: '9px 14px' }}>{(e.normalMins / 60).toFixed(2)}</td>
+                        <td style={{ border: '1px solid #000', padding: '9px 14px' }}>{(e.otMins / 60).toFixed(2)}</td>
+                        <td style={{ border: '1px solid #000', padding: '9px 14px' }}>{formatCurrency(e.cost?.totalCost ?? 0)}</td>
+                        <td style={{ border: '1px solid #000', padding: '9px 14px' }}>{e.remarks || '—'}</td>
                         {showActionsCol && (
-                          <td style={{ padding: '9px 14px' }}>
+                          <td style={{ border: '1px solid #000', padding: '9px 14px' }}>
                             <button
                               onClick={() => handleDeleteEntry(e.id)}
                               disabled={deletingId === e.id}
@@ -293,12 +293,12 @@ export function TimesheetReportForm({
                     ))
                   )}
                   <tr style={{ backgroundColor: 'var(--apex-dept-bg)' }}>
-                    <td colSpan={5} style={{ padding: '7px 14px', textAlign: 'right', fontWeight: 700, fontSize: 11 }}>{staff.name} Subtotal</td>
-                    <td style={{ padding: '7px 14px', fontWeight: 700, fontSize: 11 }}>{(staffNormal / 60).toFixed(2)}</td>
-                    <td style={{ padding: '7px 14px', fontWeight: 700, fontSize: 11 }}>{(staffOt / 60).toFixed(2)}</td>
-                    <td style={{ padding: '7px 14px', fontWeight: 700, fontSize: 11 }}>{formatCurrency(staffCost)}</td>
-                    <td style={{ padding: '7px 14px' }} />
-                    {showActionsCol && <td style={{ padding: '7px 14px' }} />}
+                    <td colSpan={5} style={{ border: '1px solid #000', padding: '7px 14px', textAlign: 'right', fontWeight: 700, fontSize: 11 }}>{staff.name} Subtotal</td>
+                    <td style={{ border: '1px solid #000', padding: '7px 14px', fontWeight: 700, fontSize: 11 }}>{(staffNormal / 60).toFixed(2)}</td>
+                    <td style={{ border: '1px solid #000', padding: '7px 14px', fontWeight: 700, fontSize: 11 }}>{(staffOt / 60).toFixed(2)}</td>
+                    <td style={{ border: '1px solid #000', padding: '7px 14px', fontWeight: 700, fontSize: 11 }}>{formatCurrency(staffCost)}</td>
+                    <td style={{ border: '1px solid #000', padding: '7px 14px' }} />
+                    {showActionsCol && <td style={{ border: '1px solid #000', padding: '7px 14px' }} />}
                   </tr>
                 </Fragment>
               )
@@ -307,14 +307,14 @@ export function TimesheetReportForm({
           {results && (teamMode ? byStaff.size > 0 : results.length > 0) && (
             <tfoot>
               <tr>
-                <td colSpan={teamMode ? 5 : 4} style={{ padding: '9px 14px', textAlign: 'right', fontWeight: 700 }}>
+                <td colSpan={teamMode ? 5 : 4} style={{ border: '1px solid #000', padding: '9px 14px', textAlign: 'right', fontWeight: 700 }}>
                   {teamMode ? 'Project Total (all staff)' : 'Total'}
                 </td>
-                <td style={{ padding: '9px 14px', fontWeight: 700 }}>{(totalNormalMins / 60).toFixed(2)}</td>
-                <td style={{ padding: '9px 14px', fontWeight: 700 }}>{(totalOtMins / 60).toFixed(2)}</td>
-                {teamMode && <td style={{ padding: '9px 14px', fontWeight: 700 }}>{formatCurrency(totalCost)}</td>}
-                <td style={{ padding: '9px 14px' }} />
-                {showActionsCol && <td style={{ padding: '9px 14px' }} />}
+                <td style={{ border: '1px solid #000', padding: '9px 14px', fontWeight: 700 }}>{(totalNormalMins / 60).toFixed(2)}</td>
+                <td style={{ border: '1px solid #000', padding: '9px 14px', fontWeight: 700 }}>{(totalOtMins / 60).toFixed(2)}</td>
+                {teamMode && <td style={{ border: '1px solid #000', padding: '9px 14px', fontWeight: 700 }}>{formatCurrency(totalCost)}</td>}
+                <td style={{ border: '1px solid #000', padding: '9px 14px' }} />
+                {showActionsCol && <td style={{ border: '1px solid #000', padding: '9px 14px' }} />}
               </tr>
             </tfoot>
           )}

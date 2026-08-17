@@ -242,12 +242,12 @@ const thStyle: React.CSSProperties = {
   fontSize: 10,
   fontWeight: 600,
   textAlign: 'center',
-  border: '1px solid var(--apex-border)',
+  border: '1px solid #000',
 }
 
 const tdStyle: React.CSSProperties = {
   padding: '6px 4px',
   fontSize: 11,
   textAlign: 'center',
-  border: '1px solid var(--apex-border)',
+  border: '1px solid #000',
 }

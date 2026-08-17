@@ -118,15 +118,15 @@ export default async function DashboardPage() {
               <tbody>
                 {todaysEvents.map((e, i) => (
                   <tr key={e.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
-                    <td style={{ padding: '9px 14px', fontSize: 12, whiteSpace: 'nowrap' }}>
+                    <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12, whiteSpace: 'nowrap' }}>
                       {e.date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
                     </td>
-                    <td style={{ padding: '9px 14px', fontSize: 12 }}>
+                    <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12 }}>
                       {e.attendees.map((a) => a.user.name).join(', ')}
                       {e.attendees.length > 0 ? ': ' : ''}
                       {e.title}
                     </td>
-                    <td style={{ padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>
+                    <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>
                       {e.venue?.description ?? e.externalVenue ?? '—'}
                     </td>
                   </tr>

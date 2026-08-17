@@ -24,8 +24,8 @@ function StatusBadge({ status }: { status: string }) {
   )
 }
 
-const thStyle: React.CSSProperties = { padding: '9px 14px', textAlign: 'left', color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em' }
-const tdStyle: React.CSSProperties = { padding: '9px 14px', fontSize: 12 }
+const thStyle: React.CSSProperties = { padding: '9px 14px', textAlign: 'left', color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', border: '1px solid #000' }
+const tdStyle: React.CSSProperties = { padding: '9px 14px', fontSize: 12, border: '1px solid #000' }
 
 export default async function LeavePage() {
   const user = await requireUser()

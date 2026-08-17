@@ -76,7 +76,7 @@ export default async function StaffPage() {
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
               {columns.map((h) => (
-                <th key={h} style={{ padding: '9px 14px', textAlign: 'left', color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em' }}>
+                <th key={h} style={{ border: '1px solid #000', padding: '9px 14px', textAlign: 'left', color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em' }}>
                   {h}
                 </th>
               ))}
@@ -104,22 +104,22 @@ export default async function StaffPage() {
                   const muted = statusLabel === 'Not logged in' || statusLabel === 'Inactive'
                   return (
                     <tr key={m.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff', opacity: m.isActive ? 1 : 0.6 }}>
-                      <td style={{ padding: '9px 14px', fontSize: 12, fontStyle: muted ? 'italic' : 'normal', color: muted ? 'var(--apex-muted)' : 'var(--apex-text)' }}>
+                      <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12, fontStyle: muted ? 'italic' : 'normal', color: muted ? 'var(--apex-muted)' : 'var(--apex-text)' }}>
                         {m.name}
                       </td>
-                      <td style={{ padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>{m.designation ?? '—'}</td>
-                      <td style={{ padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>{m.role.name}</td>
-                      <td style={{ padding: '9px 14px', fontSize: 12 }}>
+                      <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>{m.designation ?? '—'}</td>
+                      <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>{m.role.name}</td>
+                      <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12 }}>
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: statusColor, fontWeight: 600 }}>
                           {open && <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: statusColor }} />}
                           {statusLabel}
                         </span>
                       </td>
-                      <td style={{ padding: '9px 14px', fontSize: 12 }}>
+                      <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12 }}>
                         {open ? open.signInAt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) : '—'}
                       </td>
                       {canManageUsers && (
-                        <td style={{ padding: '9px 14px', fontSize: 12 }}>
+                        <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12 }}>
                           <UserModal
                             user={{ id: m.id, name: m.name, username: m.username, email: m.email, department: m.department, designation: m.designation, roleId: m.roleId, isActive: m.isActive, hourlyRate: m.hourlyRate, otRate: m.otRate, leaveGroupId: m.leaveGroupId }}
                             roles={roles}

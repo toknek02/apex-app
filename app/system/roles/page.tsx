@@ -33,7 +33,7 @@ export default async function RolesPage() {
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
               {['Role', 'Description', 'Permissions', 'Users', 'Actions'].map((h) => (
-                <th key={h} style={{ padding: '9px 14px', textAlign: 'left', color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em' }}>
+                <th key={h} style={{ border: '1px solid #000', padding: '9px 14px', textAlign: 'left', color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em' }}>
                   {h}
                 </th>
               ))}
@@ -42,7 +42,7 @@ export default async function RolesPage() {
           <tbody>
             {roles.map((r, i) => (
               <tr key={r.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
-                <td style={{ padding: '9px 14px', fontSize: 12, fontWeight: 600 }}>
+                <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12, fontWeight: 600 }}>
                   {r.name}
                   {r.isSystem && (
                     <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 700, color: 'var(--apex-accent)', backgroundColor: 'rgba(224,123,57,0.15)', padding: '1px 6px', borderRadius: 4 }}>
@@ -50,12 +50,12 @@ export default async function RolesPage() {
                     </span>
                   )}
                 </td>
-                <td style={{ padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>{r.description ?? '—'}</td>
-                <td style={{ padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>
+                <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>{r.description ?? '—'}</td>
+                <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>
                   {r.rolePermissions.length === 0 ? 'None' : r.rolePermissions.map((rp) => rp.permission.label).join(', ')}
                 </td>
-                <td style={{ padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>{r._count.users}</td>
-                <td style={{ padding: '9px 14px', fontSize: 12 }}>
+                <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>{r._count.users}</td>
+                <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12 }}>
                   <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                     <RoleModal role={r} allPermissions={PERMISSIONS} trigger={<Pencil size={14} color="var(--apex-accent)" />} />
                     <DeleteRoleButton roleId={r.id} disabled={r.isSystem || r._count.users > 0} />
