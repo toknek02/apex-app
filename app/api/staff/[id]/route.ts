@@ -48,6 +48,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (existingEmail) return NextResponse.json({ error: 'A user with this email already exists' }, { status: 409 })
   }
 
+  // Never let a save leave the account with neither a Name nor an email —
+  // that's the only pair of fields login can match against, so clearing
+  // both would lock the user out with no way back in.
+  if (username !== undefined && !username) {
+    const current = await prisma.user.findUnique({ where: { id }, select: { email: true } })
+    const finalEmail = email !== undefined ? email : current?.email
+    if (!finalEmail) {
+      return NextResponse.json({ error: 'Name (login) cannot be cleared — this user has no email either, which would lock them out' }, { status: 400 })
+    }
+  }
+
   const parsedHourlyRate = hourlyRate !== undefined ? parseRate(hourlyRate) : undefined
   const parsedOtRate = otRate !== undefined ? parseRate(otRate) : undefined
   if ((parsedHourlyRate && !parsedHourlyRate.ok) || (parsedOtRate && !parsedOtRate.ok)) {

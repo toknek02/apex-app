@@ -64,7 +64,10 @@ function entryTitle(e: Entry) {
     parts.push(`(${formatHrs(totalHrs)}h)`)
   }
   let title = parts.join(' ')
-  if (e.remarks) title += `: ${e.remarks}`
+  // Leave reasons are personal (medical details, etc.) — this page is open
+  // to every employee, so don't surface them here. The Leave Calendar,
+  // which stays restricted to directors/HR, is where that detail belongs.
+  if (!isLeave && e.remarks) title += `: ${e.remarks}`
   return title
 }
 

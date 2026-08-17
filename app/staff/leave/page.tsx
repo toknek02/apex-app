@@ -37,11 +37,23 @@ export default async function LeavePage() {
 
   const groupIds = directedGroups.map((g) => g.id)
   const isDirector = groupIds.length > 0
+  // MANAGE_LEAVE_GROUPS is the approval override for groups whose director
+  // is unavailable — extend that same override to applications from
+  // ungrouped staff, which otherwise have no director to route to and
+  // would sit PENDING forever with no one able to act on them.
+  const canApproveOrphaned = hasPermission(user, 'MANAGE_LEAVE_GROUPS')
+  const showApprovalSection = isDirector || canApproveOrphaned
 
   const [pendingForApproval, hrApplications] = await Promise.all([
-    isDirector
+    showApprovalSection
       ? prisma.leaveApplication.findMany({
-          where: { status: 'PENDING', user: { leaveGroupId: { in: groupIds } } },
+          where: {
+            status: 'PENDING',
+            OR: [
+              ...(isDirector ? [{ user: { leaveGroupId: { in: groupIds } } }] : []),
+              ...(canApproveOrphaned ? [{ user: { leaveGroupId: null } }] : []),
+            ],
+          },
           include: { user: { select: { id: true, name: true, department: true } } },
           orderBy: { createdAt: 'asc' },
         })
@@ -67,7 +79,7 @@ export default async function LeavePage() {
 
       <LeaveTabs active="applications" />
 
-      {isDirector && (
+      {showApprovalSection && (
         <>
           <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, marginBottom: 12 }}>Pending My Approval</h2>
           <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'hidden', marginBottom: 28 }}>

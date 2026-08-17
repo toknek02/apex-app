@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   if (!directorId) return NextResponse.json({ error: 'Director is required' }, { status: 400 })
 
   const director = await prisma.user.findUnique({ where: { id: directorId } })
-  if (!director) return NextResponse.json({ error: 'Director not found' }, { status: 400 })
+  if (!director || !director.isActive) return NextResponse.json({ error: 'Director not found or inactive' }, { status: 400 })
 
   const leaveGroup = await prisma.leaveGroup.create({
     data: { name: name.trim(), directorId },

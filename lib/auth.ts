@@ -77,11 +77,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         // Login is by username (the short Name set by HR/Admin) going
         // forward, but falls back to matching email too — accounts created
         // before this field existed have no username yet and keep working
-        // via the email they already have.
-        const user = await prisma.user.findFirst({
-          where: { OR: [{ username: identifier }, { email: identifier }] },
-          include: { role: { include: { rolePermissions: { include: { permission: true } } } } },
-        })
+        // via the email they already have. Checked as two separate,
+        // ordered lookups (not one OR) so a username match always wins —
+        // email is free text with no cross-user uniqueness against
+        // usernames, so an OR could otherwise match an unrelated account.
+        const roleInclude = { role: { include: { rolePermissions: { include: { permission: true } } } } } as const
+        const user =
+          (await prisma.user.findFirst({ where: { username: identifier }, include: roleInclude })) ??
+          (await prisma.user.findFirst({ where: { email: identifier }, include: roleInclude }))
         if (!user || !user.isActive) return null
 
         const passwordValid = await bcrypt.compare(password, user.passwordHash)

@@ -14,7 +14,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   if (directorId !== undefined) {
     const director = await prisma.user.findUnique({ where: { id: directorId } })
-    if (!director) return NextResponse.json({ error: 'Director not found' }, { status: 400 })
+    if (!director || !director.isActive) return NextResponse.json({ error: 'Director not found or inactive' }, { status: 400 })
   }
 
   const leaveGroup = await prisma.leaveGroup.update({

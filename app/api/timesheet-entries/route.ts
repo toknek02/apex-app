@@ -6,6 +6,7 @@ import { STAGES } from '@/lib/logbook-stages'
 import { TASKS } from '@/lib/logbook-tasks'
 import { buildTimesheetWorkbook } from '@/lib/timesheet-export'
 import { calcCost } from '@/lib/cost-calc'
+import { parseLocalDate } from '@/lib/date-utils'
 
 const MAX_MINS_PER_ENTRY = 24 * 60
 
@@ -121,8 +122,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'End Time must be after Start Time' }, { status: 400 })
     }
   }
-  const parsedDate = new Date(date)
-  if (Number.isNaN(parsedDate.getTime())) {
+  const parsedDate = typeof date === 'string' ? parseLocalDate(date) : null
+  if (!parsedDate) {
     return NextResponse.json({ error: 'Invalid date' }, { status: 400 })
   }
   if (eventType === 'Project Work' && !projectId) {

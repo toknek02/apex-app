@@ -32,6 +32,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (application.status !== 'PENDING') {
     return NextResponse.json({ error: 'This application has already been decided' }, { status: 409 })
   }
+  // Never allow self-approval, even for a director who's also a member of
+  // their own group, and even under the MANAGE_LEAVE_GROUPS override.
+  if (application.userId === session.user.id) {
+    return NextResponse.json({ error: 'You cannot approve or reject your own leave application' }, { status: 403 })
+  }
   // Approval authority is whoever directs the applicant's leave group — not
   // a permission. Only the Administrator escape hatch (MANAGE_LEAVE_GROUPS)
   // can also act, for cases where a group's director is unavailable.
@@ -41,19 +46,31 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const updated = await prisma.leaveApplication.update({
-    where: { id },
+  const reviewedAt = new Date()
+  // Atomic conditional update — only succeeds if the row is still PENDING,
+  // so two concurrent requests (a double-click, or two approvers racing)
+  // can't both go through and double-create the TimesheetEntry rows below.
+  const updateResult = await prisma.leaveApplication.updateMany({
+    where: { id, status: 'PENDING' },
     data: {
       status,
       reviewedById: session.user.id,
       reviewedByName: session.user.name,
-      reviewedAt: new Date(),
+      reviewedAt,
       reviewRemarks: reviewRemarks || null,
     },
   })
+  if (updateResult.count === 0) {
+    return NextResponse.json({ error: 'This application has already been decided' }, { status: 409 })
+  }
 
   if (status === 'APPROVED') {
     const days = enumerateDaysInclusive(application.startDate, application.endDate)
+    // Approved leave supersedes anything already logged for these dates,
+    // rather than adding a second entry on top of it.
+    await prisma.timesheetEntry.deleteMany({
+      where: { userId: application.userId, date: { in: days } },
+    })
     await prisma.timesheetEntry.createMany({
       data: days.map((date) => ({
         userId: application.userId,
@@ -75,15 +92,23 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     metadata: { leaveType: application.leaveType, startDate: application.startDate, endDate: application.endDate, reviewRemarks },
   })
 
-  const hrIds = await getHrRecipientIds(session.user.id)
-  await notifyUsers([application.userId, ...hrIds], {
-    type: status === 'APPROVED' ? 'leave_application.approved' : 'leave_application.rejected',
-    title: status === 'APPROVED'
-      ? `Your ${application.leaveType} application was approved`
-      : `Your ${application.leaveType} application was rejected`,
-    body: reviewRemarks || undefined,
-    link: '/staff/leave',
-  })
+  // The decision has already committed above — a notification failure here
+  // shouldn't turn a successful approval/rejection into an apparent error.
+  try {
+    const hrIds = await getHrRecipientIds(session.user.id)
+    await notifyUsers([application.userId, ...hrIds], {
+      type: status === 'APPROVED' ? 'leave_application.approved' : 'leave_application.rejected',
+      title: status === 'APPROVED'
+        ? `Your ${application.leaveType} application was approved`
+        : `Your ${application.leaveType} application was rejected`,
+      body: reviewRemarks || undefined,
+      link: '/staff/leave',
+    })
+  } catch (err) {
+    console.error('Failed to send leave decision notifications', err)
+  }
 
-  return NextResponse.json({ application: updated })
+  return NextResponse.json({
+    application: { ...application, status, reviewedById: session.user.id, reviewedByName: session.user.name, reviewedAt, reviewRemarks: reviewRemarks || null },
+  })
 }
