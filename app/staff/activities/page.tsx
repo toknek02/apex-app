@@ -75,7 +75,7 @@ export default async function ActivitiesPage() {
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
               {['Staff', 'Event', 'Project', 'Since', 'Remarks'].map((h) => (
-                <th key={h} style={{ border: '1px solid #000', padding: '9px 14px', textAlign: 'left', color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em' }}>
+                <th key={h} style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', textAlign: 'left', color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em' }}>
                   {h}
                 </th>
               ))}
@@ -99,17 +99,17 @@ export default async function ActivitiesPage() {
 
                   return (
                     <tr key={m.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
-                      <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12, fontStyle: eventLabel ? 'normal' : 'italic', color: eventLabel ? 'var(--apex-text)' : 'var(--apex-muted)' }}>
+                      <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12, fontStyle: eventLabel ? 'normal' : 'italic', color: eventLabel ? 'var(--apex-text)' : 'var(--apex-muted)' }}>
                         {m.name}
                       </td>
-                      <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12, color: eventLabel ? 'var(--apex-text)' : 'var(--apex-muted)' }}>
+                      <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12, color: eventLabel ? 'var(--apex-text)' : 'var(--apex-muted)' }}>
                         {eventLabel ?? 'Not logged in!'}
                       </td>
-                      <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>{eventLabel ? project : ''}</td>
-                      <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>
+                      <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>{eventLabel ? project : ''}</td>
+                      <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>
                         {since ? since.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) : ''}
                       </td>
-                      <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>{eventLabel ? remarks : ''}</td>
+                      <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>{eventLabel ? remarks : ''}</td>
                     </tr>
                   )
                 })}

@@ -129,7 +129,7 @@ export function FindEventsForm({ staff, venues, projects }: { staff: Staff[]; ve
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
               {['Date', 'Time', 'Title', 'Venue'].map((h) => (
-                <th key={h} style={{ border: '1px solid #000', padding: '9px 14px', textAlign: 'left', color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em' }}>
+                <th key={h} style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', textAlign: 'left', color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em' }}>
                   {h}
                 </th>
               ))}
@@ -146,14 +146,14 @@ export function FindEventsForm({ staff, venues, projects }: { staff: Staff[]; ve
               const d = new Date(e.date)
               return (
                 <tr key={e.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
-                  <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12 }}>{d.toLocaleDateString('en-GB')}</td>
-                  <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12 }}>{d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}</td>
-                  <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12 }}>
+                  <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }}>{d.toLocaleDateString('en-GB')}</td>
+                  <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }}>{d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}</td>
+                  <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }}>
                     {e.attendees.map((a) => a.user.name).join(', ')}
                     {e.attendees.length > 0 ? ': ' : ''}
                     {e.title}
                   </td>
-                  <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>{e.venue?.description ?? e.externalVenue ?? '—'}</td>
+                  <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>{e.venue?.description ?? e.externalVenue ?? '—'}</td>
                 </tr>
               )
             })}

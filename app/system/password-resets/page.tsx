@@ -36,7 +36,7 @@ export default async function PasswordResetsPage() {
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
               {['Requested', 'Email', 'Matched User', 'Reset', 'Actions'].map((h) => (
-                <th key={h} style={{ border: '1px solid #000', padding: '9px 14px', textAlign: 'left', color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em' }}>
+                <th key={h} style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', textAlign: 'left', color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em' }}>
                   {h}
                 </th>
               ))}
@@ -54,14 +54,14 @@ export default async function PasswordResetsPage() {
               const matched = r.userId ? userById.get(r.userId) : undefined
               return (
                 <tr key={r.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
-                  <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)', whiteSpace: 'nowrap' }}>
+                  <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)', whiteSpace: 'nowrap' }}>
                     {r.createdAt.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
                   </td>
-                  <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12 }}>{r.email}</td>
-                  <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12 }}>
+                  <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }}>{r.email}</td>
+                  <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }}>
                     {matched ? matched.name : <span style={{ color: 'var(--apex-red)' }}>No matching account</span>}
                   </td>
-                  <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12 }}>
+                  <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }}>
                     {matched && (
                       <UserModal
                         user={{ id: matched.id, name: matched.name, username: matched.username, email: matched.email, department: matched.department, designation: matched.designation, roleId: matched.roleId, isActive: matched.isActive, hourlyRate: matched.hourlyRate, otRate: matched.otRate, leaveGroupId: matched.leaveGroupId }}
@@ -75,7 +75,7 @@ export default async function PasswordResetsPage() {
                       />
                     )}
                   </td>
-                  <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12 }}>
+                  <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }}>
                     <PasswordResetActions requestId={r.id} />
                   </td>
                 </tr>

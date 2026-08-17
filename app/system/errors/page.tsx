@@ -22,7 +22,7 @@ export default async function ErrorLogPage() {
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
               {['When', 'Source', 'Message', 'Page', 'User'].map((h) => (
-                <th key={h} style={{ border: '1px solid #000', padding: '9px 14px', textAlign: 'left', color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em' }}>
+                <th key={h} style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', textAlign: 'left', color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em' }}>
                   {h}
                 </th>
               ))}
@@ -38,10 +38,10 @@ export default async function ErrorLogPage() {
             )}
             {entries.map((e, i) => (
               <tr key={e.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
-                <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)', whiteSpace: 'nowrap' }}>
+                <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)', whiteSpace: 'nowrap' }}>
                   {e.createdAt.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
                 </td>
-                <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12 }}>
+                <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }}>
                   <span
                     style={{
                       fontSize: 10,
@@ -55,13 +55,13 @@ export default async function ErrorLogPage() {
                     {e.source.toUpperCase()}
                   </span>
                 </td>
-                <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12, maxWidth: 420, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={e.message}>
+                <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12, maxWidth: 420, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={e.message}>
                   {e.message}
                 </td>
-                <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={e.url ?? ''}>
+                <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={e.url ?? ''}>
                   {e.url ?? '—'}
                 </td>
-                <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>{e.userName ?? '—'}</td>
+                <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>{e.userName ?? '—'}</td>
               </tr>
             ))}
           </tbody>

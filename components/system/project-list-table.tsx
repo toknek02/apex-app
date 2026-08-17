@@ -50,7 +50,7 @@ export function ProjectListTable({ projects }: { projects: ProjectRow[] }) {
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
               {['Project', 'Short Name', 'Status', 'Access', 'Team', 'Actions'].map((h) => (
-                <th key={h} style={{ border: '1px solid #000', padding: '9px 14px', textAlign: 'left', color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em' }}>
+                <th key={h} style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', textAlign: 'left', color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em' }}>
                   {h}
                 </th>
               ))}
@@ -72,21 +72,21 @@ export function ProjectListTable({ projects }: { projects: ProjectRow[] }) {
                     onClick={() => router.push(`/staff/project/${p.id}`)}
                     style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff', cursor: 'pointer' }}
                   >
-                    <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12, color: 'var(--apex-accent)', fontWeight: 600 }}>{p.code}</td>
-                    <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12 }}>{p.shortName || '—'}</td>
-                    <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12 }}>
+                    <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12, color: 'var(--apex-accent)', fontWeight: 600 }}>{p.code}</td>
+                    <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }}>{p.shortName || '—'}</td>
+                    <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }}>
                       <span style={{ padding: '2px 10px', borderRadius: 10, fontSize: 11, fontWeight: 600, backgroundColor: s.bg, color: s.color }}>
                         {p.status}
                       </span>
                     </td>
-                    <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>{p.access}</td>
-                    <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12 }}>
+                    <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>{p.access}</td>
+                    <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }}>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--apex-text)' }}>
                         <Users size={13} color="var(--apex-accent)" />
                         {p.memberCount}
                       </span>
                     </td>
-                    <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12 }} onClick={(e) => e.stopPropagation()}>
+                    <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }} onClick={(e) => e.stopPropagation()}>
                       <DeleteProjectButton projectId={p.id} />
                     </td>
                   </tr>

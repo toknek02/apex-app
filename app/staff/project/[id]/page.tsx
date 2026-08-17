@@ -77,28 +77,28 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
                 <tr>
-                  <th style={{ padding: '6px 8px', textAlign: 'left', fontWeight: 600, border: '1px solid #000' }}>Staff</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 600, border: '1px solid #000' }}>Normal</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 600, border: '1px solid #000' }}>OT</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', fontWeight: 600, borderRight: '1px solid var(--apex-border)' }}>Staff</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 600, borderRight: '1px solid var(--apex-border)' }}>Normal</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 600, borderRight: '1px solid var(--apex-border)' }}>OT</th>
                 </tr>
               </thead>
               <tbody>
                 {[...byStaff.values()].map((row) => (
                   <tr key={row.name}>
-                    <td style={{ padding: '6px 8px', border: '1px solid #000' }}>
+                    <td style={{ padding: '6px 8px', borderRight: '1px solid var(--apex-border)' }}>
                       {row.name}
                       {row.department && <span style={{ color: 'var(--apex-muted)', fontSize: 11 }}> ({row.department})</span>}
                     </td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #000' }}>{(row.normalMins / 60).toFixed(2)}</td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #000' }}>{(row.otMins / 60).toFixed(2)}</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'right', borderRight: '1px solid var(--apex-border)' }}>{(row.normalMins / 60).toFixed(2)}</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'right', borderRight: '1px solid var(--apex-border)' }}>{(row.otMins / 60).toFixed(2)}</td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
                 <tr>
-                  <td style={{ padding: '8px 8px', fontWeight: 700, border: '1px solid #000' }}>Total</td>
-                  <td style={{ padding: '8px 8px', textAlign: 'right', fontWeight: 700, border: '1px solid #000' }}>{(totalNormalMins / 60).toFixed(2)}</td>
-                  <td style={{ padding: '8px 8px', textAlign: 'right', fontWeight: 700, border: '1px solid #000' }}>{(totalOtMins / 60).toFixed(2)}</td>
+                  <td style={{ padding: '8px 8px', fontWeight: 700, borderRight: '1px solid var(--apex-border)' }}>Total</td>
+                  <td style={{ padding: '8px 8px', textAlign: 'right', fontWeight: 700, borderRight: '1px solid var(--apex-border)' }}>{(totalNormalMins / 60).toFixed(2)}</td>
+                  <td style={{ padding: '8px 8px', textAlign: 'right', fontWeight: 700, borderRight: '1px solid var(--apex-border)' }}>{(totalOtMins / 60).toFixed(2)}</td>
                 </tr>
               </tfoot>
             </table>

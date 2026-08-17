@@ -195,17 +195,17 @@ export default async function ActivitiesSummaryPage({
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
-              <th style={{ border: '1px solid #000', padding: '9px 14px', textAlign: 'left', color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', width: 160 }}>
+              <th style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', textAlign: 'left', color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', width: 160 }}>
                 Staff
               </th>
-              <th style={{ border: '1px solid #000', padding: '9px 14px', color: '#fff', fontSize: 10, fontWeight: 600 }}>
+              <th style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', color: '#fff', fontSize: 10, fontWeight: 600 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   {HOUR_TICKS.map((h) => (
                     <span key={h}>{formatHour(h)}</span>
                   ))}
                 </div>
               </th>
-              <th style={{ border: '1px solid #000', padding: '9px 14px', textAlign: 'right', color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', width: 70 }}>
+              <th style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', textAlign: 'right', color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', width: 70 }}>
                 Total Hrs
               </th>
             </tr>
@@ -234,8 +234,8 @@ export default async function ActivitiesSummaryPage({
 
                   return (
                     <tr key={m.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
-                      <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12, fontWeight: 600, verticalAlign: 'top' }}>{m.name}</td>
-                      <td style={{ border: '1px solid #000', padding: '9px 14px', verticalAlign: 'top' }}>
+                      <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12, fontWeight: 600, verticalAlign: 'top' }}>{m.name}</td>
+                      <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', verticalAlign: 'top' }}>
                         {placed.length === 0 && unplaced.length === 0 ? (
                           <div style={{ fontSize: 12, fontStyle: 'italic', color: 'var(--apex-muted)' }}>No entries</div>
                         ) : (
@@ -290,7 +290,7 @@ export default async function ActivitiesSummaryPage({
                           </div>
                         )}
                       </td>
-                      <td style={{ border: '1px solid #000', padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)', textAlign: 'right', verticalAlign: 'top' }}>
+                      <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)', textAlign: 'right', verticalAlign: 'top' }}>
                         {totalMins > 0 ? formatHrs(totalMins) : ''}
                       </td>
                     </tr>
