@@ -23,22 +23,13 @@ export async function GET(request: Request) {
   const monthEnd = new Date(year, month + 1, 0)
   const monthLabel = monthStart.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
 
-  // Same visibility tiering as the Leave Calendar page itself.
-  const isPrivileged =
-    session.user.permissions.includes('VIEW_TIMESHEET_REPORTS') ||
-    session.user.permissions.includes('MANAGE_PROJECTS') ||
-    session.user.permissions.includes('MANAGE_USERS')
+  // Same open visibility as the Leave Calendar page itself.
+  const allStaff = await prisma.user.findMany({
+    where: { isActive: true },
+    select: { id: true, name: true, department: true, leaveGroupMemberships: { select: { leaveGroupId: true } } },
+  })
 
-  const [allStaff, directedGroups] = await Promise.all([
-    prisma.user.findMany({ where: { isActive: true }, select: { id: true, name: true, department: true, leaveGroupMemberships: { select: { leaveGroupId: true } } } }),
-    prisma.leaveGroup.findMany({ where: { directorId: session.user.id }, select: { id: true } }),
-  ])
-  const directedGroupIds = directedGroups.map((g) => g.id)
-  const visibleStaff = isPrivileged
-    ? allStaff
-    : allStaff.filter((s) => s.id === session.user.id || s.leaveGroupMemberships.some((m) => directedGroupIds.includes(m.leaveGroupId)))
-
-  const filteredStaff = visibleStaff
+  const filteredStaff = allStaff
     .filter((s) => !department || (s.department ?? 'UNASSIGNED') === department)
     .filter((s) => !leaveGroup || s.leaveGroupMemberships.some((m) => m.leaveGroupId === leaveGroup))
   const staffById = new Map(filteredStaff.map((s) => [s.id, s]))

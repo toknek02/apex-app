@@ -1,6 +1,6 @@
 import { Fragment } from 'react'
 import Link from 'next/link'
-import { requireUser, hasPermission } from '@/lib/rbac'
+import { requireUser } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import { LeaveTabs } from '@/components/staff/leave-tabs'
@@ -136,29 +136,20 @@ export default async function LeaveCalendarPage({
   const prevKey = `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}`
   const nextKey = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}`
 
-  // Same tiering as Activities Summary — company-wide visibility needs
-  // oversight permission. Directors additionally see their own group's
-  // members even without one, since they need to plan around their team's
-  // leave regardless of broader reporting permissions.
-  const isPrivileged =
-    hasPermission(user, 'VIEW_TIMESHEET_REPORTS') ||
-    hasPermission(user, 'MANAGE_PROJECTS') ||
-    hasPermission(user, 'MANAGE_USERS')
-
-  const [allStaff, directedGroups, leaveGroups] = await Promise.all([
+  // Open to everyone — planning around a colleague's leave doesn't require
+  // oversight permissions, unlike the underlying applications' details
+  // (reason, remarks), which stay restricted to the applicant/architect/
+  // director/HR via the API.
+  const [allStaff, leaveGroups] = await Promise.all([
     prisma.user.findMany({
       where: { isActive: true },
       include: { leaveGroupMemberships: { select: { leaveGroupId: true } } },
       orderBy: [{ department: 'asc' }, { name: 'asc' }],
     }),
-    prisma.leaveGroup.findMany({ where: { directorId: user.id }, select: { id: true } }),
     prisma.leaveGroup.findMany({ orderBy: { name: 'asc' }, select: { id: true, name: true } }),
   ])
 
-  const directedGroupIds = directedGroups.map((g) => g.id)
-  const visibleStaff = isPrivileged
-    ? allStaff
-    : allStaff.filter((s) => s.id === user.id || s.leaveGroupMemberships.some((m) => directedGroupIds.includes(m.leaveGroupId)))
+  const visibleStaff = allStaff
 
   const departments = [...new Set(visibleStaff.map((s) => s.department ?? 'UNASSIGNED'))].sort()
   const selectedDepartment = sp.department && departments.includes(sp.department) ? sp.department : ''
