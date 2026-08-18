@@ -146,7 +146,11 @@ export default async function LeaveCalendarPage({
     hasPermission(user, 'MANAGE_USERS')
 
   const [allStaff, directedGroups, leaveGroups] = await Promise.all([
-    prisma.user.findMany({ where: { isActive: true }, orderBy: [{ department: 'asc' }, { name: 'asc' }] }),
+    prisma.user.findMany({
+      where: { isActive: true },
+      include: { leaveGroupMemberships: { select: { leaveGroupId: true } } },
+      orderBy: [{ department: 'asc' }, { name: 'asc' }],
+    }),
     prisma.leaveGroup.findMany({ where: { directorId: user.id }, select: { id: true } }),
     prisma.leaveGroup.findMany({ orderBy: { name: 'asc' }, select: { id: true, name: true } }),
   ])
@@ -154,7 +158,7 @@ export default async function LeaveCalendarPage({
   const directedGroupIds = directedGroups.map((g) => g.id)
   const visibleStaff = isPrivileged
     ? allStaff
-    : allStaff.filter((s) => s.id === user.id || (s.leaveGroupId && directedGroupIds.includes(s.leaveGroupId)))
+    : allStaff.filter((s) => s.id === user.id || s.leaveGroupMemberships.some((m) => directedGroupIds.includes(m.leaveGroupId)))
 
   const departments = [...new Set(visibleStaff.map((s) => s.department ?? 'UNASSIGNED'))].sort()
   const selectedDepartment = sp.department && departments.includes(sp.department) ? sp.department : ''
@@ -162,7 +166,7 @@ export default async function LeaveCalendarPage({
 
   const staff = visibleStaff
     .filter((s) => !selectedDepartment || (s.department ?? 'UNASSIGNED') === selectedDepartment)
-    .filter((s) => !selectedLeaveGroup || s.leaveGroupId === selectedLeaveGroup)
+    .filter((s) => !selectedLeaveGroup || s.leaveGroupMemberships.some((m) => m.leaveGroupId === selectedLeaveGroup))
 
   const filterQuery = `${selectedDepartment ? `&department=${encodeURIComponent(selectedDepartment)}` : ''}${selectedLeaveGroup ? `&leaveGroup=${encodeURIComponent(selectedLeaveGroup)}` : ''}`
 

@@ -23,7 +23,7 @@ type User = {
   isActive: boolean
   hourlyRate?: number | null
   otRate?: number | null
-  leaveGroupId?: string | null
+  leaveGroupIds?: string[]
 }
 
 type RoleOption = { id: string; name: string }
@@ -42,9 +42,18 @@ export function UserModal({ user, roles, leaveGroups, trigger }: { user?: User; 
   const [isActive, setIsActive] = useState(user?.isActive ?? true)
   const [hourlyRate, setHourlyRate] = useState(user?.hourlyRate?.toString() ?? '')
   const [otRate, setOtRate] = useState(user?.otRate?.toString() ?? '')
-  const [leaveGroupId, setLeaveGroupId] = useState(user?.leaveGroupId ?? '')
+  const [leaveGroupIds, setLeaveGroupIds] = useState<Set<string>>(new Set(user?.leaveGroupIds ?? []))
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+
+  function toggleGroup(id: string) {
+    setLeaveGroupIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   async function handleSave() {
     setError('')
@@ -75,8 +84,8 @@ export function UserModal({ user, roles, leaveGroups, trigger }: { user?: User; 
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(
         user
-          ? { name, username, email, department, designation, roleId, isActive, hourlyRate, otRate, leaveGroupId, ...(password ? { password } : {}) }
-          : { name, username, email, password, department, designation, roleId, hourlyRate, otRate, leaveGroupId }
+          ? { name, username, email, department, designation, roleId, isActive, hourlyRate, otRate, leaveGroupIds: [...leaveGroupIds], ...(password ? { password } : {}) }
+          : { name, username, email, password, department, designation, roleId, hourlyRate, otRate, leaveGroupIds: [...leaveGroupIds] }
       ),
     })
     setSaving(false)
@@ -158,13 +167,22 @@ export function UserModal({ user, roles, leaveGroups, trigger }: { user?: User; 
               </select>
             </div>
             <div style={{ marginBottom: 12 }}>
-              <label style={labelStyle}>Group</label>
-              <select style={inputStyle} value={leaveGroupId} onChange={(e) => setLeaveGroupId(e.target.value)}>
-                <option value="">— None —</option>
-                {leaveGroups.map((g) => (
-                  <option key={g.id} value={g.id}>{g.name}</option>
-                ))}
-              </select>
+              <label style={labelStyle}>Groups</label>
+              {leaveGroups.length === 0 ? (
+                <div style={{ fontSize: 12, color: 'var(--apex-muted)' }}>No groups exist yet.</div>
+              ) : (
+                <div style={{ border: '1px solid var(--apex-border)', borderRadius: 6, maxHeight: 120, overflowY: 'auto' }}>
+                  {leaveGroups.map((g) => (
+                    <label key={g.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', fontSize: 13, borderBottom: '1px solid var(--apex-border)', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={leaveGroupIds.has(g.id)} onChange={() => toggleGroup(g.id)} />
+                      {g.name}
+                    </label>
+                  ))}
+                </div>
+              )}
+              <div style={{ fontSize: 11, color: 'var(--apex-muted)', marginTop: 5 }}>
+                Can belong to more than one — they'll pick which group to route each leave application through.
+              </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 12 }}>
               <div>

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-type StaffOption = { id: string; name: string; leaveGroupId: string | null }
+type StaffOption = { id: string; name: string }
 
 export function LeaveGroupMembersModal({
   groupId,
@@ -65,7 +65,7 @@ export function LeaveGroupMembersModal({
           <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: '#fff', borderRadius: 10, padding: 24, width: 420, maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
             <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Members — {groupName}</h2>
             <p style={{ fontSize: 11, color: 'var(--apex-muted)', marginBottom: 12 }}>
-              A staff member checked in another group here will be moved into this one — everyone belongs to at most one group.
+              A staff member can belong to more than one group — they'll pick which one to route a leave application through when applying.
             </p>
 
             {error && (
@@ -75,19 +75,15 @@ export function LeaveGroupMembersModal({
             )}
 
             <div style={{ overflowY: 'auto', border: '1px solid var(--apex-border)', borderRadius: 6, marginBottom: 16 }}>
-              {staff.map((s) => {
-                const inOtherGroup = s.leaveGroupId && s.leaveGroupId !== groupId && !selected.has(s.id)
-                return (
-                  <label
-                    key={s.id}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', fontSize: 13, borderBottom: '1px solid var(--apex-border)', cursor: 'pointer' }}
-                  >
-                    <input type="checkbox" checked={selected.has(s.id)} onChange={() => toggle(s.id)} />
-                    <span style={{ flex: 1 }}>{s.name}</span>
-                    {inOtherGroup && <span style={{ fontSize: 10, color: 'var(--apex-muted)' }}>in another group</span>}
-                  </label>
-                )
-              })}
+              {staff.map((s) => (
+                <label
+                  key={s.id}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', fontSize: 13, borderBottom: '1px solid var(--apex-border)', cursor: 'pointer' }}
+                >
+                  <input type="checkbox" checked={selected.has(s.id)} onChange={() => toggle(s.id)} />
+                  <span style={{ flex: 1 }}>{s.name}</span>
+                </label>
+              ))}
             </div>
 
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>

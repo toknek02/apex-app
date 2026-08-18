@@ -15,17 +15,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: 'memberIds must be an array of user IDs' }, { status: 400 })
   }
 
-  const leaveGroup = await prisma.leaveGroup.findUnique({ where: { id }, include: { members: { select: { id: true, name: true } } } })
+  const leaveGroup = await prisma.leaveGroup.findUnique({ where: { id }, include: { memberships: { select: { userId: true } } } })
   if (!leaveGroup) return NextResponse.json({ error: 'Group not found' }, { status: 404 })
 
-  const currentIds = new Set(leaveGroup.members.map((m) => m.id))
+  const currentIds = new Set(leaveGroup.memberships.map((m) => m.userId))
   const nextIds = new Set(memberIds)
-  const added = memberIds.filter((id) => !currentIds.has(id))
-  const removed = leaveGroup.members.filter((m) => !nextIds.has(m.id)).map((m) => m.id)
+  const added = memberIds.filter((uid) => !currentIds.has(uid))
+  const removed = [...currentIds].filter((uid) => !nextIds.has(uid))
 
   await prisma.$transaction([
-    ...(removed.length > 0 ? [prisma.user.updateMany({ where: { id: { in: removed } }, data: { leaveGroupId: null } })] : []),
-    ...(added.length > 0 ? [prisma.user.updateMany({ where: { id: { in: added } }, data: { leaveGroupId: id } })] : []),
+    ...(removed.length > 0 ? [prisma.leaveGroupMember.deleteMany({ where: { leaveGroupId: id, userId: { in: removed } } })] : []),
+    ...(added.length > 0 ? [prisma.leaveGroupMember.createMany({ data: added.map((userId) => ({ leaveGroupId: id, userId })) })] : []),
   ])
 
   await logAudit({

@@ -45,8 +45,8 @@ export async function GET(request: Request) {
     const applications = await prisma.leaveApplication.findMany({
       where: {
         OR: [
-          ...(architectGroupIds.length > 0 ? [{ status: 'PENDING_ARCHITECT', user: { leaveGroupId: { in: architectGroupIds } } }] : []),
-          ...(directorGroupIds.length > 0 ? [{ status: 'PENDING_DIRECTOR', user: { leaveGroupId: { in: directorGroupIds } } }] : []),
+          ...(architectGroupIds.length > 0 ? [{ status: 'PENDING_ARCHITECT', leaveGroupId: { in: architectGroupIds } }] : []),
+          ...(directorGroupIds.length > 0 ? [{ status: 'PENDING_DIRECTOR', leaveGroupId: { in: directorGroupIds } }] : []),
         ],
       },
       include: { user: { select: { id: true, name: true, department: true } }, project: { select: { id: true, code: true, shortName: true } } },
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { leaveType, startDate, endDate, reason, dayPortion, projectId } = await req.json()
+  const { leaveType, startDate, endDate, reason, dayPortion, projectId, leaveGroupId } = await req.json()
 
   if (!leaveType || !LEAVE_EVENT_TYPES.includes(leaveType)) {
     return NextResponse.json({ error: 'Invalid leave type' }, { status: 400 })
@@ -105,15 +105,31 @@ export async function POST(req: NextRequest) {
 
   const applicant = await prisma.user.findUnique({
     where: { id: session.user.id },
-    include: { leaveGroup: { select: { directorId: true, architectId: true } } },
+    include: { leaveGroupMemberships: { include: { leaveGroup: { select: { id: true, directorId: true, architectId: true } } } } },
   })
   if (!applicant) return NextResponse.json({ error: 'User not found' }, { status: 404 })
+
+  // An applicant in more than one group picks which one to route through;
+  // with exactly one it's implied. Whichever it is, it must be a group
+  // they're actually a member of — not just any group id someone could pass
+  // in to route around the intended approver.
+  const memberships = applicant.leaveGroupMemberships
+  let chosenGroup: (typeof memberships)[number]['leaveGroup'] | null = null
+  if (typeof leaveGroupId === 'string' && leaveGroupId) {
+    const membership = memberships.find((m) => m.leaveGroupId === leaveGroupId)
+    if (!membership) return NextResponse.json({ error: 'You are not a member of that group' }, { status: 400 })
+    chosenGroup = membership.leaveGroup
+  } else if (memberships.length === 1) {
+    chosenGroup = memberships[0].leaveGroup
+  } else if (memberships.length > 1) {
+    return NextResponse.json({ error: 'You belong to more than one group — pick which one should review this application' }, { status: 400 })
+  }
 
   // Applications from a group with an architect start there; everyone else
   // (no architect assigned, or no group at all) goes straight to the
   // director stage, matching the app's original single-stage behavior.
-  const architectId = applicant.leaveGroup?.architectId
-  const directorId = applicant.leaveGroup?.directorId
+  const architectId = chosenGroup?.architectId
+  const directorId = chosenGroup?.directorId
   const initialStatus = architectId ? 'PENDING_ARCHITECT' : 'PENDING_DIRECTOR'
 
   const application = await prisma.leaveApplication.create({
@@ -125,6 +141,7 @@ export async function POST(req: NextRequest) {
       dayPortion: portion,
       reason: reason || null,
       projectId: validProjectId,
+      leaveGroupId: chosenGroup?.id ?? null,
       status: initialStatus,
     },
   })

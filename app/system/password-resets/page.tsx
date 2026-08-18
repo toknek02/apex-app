@@ -19,7 +19,7 @@ export default async function PasswordResetsPage() {
 
   const userIds = pending.map((r) => r.userId).filter((id): id is string => Boolean(id))
   const matchedUsers = userIds.length > 0
-    ? await prisma.user.findMany({ where: { id: { in: userIds } } })
+    ? await prisma.user.findMany({ where: { id: { in: userIds } }, include: { leaveGroupMemberships: { select: { leaveGroupId: true } } } })
     : []
   const userById = new Map(matchedUsers.map((u) => [u.id, u]))
 
@@ -64,7 +64,7 @@ export default async function PasswordResetsPage() {
                   <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }}>
                     {matched && (
                       <UserModal
-                        user={{ id: matched.id, name: matched.name, username: matched.username, email: matched.email, department: matched.department, designation: matched.designation, roleId: matched.roleId, isActive: matched.isActive, hourlyRate: matched.hourlyRate, otRate: matched.otRate, leaveGroupId: matched.leaveGroupId }}
+                        user={{ id: matched.id, name: matched.name, username: matched.username, email: matched.email, department: matched.department, designation: matched.designation, roleId: matched.roleId, isActive: matched.isActive, hourlyRate: matched.hourlyRate, otRate: matched.otRate, leaveGroupIds: matched.leaveGroupMemberships.map((lgm) => lgm.leaveGroupId) }}
                         roles={roles}
                         leaveGroups={leaveGroups}
                         trigger={

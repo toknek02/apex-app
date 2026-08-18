@@ -108,7 +108,11 @@ export default async function ActivitiesSummaryPage({
   // Department / Group / "only with entries" filters below instead
   // of gating the whole page behind a permission.
   const [staff, entries, leaveGroups] = await Promise.all([
-    prisma.user.findMany({ where: { isActive: true }, orderBy: [{ department: 'asc' }, { name: 'asc' }] }),
+    prisma.user.findMany({
+      where: { isActive: true },
+      include: { leaveGroupMemberships: { select: { leaveGroupId: true } } },
+      orderBy: [{ department: 'asc' }, { name: 'asc' }],
+    }),
     prisma.timesheetEntry.findMany({
       where: { date: { gte: dayStart, lte: dayEnd } },
       include: { project: true },
@@ -131,7 +135,7 @@ export default async function ActivitiesSummaryPage({
   const visibleStaff = staff
     .filter((s) => !onlyWithEntries || (entriesByUser.get(s.id)?.length ?? 0) > 0)
     .filter((s) => !selectedDepartment || (s.department ?? 'UNASSIGNED') === selectedDepartment)
-    .filter((s) => !selectedLeaveGroup || s.leaveGroupId === selectedLeaveGroup)
+    .filter((s) => !selectedLeaveGroup || s.leaveGroupMemberships.some((m) => m.leaveGroupId === selectedLeaveGroup))
 
   const grouped = new Map<string, typeof staff>()
   for (const s of visibleStaff) {

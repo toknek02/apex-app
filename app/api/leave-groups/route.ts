@@ -13,7 +13,7 @@ export async function GET() {
     include: {
       director: { select: { id: true, name: true } },
       architect: { select: { id: true, name: true } },
-      _count: { select: { members: true } },
+      _count: { select: { memberships: true } },
     },
     orderBy: { name: 'asc' },
   })

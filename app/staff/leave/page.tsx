@@ -65,9 +65,9 @@ export default async function LeavePage() {
       ? prisma.leaveApplication.findMany({
           where: {
             OR: [
-              ...(isArchitect ? [{ status: 'PENDING_ARCHITECT', user: { leaveGroupId: { in: architectGroupIds } } }] : []),
-              ...(isDirector ? [{ status: 'PENDING_DIRECTOR', user: { leaveGroupId: { in: directorGroupIds } } }] : []),
-              ...(canApproveOrphaned ? [{ status: { in: ['PENDING_ARCHITECT', 'PENDING_DIRECTOR'] }, user: { leaveGroupId: null } }] : []),
+              ...(isArchitect ? [{ status: 'PENDING_ARCHITECT', leaveGroupId: { in: architectGroupIds } }] : []),
+              ...(isDirector ? [{ status: 'PENDING_DIRECTOR', leaveGroupId: { in: directorGroupIds } }] : []),
+              ...(canApproveOrphaned ? [{ status: { in: ['PENDING_ARCHITECT', 'PENDING_DIRECTOR'] }, leaveGroupId: null }] : []),
             ],
           },
           include: { user: { select: { id: true, name: true, department: true } }, ...projectSelect },

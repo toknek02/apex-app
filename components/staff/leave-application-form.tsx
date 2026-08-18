@@ -18,8 +18,9 @@ function Required() {
 }
 
 type Project = { id: string; code: string; shortName: string }
+type LeaveGroupOption = { id: string; name: string }
 
-export function LeaveApplicationForm({ projects }: { projects: Project[] }) {
+export function LeaveApplicationForm({ projects, leaveGroups }: { projects: Project[]; leaveGroups: LeaveGroupOption[] }) {
   const router = useRouter()
   const today = new Date().toISOString().slice(0, 10)
 
@@ -29,6 +30,7 @@ export function LeaveApplicationForm({ projects }: { projects: Project[] }) {
   const [dayLength, setDayLength] = useState<'FULL' | 'HALF'>('FULL')
   const [halfPortion, setHalfPortion] = useState<'AM' | 'PM'>('AM')
   const [projectId, setProjectId] = useState('')
+  const [leaveGroupId, setLeaveGroupId] = useState(leaveGroups[0]?.id ?? '')
   const [reason, setReason] = useState('')
   const [errors, setErrors] = useState<string[]>([])
   const [warning, setWarning] = useState('')
@@ -66,7 +68,7 @@ export function LeaveApplicationForm({ projects }: { projects: Project[] }) {
     const res = await fetch('/api/leave-applications', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ leaveType, startDate, endDate, reason, dayPortion, projectId: projectId || null }),
+      body: JSON.stringify({ leaveType, startDate, endDate, reason, dayPortion, projectId: projectId || null, leaveGroupId: leaveGroupId || null }),
     })
     setSubmitting(false)
     if (res.ok) {
@@ -111,6 +113,20 @@ export function LeaveApplicationForm({ projects }: { projects: Project[] }) {
           ))}
         </select>
       </div>
+
+      {leaveGroups.length > 1 && (
+        <div style={{ marginBottom: 16 }}>
+          <label style={labelStyle}>Notify<Required /></label>
+          <select style={inputStyle} value={leaveGroupId} onChange={(e) => setLeaveGroupId(e.target.value)}>
+            {leaveGroups.map((g) => (
+              <option key={g.id} value={g.id}>{g.name}</option>
+            ))}
+          </select>
+          <div style={{ fontSize: 11, color: 'var(--apex-muted)', marginTop: 5 }}>
+            You're in more than one group — pick which one should review this application.
+          </div>
+        </div>
+      )}
 
       {halfDayEligible && (
         <div style={{ marginBottom: 16 }}>

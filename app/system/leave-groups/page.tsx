@@ -13,11 +13,11 @@ export default async function LeaveGroupsPage() {
       include: {
         director: { select: { id: true, name: true } },
         architect: { select: { id: true, name: true } },
-        members: { select: { id: true } },
+        memberships: { select: { userId: true } },
       },
       orderBy: { name: 'asc' },
     }),
-    prisma.user.findMany({ where: { isActive: true }, orderBy: { name: 'asc' }, select: { id: true, name: true, leaveGroupId: true } }),
+    prisma.user.findMany({ where: { isActive: true }, orderBy: { name: 'asc' }, select: { id: true, name: true } }),
   ])
 
   return (
@@ -37,7 +37,9 @@ export default async function LeaveGroupsPage() {
       <p style={{ fontSize: 12, color: 'var(--apex-muted)', marginBottom: 16, maxWidth: 640 }}>
         Each group has a Director, who gives final approval on that group's leave applications, and an
         optional Architect, who reviews applications first — if set, an application only reaches the
-        Director after the Architect approves it. Click a group's member count to manage who's in it.
+        Director after the Architect approves it. Staff can belong to more than one group, and pick
+        which one to route a leave application through when applying. Click a group's member count to
+        manage who's in it.
       </p>
 
       <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
@@ -71,10 +73,10 @@ export default async function LeaveGroupsPage() {
                       groupId={g.id}
                       groupName={g.name}
                       staff={staff}
-                      currentMemberIds={g.members.map((m) => m.id)}
+                      currentMemberIds={g.memberships.map((m) => m.userId)}
                       trigger={
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--apex-accent)', fontWeight: 600 }}>
-                          <Users size={13} /> {g.members.length}
+                          <Users size={13} /> {g.memberships.length}
                         </span>
                       }
                     />

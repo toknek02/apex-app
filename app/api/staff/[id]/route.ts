@@ -18,7 +18,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!hasPermission(session.user, 'MANAGE_USERS')) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const { id } = await params
-  const { name, username, email, department, designation, roleId, isActive, password, hourlyRate, otRate, leaveGroupId } = await req.json()
+  const { name, username, email, department, designation, roleId, isActive, password, hourlyRate, otRate, leaveGroupIds } = await req.json()
 
   if (password !== undefined && password !== '' && password.length < 6) {
     return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 })
@@ -33,9 +33,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!role) return NextResponse.json({ error: 'Role not found' }, { status: 400 })
   }
 
-  if (leaveGroupId) {
-    const leaveGroup = await prisma.leaveGroup.findUnique({ where: { id: leaveGroupId } })
-    if (!leaveGroup) return NextResponse.json({ error: 'Group not found' }, { status: 400 })
+  const groupIds: string[] | undefined = Array.isArray(leaveGroupIds)
+    ? leaveGroupIds.filter((v): v is string => typeof v === 'string')
+    : undefined
+  if (groupIds && groupIds.length > 0) {
+    const count = await prisma.leaveGroup.count({ where: { id: { in: groupIds } } })
+    if (count !== groupIds.length) return NextResponse.json({ error: 'One or more groups not found' }, { status: 400 })
   }
 
   if (username) {
@@ -65,6 +68,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: 'Rates must be non-negative numbers' }, { status: 400 })
   }
 
+  if (groupIds !== undefined) {
+    // Replace the full membership set rather than diffing — simpler, and
+    // this is a small list so the extra writes are negligible.
+    await prisma.leaveGroupMember.deleteMany({ where: { userId: id } })
+    if (groupIds.length > 0) {
+      await prisma.leaveGroupMember.createMany({ data: groupIds.map((leaveGroupId) => ({ userId: id, leaveGroupId })) })
+    }
+  }
+
   const user = await prisma.user.update({
     where: { id },
     data: {
@@ -78,9 +90,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ...(password ? { passwordHash: await bcrypt.hash(password, 10) } : {}),
       ...(parsedHourlyRate ? { hourlyRate: parsedHourlyRate.rate } : {}),
       ...(parsedOtRate ? { otRate: parsedOtRate.rate } : {}),
-      ...(leaveGroupId !== undefined ? { leaveGroupId: leaveGroupId || null } : {}),
     },
-    select: { id: true, name: true, username: true, email: true, department: true, designation: true, roleId: true, role: { select: { name: true } }, isActive: true, hourlyRate: true, otRate: true, leaveGroupId: true },
+    select: { id: true, name: true, username: true, email: true, department: true, designation: true, roleId: true, role: { select: { name: true } }, isActive: true, hourlyRate: true, otRate: true, leaveGroupMemberships: { select: { leaveGroupId: true } } },
   })
   await logAudit({
     actor: session.user,
@@ -88,7 +99,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     targetType: 'User',
     targetId: user.id,
     targetLabel: user.name,
-    metadata: { name, username, email, department, designation, roleId, isActive, leaveGroupId, passwordReset: Boolean(password), ratesChanged: Boolean(parsedHourlyRate || parsedOtRate) },
+    metadata: { name, username, email, department, designation, roleId, isActive, leaveGroupIds: groupIds, passwordReset: Boolean(password), ratesChanged: Boolean(parsedHourlyRate || parsedOtRate) },
   })
   return NextResponse.json({ user })
 }

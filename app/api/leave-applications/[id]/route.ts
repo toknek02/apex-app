@@ -26,7 +26,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const application = await prisma.leaveApplication.findUnique({
     where: { id },
-    include: { user: { include: { leaveGroup: { select: { directorId: true, architectId: true } } } } },
+    include: { user: { select: { id: true, name: true } }, leaveGroup: { select: { directorId: true, architectId: true } } },
   })
   if (!application) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (application.status !== 'PENDING_ARCHITECT' && application.status !== 'PENDING_DIRECTOR') {
@@ -45,8 +45,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // or unavailable.
   const isOverride = hasPermission(session.user, 'MANAGE_LEAVE_GROUPS')
   const isAuthorizedApprover = stage === 'ARCHITECT'
-    ? application.user.leaveGroup?.architectId === session.user.id
-    : application.user.leaveGroup?.directorId === session.user.id
+    ? application.leaveGroup?.architectId === session.user.id
+    : application.leaveGroup?.directorId === session.user.id
   if (!isAuthorizedApprover && !isOverride) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
@@ -122,7 +122,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       // Wrong wording here isn't cosmetic — telling the applicant an
       // application "needs your approval" would misleadingly suggest they
       // themselves are the approver.
-      const directorId = application.user.leaveGroup?.directorId
+      const directorId = application.leaveGroup?.directorId
       const promises: Promise<void>[] = []
       if (directorId) {
         promises.push(notifyUsers([directorId], {

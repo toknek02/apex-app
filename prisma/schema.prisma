@@ -38,12 +38,13 @@ model User {
   timesheetEntries   TimesheetEntry[]
   projectMemberships ProjectMember[]
 
-  // Leave approval groups: each employee belongs to at most one group, and
-  // a group's director is whoever approves/rejects that group's leave
-  // applications. Kept independent of `department` on purpose — a
-  // director's reports don't necessarily match a department boundary.
-  leaveGroupId          String?
-  leaveGroup            LeaveGroup?        @relation("LeaveGroupMembers", fields: [leaveGroupId], references: [id])
+  // Leave approval groups: an employee can belong to more than one (e.g. a
+  // department group and a project group), and picks which one to route a
+  // given application through at apply time. A group's director is whoever
+  // approves/rejects that group's leave applications. Kept independent of
+  // `department` on purpose — a director's reports don't necessarily match
+  // a department boundary.
+  leaveGroupMemberships LeaveGroupMember[]
   directedLeaveGroups   LeaveGroup[]       @relation("LeaveGroupDirector")
   // The architect is the first-stage approver for a group's leave
   // applications — a director only sees an application after the group's
@@ -61,7 +62,6 @@ model User {
 
   @@index([department])
   @@index([roleId])
-  @@index([leaveGroupId])
 }
 
 model LeaveGroup {
@@ -72,9 +72,25 @@ model LeaveGroup {
   // First-stage approver — see the comment on User.architectedLeaveGroups.
   architectId String?
   architect   User?    @relation("LeaveGroupArchitect", fields: [architectId], references: [id])
-  members    User[]   @relation("LeaveGroupMembers")
+  memberships LeaveGroupMember[]
+  applications LeaveApplication[]
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+// Join table for User<->LeaveGroup membership — an employee can be a member
+// of several groups (e.g. their department's group and a project group),
+// unlike the single architect/director roles which are one-per-group.
+model LeaveGroupMember {
+  id           String     @id @default(cuid())
+  leaveGroupId String
+  leaveGroup   LeaveGroup @relation(fields: [leaveGroupId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([leaveGroupId, userId])
+  @@index([userId])
 }
 
 model LeaveApplication {
@@ -92,6 +108,13 @@ model LeaveApplication {
   // approvers alongside the leave type/dates for context.
   projectId      String?
   project        Project?  @relation(fields: [projectId], references: [id])
+  // Which of the applicant's (possibly several) leave groups this specific
+  // application was routed through — chosen by the applicant at submission
+  // time, since membership in more than one group makes "the" group
+  // ambiguous otherwise. Drives which architect/director gets notified and
+  // is authorized to act on it. Null for an applicant with no group.
+  leaveGroupId   String?
+  leaveGroup     LeaveGroup? @relation(fields: [leaveGroupId], references: [id])
   // PENDING_ARCHITECT | PENDING_DIRECTOR | APPROVED | REJECTED. A group with
   // no architect assigned starts straight at PENDING_DIRECTOR.
   status         String    @default("PENDING_DIRECTOR")

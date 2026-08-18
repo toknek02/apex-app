@@ -17,7 +17,7 @@ export default async function StaffPage() {
   const [staff, roles, leaveGroups, openRecords, todaysAttendance] = await Promise.all([
     prisma.user.findMany({
       where: canManageUsers ? {} : { isActive: true },
-      include: { role: true },
+      include: { role: true, leaveGroupMemberships: { select: { leaveGroupId: true } } },
       orderBy: [{ department: 'asc' }, { name: 'asc' }],
     }),
     canManageUsers ? prisma.role.findMany({ orderBy: { name: 'asc' } }) : Promise.resolve([]),
@@ -121,7 +121,7 @@ export default async function StaffPage() {
                       {canManageUsers && (
                         <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }}>
                           <UserModal
-                            user={{ id: m.id, name: m.name, username: m.username, email: m.email, department: m.department, designation: m.designation, roleId: m.roleId, isActive: m.isActive, hourlyRate: m.hourlyRate, otRate: m.otRate, leaveGroupId: m.leaveGroupId }}
+                            user={{ id: m.id, name: m.name, username: m.username, email: m.email, department: m.department, designation: m.designation, roleId: m.roleId, isActive: m.isActive, hourlyRate: m.hourlyRate, otRate: m.otRate, leaveGroupIds: m.leaveGroupMemberships.map((lgm) => lgm.leaveGroupId) }}
                             roles={roles}
                             leaveGroups={leaveGroups}
                             trigger={<Pencil size={14} color="var(--apex-accent)" />}
