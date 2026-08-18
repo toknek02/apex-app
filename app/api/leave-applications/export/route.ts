@@ -46,10 +46,11 @@ export async function GET(request: Request) {
   const applications = await prisma.leaveApplication.findMany({
     where: {
       userId: { in: filteredStaff.map((s) => s.id) },
-      status: { in: ['PENDING', 'APPROVED'] },
+      status: { in: ['PENDING_ARCHITECT', 'PENDING_DIRECTOR', 'APPROVED'] },
       startDate: { lte: monthEnd },
       endDate: { gte: monthStart },
     },
+    include: { project: { select: { code: true, shortName: true } } },
   })
 
   const buffer = await buildLeaveCalendarWorkbook({
@@ -57,6 +58,7 @@ export async function GET(request: Request) {
       userName: staffById.get(a.userId)?.name ?? 'Unknown',
       department: staffById.get(a.userId)?.department ?? null,
       leaveType: a.leaveType,
+      project: a.project ? `${a.project.code} — ${a.project.shortName}` : '',
       startDate: a.startDate,
       endDate: a.endDate,
       dayPortion: a.dayPortion,

@@ -24,21 +24,32 @@ export async function GET(request: Request) {
   if (scope === 'mine') {
     const applications = await prisma.leaveApplication.findMany({
       where: { userId: session.user.id },
+      include: { project: { select: { id: true, code: true, shortName: true } } },
       orderBy: { createdAt: 'desc' },
     })
     return NextResponse.json({ applications })
   }
 
   if (scope === 'pending-approval') {
-    // "Approval authority" isn't a permission — it's just whoever is set as
-    // the director of the applicant's leave group.
-    const directedGroups = await prisma.leaveGroup.findMany({ where: { directorId: session.user.id }, select: { id: true } })
-    const groupIds = directedGroups.map((g) => g.id)
-    if (groupIds.length === 0) return NextResponse.json({ applications: [] })
+    // "Approval authority" isn't a permission — it's whoever is set as a
+    // group's architect (stage 1) or director (stage 2). The same person
+    // can hold either role for different groups, so both are checked.
+    const [architectedGroups, directedGroups] = await Promise.all([
+      prisma.leaveGroup.findMany({ where: { architectId: session.user.id }, select: { id: true } }),
+      prisma.leaveGroup.findMany({ where: { directorId: session.user.id }, select: { id: true } }),
+    ])
+    const architectGroupIds = architectedGroups.map((g) => g.id)
+    const directorGroupIds = directedGroups.map((g) => g.id)
+    if (architectGroupIds.length === 0 && directorGroupIds.length === 0) return NextResponse.json({ applications: [] })
 
     const applications = await prisma.leaveApplication.findMany({
-      where: { status: 'PENDING', user: { leaveGroupId: { in: groupIds } } },
-      include: { user: { select: { id: true, name: true, department: true } } },
+      where: {
+        OR: [
+          ...(architectGroupIds.length > 0 ? [{ status: 'PENDING_ARCHITECT', user: { leaveGroupId: { in: architectGroupIds } } }] : []),
+          ...(directorGroupIds.length > 0 ? [{ status: 'PENDING_DIRECTOR', user: { leaveGroupId: { in: directorGroupIds } } }] : []),
+        ],
+      },
+      include: { user: { select: { id: true, name: true, department: true } }, project: { select: { id: true, code: true, shortName: true } } },
       orderBy: { createdAt: 'asc' },
     })
     return NextResponse.json({ applications })
@@ -49,7 +60,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
     const applications = await prisma.leaveApplication.findMany({
-      include: { user: { select: { id: true, name: true, department: true } } },
+      include: { user: { select: { id: true, name: true, department: true } }, project: { select: { id: true, code: true, shortName: true } } },
       orderBy: { createdAt: 'desc' },
       take: 200,
     })
@@ -63,7 +74,7 @@ export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { leaveType, startDate, endDate, reason, dayPortion } = await req.json()
+  const { leaveType, startDate, endDate, reason, dayPortion, projectId } = await req.json()
 
   if (!leaveType || !LEAVE_EVENT_TYPES.includes(leaveType)) {
     return NextResponse.json({ error: 'Invalid leave type' }, { status: 400 })
@@ -85,11 +96,25 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  let validProjectId: string | null = null
+  if (typeof projectId === 'string' && projectId) {
+    const project = await prisma.project.findUnique({ where: { id: projectId }, select: { id: true } })
+    if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 400 })
+    validProjectId = project.id
+  }
+
   const applicant = await prisma.user.findUnique({
     where: { id: session.user.id },
-    include: { leaveGroup: { select: { directorId: true } } },
+    include: { leaveGroup: { select: { directorId: true, architectId: true } } },
   })
   if (!applicant) return NextResponse.json({ error: 'User not found' }, { status: 404 })
+
+  // Applications from a group with an architect start there; everyone else
+  // (no architect assigned, or no group at all) goes straight to the
+  // director stage, matching the app's original single-stage behavior.
+  const architectId = applicant.leaveGroup?.architectId
+  const directorId = applicant.leaveGroup?.directorId
+  const initialStatus = architectId ? 'PENDING_ARCHITECT' : 'PENDING_DIRECTOR'
 
   const application = await prisma.leaveApplication.create({
     data: {
@@ -99,12 +124,14 @@ export async function POST(req: NextRequest) {
       endDate: parsedEnd,
       dayPortion: portion,
       reason: reason || null,
+      projectId: validProjectId,
+      status: initialStatus,
     },
   })
 
   const hrIds = await getHrRecipientIds(applicant.id)
-  const directorId = applicant.leaveGroup?.directorId
-  const recipientIds = directorId ? [directorId, ...hrIds] : hrIds
+  const firstApproverId = architectId ?? directorId
+  const recipientIds = firstApproverId ? [firstApproverId, ...hrIds] : hrIds
   const dateRange = parsedStart.getTime() === parsedEnd.getTime()
     ? parsedStart.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
     : `${parsedStart.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} – ${parsedEnd.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}`
@@ -118,6 +145,6 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     application,
-    warning: directorId ? undefined : 'You are not assigned to a group yet, so only HR was notified — no director could be notified automatically.',
+    warning: firstApproverId ? undefined : 'You are not assigned to a group yet, so only HR was notified — no approver could be notified automatically.',
   }, { status: 201 })
 }

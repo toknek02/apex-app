@@ -10,7 +10,11 @@ export default async function LeaveGroupsPage() {
 
   const [leaveGroups, staff] = await Promise.all([
     prisma.leaveGroup.findMany({
-      include: { director: { select: { id: true, name: true } }, members: { select: { id: true } } },
+      include: {
+        director: { select: { id: true, name: true } },
+        architect: { select: { id: true, name: true } },
+        members: { select: { id: true } },
+      },
       orderBy: { name: 'asc' },
     }),
     prisma.user.findMany({ where: { isActive: true }, orderBy: { name: 'asc' }, select: { id: true, name: true, leaveGroupId: true } }),
@@ -31,15 +35,16 @@ export default async function LeaveGroupsPage() {
         />
       </div>
       <p style={{ fontSize: 12, color: 'var(--apex-muted)', marginBottom: 16, maxWidth: 640 }}>
-        Each group has one director, who approves or rejects leave applications from that group's members.
-        Click a group's member count to manage who's in it.
+        Each group has a Director, who gives final approval on that group's leave applications, and an
+        optional Architect, who reviews applications first — if set, an application only reaches the
+        Director after the Architect approves it. Click a group's member count to manage who's in it.
       </p>
 
       <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
-              {['Name', 'Director', 'Members', 'Actions'].map((h) => (
+              {['Name', 'Architect', 'Director', 'Members', 'Actions'].map((h) => (
                 <th key={h} style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', textAlign: 'left', color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em' }}>
                   {h}
                 </th>
@@ -49,7 +54,7 @@ export default async function LeaveGroupsPage() {
           <tbody>
             {leaveGroups.length === 0 ? (
               <tr>
-                <td colSpan={4} style={{ padding: '20px 14px', textAlign: 'center', fontSize: 12, fontStyle: 'italic', color: 'var(--apex-muted)' }}>
+                <td colSpan={5} style={{ padding: '20px 14px', textAlign: 'center', fontSize: 12, fontStyle: 'italic', color: 'var(--apex-muted)' }}>
                   No groups yet.
                 </td>
               </tr>
@@ -57,6 +62,9 @@ export default async function LeaveGroupsPage() {
               leaveGroups.map((g, i) => (
                 <tr key={g.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
                   <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12, fontWeight: 600 }}>{g.name}</td>
+                  <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12, color: g.architect ? 'var(--apex-text)' : 'var(--apex-muted)' }}>
+                    {g.architect?.name ?? '— None —'}
+                  </td>
                   <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }}>{g.director.name}</td>
                   <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }}>
                     <LeaveGroupMembersModal
@@ -72,7 +80,11 @@ export default async function LeaveGroupsPage() {
                     />
                   </td>
                   <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }}>
-                    <LeaveGroupModal leaveGroup={g} staff={staff.map((s) => ({ id: s.id, name: s.name }))} trigger={<Pencil size={14} color="var(--apex-accent)" />} />
+                    <LeaveGroupModal
+                      leaveGroup={{ id: g.id, name: g.name, directorId: g.directorId, architectId: g.architectId }}
+                      staff={staff.map((s) => ({ id: s.id, name: s.name }))}
+                      trigger={<Pencil size={14} color="var(--apex-accent)" />}
+                    />
                   </td>
                 </tr>
               ))

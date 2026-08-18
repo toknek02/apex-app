@@ -14,12 +14,22 @@ function dateRangeLabel(start: Date, end: Date, dayPortion: string) {
   return dayPortion === 'AM' || dayPortion === 'PM' ? `${range} (${dayPortion} half-day)` : range
 }
 
+function projectLabel(project: { code: string; shortName: string } | null) {
+  return project ? `${project.code} — ${project.shortName}` : '—'
+}
+
+const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
+  PENDING_ARCHITECT: { label: 'Pending — Architect', color: 'var(--apex-accent)', bg: 'var(--apex-accent-lt)' },
+  PENDING_DIRECTOR: { label: 'Pending — Director', color: 'var(--apex-accent)', bg: 'var(--apex-accent-lt)' },
+  APPROVED: { label: 'Approved', color: 'var(--apex-green)', bg: 'var(--apex-green-lt)' },
+  REJECTED: { label: 'Rejected', color: 'var(--apex-red)', bg: 'var(--apex-red-lt)' },
+}
+
 function StatusBadge({ status }: { status: string }) {
-  const color = status === 'APPROVED' ? 'var(--apex-green)' : status === 'REJECTED' ? 'var(--apex-red)' : 'var(--apex-accent)'
-  const bg = status === 'APPROVED' ? 'var(--apex-green-lt)' : status === 'REJECTED' ? 'var(--apex-red-lt)' : 'var(--apex-accent-lt)'
+  const meta = STATUS_META[status] ?? { label: status, color: 'var(--apex-muted)', bg: 'var(--apex-row-alt)' }
   return (
-    <span style={{ padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, color, backgroundColor: bg }}>
-      {status}
+    <span style={{ padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, color: meta.color, backgroundColor: meta.bg }}>
+      {meta.label}
     </span>
   )
 }
@@ -31,37 +41,42 @@ export default async function LeavePage() {
   const user = await requireUser()
   const isHR = hasPermission(user, 'RECEIVE_HR_LEAVE_NOTIFICATIONS')
 
-  const [myApplications, directedGroups] = await Promise.all([
-    prisma.leaveApplication.findMany({ where: { userId: user.id }, orderBy: { createdAt: 'desc' } }),
+  const projectSelect = { project: { select: { code: true, shortName: true } } } as const
+
+  const [myApplications, architectedGroups, directedGroups] = await Promise.all([
+    prisma.leaveApplication.findMany({ where: { userId: user.id }, include: projectSelect, orderBy: { createdAt: 'desc' } }),
+    prisma.leaveGroup.findMany({ where: { architectId: user.id }, select: { id: true, name: true } }),
     prisma.leaveGroup.findMany({ where: { directorId: user.id }, select: { id: true, name: true } }),
   ])
 
-  const groupIds = directedGroups.map((g) => g.id)
-  const isDirector = groupIds.length > 0
+  const architectGroupIds = architectedGroups.map((g) => g.id)
+  const directorGroupIds = directedGroups.map((g) => g.id)
+  const isArchitect = architectGroupIds.length > 0
+  const isDirector = directorGroupIds.length > 0
   // MANAGE_LEAVE_GROUPS is the approval override for groups whose director
   // is unavailable — extend that same override to applications from
   // ungrouped staff, which otherwise have no director to route to and
-  // would sit PENDING forever with no one able to act on them.
+  // would sit pending forever with no one able to act on them.
   const canApproveOrphaned = hasPermission(user, 'MANAGE_LEAVE_GROUPS')
-  const showApprovalSection = isDirector || canApproveOrphaned
+  const showApprovalSection = isArchitect || isDirector || canApproveOrphaned
 
   const [pendingForApproval, hrApplications] = await Promise.all([
     showApprovalSection
       ? prisma.leaveApplication.findMany({
           where: {
-            status: 'PENDING',
             OR: [
-              ...(isDirector ? [{ user: { leaveGroupId: { in: groupIds } } }] : []),
-              ...(canApproveOrphaned ? [{ user: { leaveGroupId: null } }] : []),
+              ...(isArchitect ? [{ status: 'PENDING_ARCHITECT', user: { leaveGroupId: { in: architectGroupIds } } }] : []),
+              ...(isDirector ? [{ status: 'PENDING_DIRECTOR', user: { leaveGroupId: { in: directorGroupIds } } }] : []),
+              ...(canApproveOrphaned ? [{ status: { in: ['PENDING_ARCHITECT', 'PENDING_DIRECTOR'] }, user: { leaveGroupId: null } }] : []),
             ],
           },
-          include: { user: { select: { id: true, name: true, department: true } } },
+          include: { user: { select: { id: true, name: true, department: true } }, ...projectSelect },
           orderBy: { createdAt: 'asc' },
         })
       : Promise.resolve([]),
     isHR
       ? prisma.leaveApplication.findMany({
-          include: { user: { select: { id: true, name: true, department: true } } },
+          include: { user: { select: { id: true, name: true, department: true } }, ...projectSelect },
           orderBy: { createdAt: 'desc' },
           take: 100,
         })
@@ -87,7 +102,7 @@ export default async function LeavePage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
-                  {['Staff', 'Leave Type', 'Dates', 'Reason', 'Actions'].map((h) => (
+                  {['Staff', 'Leave Type', 'Project', 'Dates', 'Stage', 'Reason', 'Actions'].map((h) => (
                     <th key={h} style={thStyle}>{h}</th>
                   ))}
                 </tr>
@@ -95,7 +110,7 @@ export default async function LeavePage() {
               <tbody>
                 {pendingForApproval.length === 0 ? (
                   <tr>
-                    <td colSpan={5} style={{ ...tdStyle, textAlign: 'center', color: 'var(--apex-muted)', fontStyle: 'italic' }}>
+                    <td colSpan={7} style={{ ...tdStyle, textAlign: 'center', color: 'var(--apex-muted)', fontStyle: 'italic' }}>
                       Nothing pending your approval.
                     </td>
                   </tr>
@@ -104,7 +119,9 @@ export default async function LeavePage() {
                     <tr key={a.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
                       <td style={{ ...tdStyle, fontWeight: 600 }}>{a.user.name}</td>
                       <td style={tdStyle}>{a.leaveType}</td>
+                      <td style={{ ...tdStyle, color: 'var(--apex-muted)' }}>{projectLabel(a.project)}</td>
                       <td style={tdStyle}>{dateRangeLabel(a.startDate, a.endDate, a.dayPortion)}</td>
+                      <td style={tdStyle}>{a.status === 'PENDING_ARCHITECT' ? 'Architect Review' : 'Director Review'}</td>
                       <td style={{ ...tdStyle, color: 'var(--apex-muted)' }}>{a.reason || '—'}</td>
                       <td style={tdStyle}>
                         <LeaveApprovalActions applicationId={a.id} />
@@ -125,7 +142,7 @@ export default async function LeavePage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
-                  {['Staff', 'Leave Type', 'Dates', 'Status', 'Reviewed By'].map((h) => (
+                  {['Staff', 'Leave Type', 'Project', 'Dates', 'Status', 'Reviewed By'].map((h) => (
                     <th key={h} style={thStyle}>{h}</th>
                   ))}
                 </tr>
@@ -133,7 +150,7 @@ export default async function LeavePage() {
               <tbody>
                 {hrApplications.length === 0 ? (
                   <tr>
-                    <td colSpan={5} style={{ ...tdStyle, textAlign: 'center', color: 'var(--apex-muted)', fontStyle: 'italic' }}>
+                    <td colSpan={6} style={{ ...tdStyle, textAlign: 'center', color: 'var(--apex-muted)', fontStyle: 'italic' }}>
                       No leave applications yet.
                     </td>
                   </tr>
@@ -142,9 +159,10 @@ export default async function LeavePage() {
                     <tr key={a.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
                       <td style={{ ...tdStyle, fontWeight: 600 }}>{a.user.name}</td>
                       <td style={tdStyle}>{a.leaveType}</td>
+                      <td style={{ ...tdStyle, color: 'var(--apex-muted)' }}>{projectLabel(a.project)}</td>
                       <td style={tdStyle}>{dateRangeLabel(a.startDate, a.endDate, a.dayPortion)}</td>
                       <td style={tdStyle}><StatusBadge status={a.status} /></td>
-                      <td style={{ ...tdStyle, color: 'var(--apex-muted)' }}>{a.reviewedByName || '—'}</td>
+                      <td style={{ ...tdStyle, color: 'var(--apex-muted)' }}>{a.reviewedByName || (a.architectApprovedByName ? `${a.architectApprovedByName} (architect)` : '—')}</td>
                     </tr>
                   ))
                 )}
@@ -159,7 +177,7 @@ export default async function LeavePage() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
-              {['Leave Type', 'Dates', 'Reason', 'Status', 'Remarks'].map((h) => (
+              {['Leave Type', 'Project', 'Dates', 'Reason', 'Status', 'Remarks'].map((h) => (
                 <th key={h} style={thStyle}>{h}</th>
               ))}
             </tr>
@@ -167,7 +185,7 @@ export default async function LeavePage() {
           <tbody>
             {myApplications.length === 0 ? (
               <tr>
-                <td colSpan={5} style={{ ...tdStyle, textAlign: 'center', color: 'var(--apex-muted)', fontStyle: 'italic' }}>
+                <td colSpan={6} style={{ ...tdStyle, textAlign: 'center', color: 'var(--apex-muted)', fontStyle: 'italic' }}>
                   You haven't applied for leave yet.
                 </td>
               </tr>
@@ -175,10 +193,11 @@ export default async function LeavePage() {
               myApplications.map((a, i) => (
                 <tr key={a.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
                   <td style={tdStyle}>{a.leaveType}</td>
+                  <td style={{ ...tdStyle, color: 'var(--apex-muted)' }}>{projectLabel(a.project)}</td>
                   <td style={tdStyle}>{dateRangeLabel(a.startDate, a.endDate, a.dayPortion)}</td>
                   <td style={{ ...tdStyle, color: 'var(--apex-muted)' }}>{a.reason || '—'}</td>
                   <td style={tdStyle}><StatusBadge status={a.status} /></td>
-                  <td style={{ ...tdStyle, color: 'var(--apex-muted)' }}>{a.reviewRemarks || '—'}</td>
+                  <td style={{ ...tdStyle, color: 'var(--apex-muted)' }}>{a.reviewRemarks || a.architectRemarks || '—'}</td>
                 </tr>
               ))
             )}

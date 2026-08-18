@@ -17,7 +17,9 @@ function Required() {
   return <span style={{ color: 'var(--apex-red)' }}> *</span>
 }
 
-export function LeaveApplicationForm() {
+type Project = { id: string; code: string; shortName: string }
+
+export function LeaveApplicationForm({ projects }: { projects: Project[] }) {
   const router = useRouter()
   const today = new Date().toISOString().slice(0, 10)
 
@@ -26,6 +28,7 @@ export function LeaveApplicationForm() {
   const [endDate, setEndDate] = useState(today)
   const [dayLength, setDayLength] = useState<'FULL' | 'HALF'>('FULL')
   const [halfPortion, setHalfPortion] = useState<'AM' | 'PM'>('AM')
+  const [projectId, setProjectId] = useState('')
   const [reason, setReason] = useState('')
   const [errors, setErrors] = useState<string[]>([])
   const [warning, setWarning] = useState('')
@@ -63,7 +66,7 @@ export function LeaveApplicationForm() {
     const res = await fetch('/api/leave-applications', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ leaveType, startDate, endDate, reason, dayPortion }),
+      body: JSON.stringify({ leaveType, startDate, endDate, reason, dayPortion, projectId: projectId || null }),
     })
     setSubmitting(false)
     if (res.ok) {
@@ -139,6 +142,21 @@ export function LeaveApplicationForm() {
           <input type="date" style={inputStyle} value={endDate} disabled={dayLength === 'HALF'} onChange={(e) => setEndDate(e.target.value)} />
         </div>
       </div>
+
+      {projects.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <label style={labelStyle}>Project</label>
+          <select style={inputStyle} value={projectId} onChange={(e) => setProjectId(e.target.value)}>
+            <option value="">— None —</option>
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>{p.code} — {p.shortName}</option>
+            ))}
+          </select>
+          <div style={{ fontSize: 11, color: 'var(--apex-muted)', marginTop: 5 }}>
+            Optional — lets your approver see what work this leave affects.
+          </div>
+        </div>
+      )}
 
       <div style={{ marginBottom: 20 }}>
         <label style={labelStyle}>Reason</label>

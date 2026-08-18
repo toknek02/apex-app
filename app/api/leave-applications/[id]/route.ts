@@ -26,45 +26,55 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const application = await prisma.leaveApplication.findUnique({
     where: { id },
-    include: { user: { include: { leaveGroup: { select: { directorId: true } } } } },
+    include: { user: { include: { leaveGroup: { select: { directorId: true, architectId: true } } } } },
   })
   if (!application) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  if (application.status !== 'PENDING') {
+  if (application.status !== 'PENDING_ARCHITECT' && application.status !== 'PENDING_DIRECTOR') {
     return NextResponse.json({ error: 'This application has already been decided' }, { status: 409 })
   }
-  // Never allow self-approval, even for a director who's also a member of
-  // their own group, and even under the MANAGE_LEAVE_GROUPS override.
+  // Never allow self-approval, even for an architect/director who's also a
+  // member of their own group, and even under the MANAGE_LEAVE_GROUPS override.
   if (application.userId === session.user.id) {
     return NextResponse.json({ error: 'You cannot approve or reject your own leave application' }, { status: 403 })
   }
-  // Approval authority is whoever directs the applicant's leave group — not
-  // a permission. Only the Administrator escape hatch (MANAGE_LEAVE_GROUPS)
-  // can also act, for cases where a group's director is unavailable.
-  const isDirector = application.user.leaveGroup?.directorId === session.user.id
+
+  const stage = application.status === 'PENDING_ARCHITECT' ? 'ARCHITECT' : 'DIRECTOR'
+  // Approval authority is whoever holds the relevant role on the applicant's
+  // leave group — not a permission. Only the Administrator escape hatch
+  // (MANAGE_LEAVE_GROUPS) can also act, for cases where that role is unfilled
+  // or unavailable.
   const isOverride = hasPermission(session.user, 'MANAGE_LEAVE_GROUPS')
-  if (!isDirector && !isOverride) {
+  const isAuthorizedApprover = stage === 'ARCHITECT'
+    ? application.user.leaveGroup?.architectId === session.user.id
+    : application.user.leaveGroup?.directorId === session.user.id
+  if (!isAuthorizedApprover && !isOverride) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const reviewedAt = new Date()
-  // Atomic conditional update — only succeeds if the row is still PENDING,
-  // so two concurrent requests (a double-click, or two approvers racing)
-  // can't both go through and double-create the TimesheetEntry rows below.
+  const now = new Date()
+  // A stage-1 (architect) approval isn't final — it just advances the
+  // application to the director. Everything else (either stage's rejection,
+  // or the director's approval) is a terminal decision.
+  const isFinal = status === 'REJECTED' || stage === 'DIRECTOR'
+  const nextStatus = status === 'REJECTED' ? 'REJECTED' : stage === 'ARCHITECT' ? 'PENDING_DIRECTOR' : 'APPROVED'
+
+  // Atomic conditional update — only succeeds if the row is still at the
+  // stage we read above, so two concurrent requests (a double-click, or two
+  // approvers racing) can't both go through.
   const updateResult = await prisma.leaveApplication.updateMany({
-    where: { id, status: 'PENDING' },
+    where: { id, status: application.status },
     data: {
-      status,
-      reviewedById: session.user.id,
-      reviewedByName: session.user.name,
-      reviewedAt,
-      reviewRemarks: reviewRemarks || null,
+      status: nextStatus,
+      ...(isFinal
+        ? { reviewedById: session.user.id, reviewedByName: session.user.name, reviewedAt: now, reviewRemarks: reviewRemarks || null }
+        : { architectApprovedById: session.user.id, architectApprovedByName: session.user.name, architectApprovedAt: now, architectRemarks: reviewRemarks || null }),
     },
   })
   if (updateResult.count === 0) {
     return NextResponse.json({ error: 'This application has already been decided' }, { status: 409 })
   }
 
-  if (status === 'APPROVED') {
+  if (nextStatus === 'APPROVED') {
     const days = enumerateDaysInclusive(application.startDate, application.endDate)
     // AM = 9am-1pm, PM = 1pm-6pm, matching the Activities Summary Gantt
     // chart's minute-since-midnight convention. FULL day leaves these null.
@@ -94,30 +104,56 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   await logAudit({
     actor: session.user,
-    action: status === 'APPROVED' ? 'leave_application.approve' : 'leave_application.reject',
+    action: nextStatus === 'REJECTED' ? 'leave_application.reject' : nextStatus === 'APPROVED' ? 'leave_application.approve' : 'leave_application.architect_approve',
     targetType: 'LeaveApplication',
     targetId: application.id,
     targetLabel: application.user.name,
-    metadata: { leaveType: application.leaveType, startDate: application.startDate, endDate: application.endDate, reviewRemarks },
+    metadata: { leaveType: application.leaveType, startDate: application.startDate, endDate: application.endDate, reviewRemarks, stage },
   })
 
   // The decision has already committed above — a notification failure here
   // shouldn't turn a successful approval/rejection into an apparent error.
   try {
     const hrIds = await getHrRecipientIds(session.user.id)
-    await notifyUsers([application.userId, ...hrIds], {
-      type: status === 'APPROVED' ? 'leave_application.approved' : 'leave_application.rejected',
-      title: status === 'APPROVED'
-        ? `Your ${application.leaveType} application was approved`
-        : `Your ${application.leaveType} application was rejected`,
-      body: reviewRemarks || undefined,
-      link: '/staff/leave',
-    })
+    if (nextStatus === 'PENDING_DIRECTOR') {
+      // Architect passed it along — the director needs to act, so their
+      // notification reads as a call to action; the applicant and HR are
+      // just being kept informed, so theirs reads as a status update.
+      // Wrong wording here isn't cosmetic — telling the applicant an
+      // application "needs your approval" would misleadingly suggest they
+      // themselves are the approver.
+      const directorId = application.user.leaveGroup?.directorId
+      const promises: Promise<void>[] = []
+      if (directorId) {
+        promises.push(notifyUsers([directorId], {
+          type: 'leave_application.architect_approved',
+          title: `${application.user.name}'s ${application.leaveType} application needs your approval`,
+          body: reviewRemarks || undefined,
+          link: '/staff/leave',
+        }))
+      }
+      promises.push(notifyUsers([application.userId, ...hrIds], {
+        type: 'leave_application.architect_approved',
+        title: `Your ${application.leaveType} application was approved by the architect`,
+        body: 'Now awaiting director approval.',
+        link: '/staff/leave',
+      }))
+      await Promise.all(promises)
+    } else {
+      await notifyUsers([application.userId, ...hrIds], {
+        type: nextStatus === 'APPROVED' ? 'leave_application.approved' : 'leave_application.rejected',
+        title: nextStatus === 'APPROVED'
+          ? `Your ${application.leaveType} application was approved`
+          : `Your ${application.leaveType} application was rejected`,
+        body: reviewRemarks || undefined,
+        link: '/staff/leave',
+      })
+    }
   } catch (err) {
     console.error('Failed to send leave decision notifications', err)
   }
 
   return NextResponse.json({
-    application: { ...application, status, reviewedById: session.user.id, reviewedByName: session.user.name, reviewedAt, reviewRemarks: reviewRemarks || null },
+    application: { ...application, status: nextStatus },
   })
 }

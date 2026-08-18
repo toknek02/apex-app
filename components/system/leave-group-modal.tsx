@@ -12,7 +12,7 @@ const inputStyle: React.CSSProperties = {
 }
 const labelStyle: React.CSSProperties = { display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 5 }
 
-type LeaveGroup = { id: string; name: string; directorId: string }
+type LeaveGroup = { id: string; name: string; directorId: string; architectId?: string | null }
 type StaffOption = { id: string; name: string }
 
 export function LeaveGroupModal({ leaveGroup, staff, trigger }: { leaveGroup?: LeaveGroup; staff: StaffOption[]; trigger: React.ReactNode }) {
@@ -20,6 +20,7 @@ export function LeaveGroupModal({ leaveGroup, staff, trigger }: { leaveGroup?: L
   const [open, setOpen] = useState(false)
   const [name, setName] = useState(leaveGroup?.name ?? '')
   const [directorId, setDirectorId] = useState(leaveGroup?.directorId ?? staff[0]?.id ?? '')
+  const [architectId, setArchitectId] = useState(leaveGroup?.architectId ?? '')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -37,7 +38,7 @@ export function LeaveGroupModal({ leaveGroup, staff, trigger }: { leaveGroup?: L
     const res = await fetch(leaveGroup ? `/api/leave-groups/${leaveGroup.id}` : '/api/leave-groups', {
       method: leaveGroup ? 'PATCH' : 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, directorId }),
+      body: JSON.stringify({ name, directorId, architectId: architectId || null }),
     })
     setSaving(false)
     if (res.ok) {
@@ -73,6 +74,18 @@ export function LeaveGroupModal({ leaveGroup, staff, trigger }: { leaveGroup?: L
               <label style={labelStyle}>Name</label>
               <input style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Design Team A" />
             </div>
+            <div style={{ marginBottom: 12 }}>
+              <label style={labelStyle}>Architect</label>
+              <select style={inputStyle} value={architectId} onChange={(e) => setArchitectId(e.target.value)}>
+                <option value="">— None (skip to Director) —</option>
+                {staff.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+              <div style={{ fontSize: 11, color: 'var(--apex-muted)', marginTop: 5 }}>
+                Reviews this group's leave applications first. If set, an application only reaches the Director after the Architect approves it.
+              </div>
+            </div>
             <div style={{ marginBottom: 20 }}>
               <label style={labelStyle}>Director</label>
               <select style={inputStyle} value={directorId} onChange={(e) => setDirectorId(e.target.value)}>
@@ -81,7 +94,7 @@ export function LeaveGroupModal({ leaveGroup, staff, trigger }: { leaveGroup?: L
                 ))}
               </select>
               <div style={{ fontSize: 11, color: 'var(--apex-muted)', marginTop: 5 }}>
-                Approves/rejects leave applications from this group's members.
+                Gives final approval/rejection for this group's leave applications.
               </div>
             </div>
 

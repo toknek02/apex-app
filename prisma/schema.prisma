@@ -45,8 +45,14 @@ model User {
   leaveGroupId          String?
   leaveGroup            LeaveGroup?        @relation("LeaveGroupMembers", fields: [leaveGroupId], references: [id])
   directedLeaveGroups   LeaveGroup[]       @relation("LeaveGroupDirector")
+  // The architect is the first-stage approver for a group's leave
+  // applications — a director only sees an application after the group's
+  // architect has already signed off on it. Optional: a group with no
+  // architect assigned skips straight to the director stage.
+  architectedLeaveGroups LeaveGroup[]       @relation("LeaveGroupArchitect")
   leaveApplications     LeaveApplication[] @relation("LeaveApplicant")
   reviewedLeaveApplications LeaveApplication[] @relation("LeaveReviewer")
+  architectApprovedLeaveApplications LeaveApplication[] @relation("LeaveArchitectApprover")
   notifications         Notification[]
   // Notification `type` values (see lib/notification-types.ts) this user has
   // opted out of — notifyUsers() skips creating a row for a muted type
@@ -63,6 +69,9 @@ model LeaveGroup {
   name       String   @unique
   directorId String
   director   User     @relation("LeaveGroupDirector", fields: [directorId], references: [id])
+  // First-stage approver — see the comment on User.architectedLeaveGroups.
+  architectId String?
+  architect   User?    @relation("LeaveGroupArchitect", fields: [architectId], references: [id])
   members    User[]   @relation("LeaveGroupMembers")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -79,8 +88,23 @@ model LeaveApplication {
   // is single-day only) and only for HALF_DAY_ELIGIBLE_LEAVE_TYPES.
   dayPortion     String    @default("FULL")
   reason         String?
-  // PENDING | APPROVED | REJECTED
-  status         String    @default("PENDING")
+  // Optional — which project this leave affects the schedule for, shown to
+  // approvers alongside the leave type/dates for context.
+  projectId      String?
+  project        Project?  @relation(fields: [projectId], references: [id])
+  // PENDING_ARCHITECT | PENDING_DIRECTOR | APPROVED | REJECTED. A group with
+  // no architect assigned starts straight at PENDING_DIRECTOR.
+  status         String    @default("PENDING_DIRECTOR")
+  // Stage 1: set only when the architect approves and passes the
+  // application on to the director — an architect rejection is terminal
+  // and recorded in reviewedBy*/reviewedAt below instead, same as a
+  // director's decision.
+  architectApprovedById   String?
+  architectApprovedByName String?
+  architectRemarks        String?
+  architectApprovedAt     DateTime?
+  // Terminal decision — whoever made the final call (architect reject,
+  // director reject, or director approve).
   reviewedById   String?
   reviewedByName String?
   reviewRemarks  String?
@@ -88,7 +112,8 @@ model LeaveApplication {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  reviewedBy User? @relation("LeaveReviewer", fields: [reviewedById], references: [id])
+  reviewedBy         User? @relation("LeaveReviewer", fields: [reviewedById], references: [id])
+  architectApprovedBy User? @relation("LeaveArchitectApprover", fields: [architectApprovedById], references: [id])
 
   @@index([userId])
   @@index([status])
@@ -158,6 +183,7 @@ model Project {
   events           Event[]
   timesheetEntries TimesheetEntry[]
   members          ProjectMember[]
+  leaveApplications LeaveApplication[]
 }
 
 model ProjectMember {

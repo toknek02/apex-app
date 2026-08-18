@@ -8,6 +8,11 @@ export const NOTIFICATION_TYPES: { type: string; label: string; description: str
     description: 'A staff member you approve leave for (or that HR oversees) submitted an application.',
   },
   {
+    type: 'leave_application.architect_approved',
+    label: 'Leave application passed to director',
+    description: 'The group architect approved a leave application, which now needs the director’s sign-off.',
+  },
+  {
     type: 'leave_application.approved',
     label: 'Leave application approved',
     description: 'Your leave application was approved.',

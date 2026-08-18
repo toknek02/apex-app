@@ -91,7 +91,7 @@ export default async function LeaveCalendarPage({
   const applications = await prisma.leaveApplication.findMany({
     where: {
       userId: { in: staff.map((s) => s.id) },
-      status: { in: ['PENDING', 'APPROVED'] },
+      status: { in: ['PENDING_ARCHITECT', 'PENDING_DIRECTOR', 'APPROVED'] },
       startDate: { lte: monthEnd },
       endDate: { gte: monthStart },
     },
@@ -185,7 +185,7 @@ export default async function LeaveCalendarPage({
                           return <td key={day} style={{ ...tdStyle, backgroundColor: isToday ? 'var(--apex-accent-lt)' : undefined }} />
                         }
                         const { code, color } = leaveTypeMeta(app.leaveType)
-                        const isPending = app.status === 'PENDING'
+                        const isPending = app.status !== 'APPROVED'
                         // Half-day is only visualized on approved (solid) badges —
                         // combining the dashed pending outline with a half-white
                         // fill reads as cluttered, so pending stays a plain outline.
@@ -198,7 +198,7 @@ export default async function LeaveCalendarPage({
                         return (
                           <td key={day} style={{ ...tdStyle, backgroundColor: isToday ? 'var(--apex-accent-lt)' : undefined, padding: 3 }}>
                             <span
-                              title={`${app.leaveType}${isHalfDay ? ` — Half Day (${app.dayPortion})` : ''}${isPending ? ' — Awaiting Approval' : ''}`}
+                              title={`${app.leaveType}${isHalfDay ? ` — Half Day (${app.dayPortion})` : ''}${app.status === 'PENDING_ARCHITECT' ? ' — Awaiting Architect Approval' : app.status === 'PENDING_DIRECTOR' ? ' — Awaiting Director Approval' : ''}`}
                               style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
