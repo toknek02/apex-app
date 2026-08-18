@@ -24,20 +24,20 @@ export async function markNotificationTypeRead(type: string) {
   window.dispatchEvent(new Event(REFRESH_EVENT))
 }
 
-export function useNotifications() {
+export function useNotifications(limit = 20) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [unreadByType, setUnreadByType] = useState<Record<string, number>>({})
 
   const refresh = useCallback(async () => {
-    const res = await fetch('/api/notifications')
+    const res = await fetch(`/api/notifications?limit=${limit}`)
     if (res.ok) {
       const data = await res.json()
       setNotifications(data.notifications)
       setUnreadCount(data.unreadCount)
       setUnreadByType(data.unreadByType ?? {})
     }
-  }, [])
+  }, [limit])
 
   useEffect(() => {
     refresh()
@@ -59,6 +59,11 @@ export function useNotifications() {
       setUnreadByType((prev) => ({ ...prev, [target.type]: Math.max(0, (prev[target.type] ?? 0) - 1) }))
     }
     await fetch(`/api/notifications/${id}`, { method: 'PATCH' })
+    // Other useNotifications() instances on the page (e.g. the sidebar badge
+    // when this call came from the full Notifications page) have their own
+    // local state and won't see this change until their next 60s poll —
+    // nudge them to refetch now instead.
+    window.dispatchEvent(new Event(REFRESH_EVENT))
   }
 
   async function markAllRead() {
@@ -66,6 +71,7 @@ export function useNotifications() {
     setUnreadCount(0)
     setUnreadByType({})
     await fetch('/api/notifications/mark-all-read', { method: 'PATCH' })
+    window.dispatchEvent(new Event(REFRESH_EVENT))
   }
 
   return { notifications, unreadCount, unreadByType, markRead, markAllRead, refresh }

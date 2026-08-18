@@ -2,15 +2,19 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { searchParams } = new URL(request.url)
+  const requestedLimit = Number(searchParams.get('limit'))
+  const limit = Number.isInteger(requestedLimit) && requestedLimit > 0 ? Math.min(requestedLimit, 200) : 20
 
   const [notifications, unreadCount, unreadByTypeRows] = await Promise.all([
     prisma.notification.findMany({
       where: { userId: session.user.id },
       orderBy: { createdAt: 'desc' },
-      take: 20,
+      take: limit,
     }),
     prisma.notification.count({ where: { userId: session.user.id, read: false } }),
     // Per-type unread counts (e.g. for the Announcements nav badge) —

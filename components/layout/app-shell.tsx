@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { signOut } from 'next-auth/react'
-import { LayoutDashboard, BookOpen, Users, Settings, Megaphone, LogOut, ChevronLeft, ChevronRight, Menu, X } from 'lucide-react'
+import { LayoutDashboard, BookOpen, Users, Settings, Megaphone, Bell, LogOut, ChevronLeft, ChevronRight, Menu, X } from 'lucide-react'
 import type { PermissionCode } from '@/lib/permissions'
 import { SignInStatusPill } from '@/components/layout/sign-in-status-pill'
 import { NotificationBell } from '@/components/layout/notification-bell'
@@ -27,6 +27,7 @@ const NAV: {
   { key: 'logbook', href: '/logbook', label: 'LogBook', Icon: BookOpen },
   { key: 'staff', href: '/staff', label: 'Staff', Icon: Users },
   { key: 'announcements', href: '/announcements', label: 'Announcements', Icon: Megaphone },
+  { key: 'notifications', href: '/notifications', label: 'Notifications', Icon: Bell },
   { key: 'system', href: '/system', label: 'System', Icon: Settings, requiresAnyOf: ['MANAGE_USERS', 'MANAGE_ROLES', 'MANAGE_VENUES', 'MANAGE_PROJECTS', 'MANAGE_SETTINGS', 'VIEW_AUDIT_LOG', 'VIEW_ERROR_LOG', 'MANAGE_LEAVE_GROUPS'] },
 ]
 
@@ -69,6 +70,7 @@ const SECTION_TITLES: Record<string, string> = {
   '/staff/project/archive': 'Project Archive',
   '/announcements': 'Announcements',
   '/announcements/new': 'New Announcement',
+  '/notifications': 'Notifications',
   '/system/venue': 'Venue',
   '/system/roles': 'Roles',
   '/system/leave-groups': 'Groups',
@@ -396,7 +398,7 @@ export function AppShell({ user, children }: { user: NavUser; children: React.Re
   // per-nav-item badges (e.g. Announcements) and the header bell share one
   // poll instead of each fetching independently.
   const notifications = useNotifications()
-  const navBadges = { announcements: notifications.unreadByType['announcement.posted'] ?? 0 }
+  const navBadges = { announcements: notifications.unreadByType['announcement.posted'] ?? 0, notifications: notifications.unreadCount }
 
   useEffect(() => {
     setCollapsed(localStorage.getItem(SIDEBAR_STORAGE_KEY) === 'true')
