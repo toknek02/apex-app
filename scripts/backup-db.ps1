@@ -66,6 +66,11 @@ try {
   $errorPruneOutput = npm run prune-error-log 2>&1 | Out-String
   Pop-Location
   Log "Error log prune: $($errorPruneOutput.Trim())"
+
+  Push-Location $ProjectRoot
+  $notificationPruneOutput = npm run prune-notifications 2>&1 | Out-String
+  Pop-Location
+  Log "Notification prune: $($notificationPruneOutput.Trim())"
 } catch {
   Log "ERROR: $_"
   if (Test-Path Env:\PGPASSWORD) { Remove-Item Env:\PGPASSWORD }

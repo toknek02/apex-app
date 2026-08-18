@@ -48,6 +48,10 @@ model User {
   leaveApplications     LeaveApplication[] @relation("LeaveApplicant")
   reviewedLeaveApplications LeaveApplication[] @relation("LeaveReviewer")
   notifications         Notification[]
+  // Notification `type` values (see lib/notification-types.ts) this user has
+  // opted out of — notifyUsers() skips creating a row for a muted type
+  // rather than creating it read, so it never counts toward unread history.
+  mutedNotificationTypes String[] @default([])
 
   @@index([department])
   @@index([roleId])

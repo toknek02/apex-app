@@ -43,10 +43,23 @@ export function useNotifications(limit = 20) {
     refresh()
     window.addEventListener('focus', refresh)
     window.addEventListener(REFRESH_EVENT, refresh)
-    const interval = setInterval(refresh, 60_000)
+    // Polling every 15s while the tab is in the background just burns
+    // requests nobody will see in time, so the interval below skips its own
+    // tick while hidden — the 'focus' listener already refetches the moment
+    // someone switches back, and this also catches switching to a visible
+    // tab without a window focus event (e.g. Alt-Tab between two apps that
+    // both keep window focus at the OS level).
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') refresh()
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') refresh()
+    }, 15_000)
     return () => {
       window.removeEventListener('focus', refresh)
       window.removeEventListener(REFRESH_EVENT, refresh)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
       clearInterval(interval)
     }
   }, [refresh])

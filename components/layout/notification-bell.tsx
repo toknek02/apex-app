@@ -4,17 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Bell } from 'lucide-react'
 import type { NotificationItem } from '@/lib/hooks/use-notifications'
-
-function timeAgo(iso: string) {
-  const diffMs = Date.now() - new Date(iso).getTime()
-  const mins = Math.floor(diffMs / 60_000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  const days = Math.floor(hrs / 24)
-  return `${days}d ago`
-}
+import { NotificationRows } from '@/components/notifications/notification-rows'
 
 export function NotificationBell({
   notifications,
@@ -99,28 +89,7 @@ export function NotificationBell({
               )}
             </div>
 
-            {notifications.length === 0 ? (
-              <div style={{ padding: '20px 14px', textAlign: 'center', fontSize: 12, color: 'var(--apex-muted)', fontStyle: 'italic' }}>
-                No notifications yet.
-              </div>
-            ) : (
-              notifications.map((n) => (
-                <div
-                  key={n.id}
-                  onClick={() => handleClick(n)}
-                  style={{
-                    padding: '10px 14px',
-                    borderBottom: '1px solid var(--apex-border)',
-                    cursor: 'pointer',
-                    backgroundColor: n.read ? '#fff' : 'var(--apex-accent-lt)',
-                  }}
-                >
-                  <div style={{ fontSize: 12, fontWeight: n.read ? 500 : 700, color: 'var(--apex-text)', marginBottom: 2 }}>{n.title}</div>
-                  {n.body && <div style={{ fontSize: 11, color: 'var(--apex-muted)', marginBottom: 3 }}>{n.body}</div>}
-                  <div style={{ fontSize: 10, color: 'var(--apex-muted)' }}>{timeAgo(n.createdAt)}</div>
-                </div>
-              ))
-            )}
+            <NotificationRows notifications={notifications} onItemClick={handleClick} variant="dropdown" emptyMessage="No notifications yet." />
           </div>
         </>
       )}

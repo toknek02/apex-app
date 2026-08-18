@@ -3,17 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useNotifications } from '@/lib/hooks/use-notifications'
 import type { NotificationItem } from '@/lib/hooks/use-notifications'
-
-function timeAgo(iso: string) {
-  const diffMs = Date.now() - new Date(iso).getTime()
-  const mins = Math.floor(diffMs / 60_000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  const days = Math.floor(hrs / 24)
-  return `${days}d ago`
-}
+import { NotificationRows } from '@/components/notifications/notification-rows'
 
 export function NotificationsList() {
   const router = useRouter()
@@ -40,30 +30,7 @@ export function NotificationsList() {
         )}
       </div>
 
-      {notifications.length === 0 ? (
-        <div style={{ padding: 24, textAlign: 'center', fontSize: 13, color: 'var(--apex-muted)', fontStyle: 'italic' }}>
-          No notifications yet.
-        </div>
-      ) : (
-        notifications.map((n, i) => (
-          <div
-            key={n.id}
-            onClick={() => handleClick(n)}
-            style={{
-              padding: '14px 16px',
-              borderBottom: '1px solid var(--apex-border)',
-              cursor: n.link ? 'pointer' : 'default',
-              backgroundColor: n.read ? (i % 2 ? 'var(--apex-row-alt)' : '#fff') : 'var(--apex-accent-lt)',
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-              <div style={{ fontSize: 13, fontWeight: n.read ? 500 : 700, color: 'var(--apex-text)' }}>{n.title}</div>
-              <div style={{ fontSize: 11, color: 'var(--apex-muted)', whiteSpace: 'nowrap', flexShrink: 0 }}>{timeAgo(n.createdAt)}</div>
-            </div>
-            {n.body && <div style={{ fontSize: 12, color: 'var(--apex-muted)', marginTop: 3 }}>{n.body}</div>}
-          </div>
-        ))
-      )}
+      <NotificationRows notifications={notifications} onItemClick={handleClick} variant="page" emptyMessage="No notifications yet." />
     </div>
   )
 }

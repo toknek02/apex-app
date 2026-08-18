@@ -10,7 +10,8 @@
     "seed": "ts-node -P scripts/tsconfig.json prisma/seed.ts",
     "eod-signout": "ts-node -P scripts/tsconfig.json scripts/eod-signout.ts",
     "prune-audit-log": "ts-node -P scripts/tsconfig.json scripts/prune-audit-log.ts",
-    "prune-error-log": "ts-node -P scripts/tsconfig.json scripts/prune-error-log.ts"
+    "prune-error-log": "ts-node -P scripts/tsconfig.json scripts/prune-error-log.ts",
+    "prune-notifications": "ts-node -P scripts/tsconfig.json scripts/prune-notifications.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
