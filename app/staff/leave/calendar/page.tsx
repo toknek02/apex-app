@@ -5,6 +5,8 @@ import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import { LeaveTabs } from '@/components/staff/leave-tabs'
 import { LeaveCalendarMonthPicker } from '@/components/staff/leave-calendar-month-picker'
+import { DepartmentFilter } from '@/components/staff/department-filter'
+import { LeaveGroupFilter } from '@/components/staff/leave-group-filter'
 import { enumerateDaysInclusive } from '@/lib/date-utils'
 import { LEAVE_EVENT_TYPES } from '@/lib/timesheet-event-types'
 
@@ -36,7 +38,7 @@ function leaveTypeMeta(leaveType: string) {
 export default async function LeaveCalendarPage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string }>
+  searchParams: Promise<{ month?: string; department?: string; leaveGroup?: string }>
 }) {
   const user = await requireUser()
   const sp = await searchParams
@@ -65,15 +67,26 @@ export default async function LeaveCalendarPage({
     hasPermission(user, 'MANAGE_PROJECTS') ||
     hasPermission(user, 'MANAGE_USERS')
 
-  const [allStaff, directedGroups] = await Promise.all([
+  const [allStaff, directedGroups, leaveGroups] = await Promise.all([
     prisma.user.findMany({ where: { isActive: true }, orderBy: [{ department: 'asc' }, { name: 'asc' }] }),
     prisma.leaveGroup.findMany({ where: { directorId: user.id }, select: { id: true } }),
+    prisma.leaveGroup.findMany({ orderBy: { name: 'asc' }, select: { id: true, name: true } }),
   ])
 
   const directedGroupIds = directedGroups.map((g) => g.id)
-  const staff = isPrivileged
+  const visibleStaff = isPrivileged
     ? allStaff
     : allStaff.filter((s) => s.id === user.id || (s.leaveGroupId && directedGroupIds.includes(s.leaveGroupId)))
+
+  const departments = [...new Set(visibleStaff.map((s) => s.department ?? 'UNASSIGNED'))].sort()
+  const selectedDepartment = sp.department && departments.includes(sp.department) ? sp.department : ''
+  const selectedLeaveGroup = sp.leaveGroup && leaveGroups.some((g) => g.id === sp.leaveGroup) ? sp.leaveGroup : ''
+
+  const staff = visibleStaff
+    .filter((s) => !selectedDepartment || (s.department ?? 'UNASSIGNED') === selectedDepartment)
+    .filter((s) => !selectedLeaveGroup || s.leaveGroupId === selectedLeaveGroup)
+
+  const filterQuery = `${selectedDepartment ? `&department=${encodeURIComponent(selectedDepartment)}` : ''}${selectedLeaveGroup ? `&leaveGroup=${encodeURIComponent(selectedLeaveGroup)}` : ''}`
 
   const applications = await prisma.leaveApplication.findMany({
     where: {
@@ -119,10 +132,20 @@ export default async function LeaveCalendarPage({
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <Link href={`/staff/leave/calendar?month=${prevKey}`} style={navBtn}>&lt; Prev Month</Link>
-          <Link href={`/staff/leave/calendar?month=${nextKey}`} style={navBtn}>Next Month &gt;</Link>
+          <Link href={`/staff/leave/calendar?month=${prevKey}${filterQuery}`} style={navBtn}>&lt; Prev Month</Link>
+          <Link href={`/staff/leave/calendar?month=${nextKey}${filterQuery}`} style={navBtn}>Next Month &gt;</Link>
         </div>
         <LeaveCalendarMonthPicker year={year} month={month} />
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <DepartmentFilter departments={departments} selected={selectedDepartment} basePath="/staff/leave/calendar" />
+          <LeaveGroupFilter leaveGroups={leaveGroups} selected={selectedLeaveGroup} basePath="/staff/leave/calendar" />
+          <a
+            href={`/api/leave-applications/export?month=${yearStr}-${monthStr.padStart(2, '0')}${filterQuery}`}
+            style={{ ...navBtn, color: 'var(--apex-green)', borderColor: 'var(--apex-green)' }}
+          >
+            Download
+          </a>
+        </div>
       </div>
 
       <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>

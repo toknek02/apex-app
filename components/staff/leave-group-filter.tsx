@@ -4,7 +4,15 @@ import { useRouter, useSearchParams } from 'next/navigation'
 
 type LeaveGroupOption = { id: string; name: string }
 
-export function LeaveGroupFilter({ leaveGroups, selected }: { leaveGroups: LeaveGroupOption[]; selected: string }) {
+export function LeaveGroupFilter({
+  leaveGroups,
+  selected,
+  basePath = '/staff/activities/summary',
+}: {
+  leaveGroups: LeaveGroupOption[]
+  selected: string
+  basePath?: string
+}) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -15,7 +23,7 @@ export function LeaveGroupFilter({ leaveGroups, selected }: { leaveGroups: Leave
     } else {
       params.delete('leaveGroup')
     }
-    router.push(`/staff/activities/summary?${params.toString()}`)
+    router.push(`${basePath}?${params.toString()}`)
   }
 
   return (

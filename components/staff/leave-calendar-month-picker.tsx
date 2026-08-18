@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -16,9 +16,12 @@ const selectStyle: React.CSSProperties = {
 
 export function LeaveCalendarMonthPicker({ year, month }: { year: number; month: number }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   function navigate(newYear: number, newMonth: number) {
-    router.push(`/staff/leave/calendar?month=${newYear}-${String(newMonth + 1).padStart(2, '0')}`)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('month', `${newYear}-${String(newMonth + 1).padStart(2, '0')}`)
+    router.push(`/staff/leave/calendar?${params.toString()}`)
   }
 
   const yearOptions = Array.from({ length: 6 }, (_, i) => year - 3 + i)

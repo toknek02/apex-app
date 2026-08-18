@@ -2,7 +2,15 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 
-export function DepartmentFilter({ departments, selected }: { departments: string[]; selected: string }) {
+export function DepartmentFilter({
+  departments,
+  selected,
+  basePath = '/staff/activities/summary',
+}: {
+  departments: string[]
+  selected: string
+  basePath?: string
+}) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -13,7 +21,7 @@ export function DepartmentFilter({ departments, selected }: { departments: strin
     } else {
       params.delete('department')
     }
-    router.push(`/staff/activities/summary?${params.toString()}`)
+    router.push(`${basePath}?${params.toString()}`)
   }
 
   return (
