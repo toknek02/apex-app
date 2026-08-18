@@ -35,6 +35,84 @@ function leaveTypeMeta(leaveType: string) {
   return LEAVE_TYPE_META[leaveType] ?? { code: '??', color: 'var(--apex-muted)' }
 }
 
+type Application = {
+  id: string
+  leaveType: string
+  status: string
+  dayPortion: string
+}
+
+// Renders one cell per empty day, but merges a run of consecutive days
+// covered by the same application into a single colSpan cell — so a
+// multi-day leave shows as one continuous bar instead of a separate badge
+// per day with a visible seam between them.
+function renderDayCells({
+  dayMap,
+  daysInMonth,
+  isCurrentMonth,
+  todayDate,
+}: {
+  dayMap: Map<number, Application> | undefined
+  daysInMonth: number
+  isCurrentMonth: boolean
+  todayDate: number
+}) {
+  const cells: React.ReactNode[] = []
+  let day = 1
+  while (day <= daysInMonth) {
+    const app = dayMap?.get(day)
+    if (!app) {
+      const isToday = isCurrentMonth && todayDate === day
+      cells.push(<td key={day} style={{ ...tdStyle, backgroundColor: isToday ? 'var(--apex-accent-lt)' : undefined }} />)
+      day++
+      continue
+    }
+
+    let length = 1
+    while (day + length <= daysInMonth && dayMap?.get(day + length)?.id === app.id) length++
+    const segmentIncludesToday = isCurrentMonth && todayDate >= day && todayDate < day + length
+
+    const { code, color } = leaveTypeMeta(app.leaveType)
+    const isPending = app.status !== 'APPROVED'
+    // Half-day is only visualized on approved (solid) badges — combining the
+    // dashed pending outline with a half-white fill reads as cluttered, so
+    // pending stays a plain outline. Also single-day only (enforced at
+    // submission), so it never appears on a merged multi-day segment.
+    const isHalfDay = !isPending && length === 1 && (app.dayPortion === 'AM' || app.dayPortion === 'PM')
+    const halfDayBackground = isHalfDay
+      ? app.dayPortion === 'AM'
+        ? `linear-gradient(to right, #fff 50%, ${color} 50%)`
+        : `linear-gradient(to right, ${color} 50%, #fff 50%)`
+      : undefined
+
+    cells.push(
+      <td key={day} colSpan={length} style={{ ...tdStyle, backgroundColor: segmentIncludesToday ? 'var(--apex-accent-lt)' : undefined, padding: 3 }}>
+        <span
+          title={`${app.leaveType}${isHalfDay ? ` — Half Day (${app.dayPortion})` : ''}${app.status === 'PENDING_ARCHITECT' ? ' — Awaiting Architect Approval' : app.status === 'PENDING_DIRECTOR' ? ' — Awaiting Director Approval' : ''}`}
+          style={{
+            display: 'flex',
+            width: '100%',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: 20,
+            borderRadius: 4,
+            fontSize: 9,
+            fontWeight: 700,
+            color: isPending ? color : (isHalfDay ? '#000' : '#fff'),
+            backgroundColor: isPending ? '#fff' : (isHalfDay ? undefined : color),
+            background: halfDayBackground,
+            border: isPending ? `1.5px dashed ${color}` : (isHalfDay ? `1px solid ${color}` : 'none'),
+          }}
+        >
+          {code}
+        </span>
+      </td>
+    )
+    day += length
+  }
+  return cells
+}
+
 export default async function LeaveCalendarPage({
   searchParams,
 }: {
@@ -178,47 +256,7 @@ export default async function LeaveCalendarPage({
                       <td style={{ ...tdStyle, position: 'sticky', left: 0, backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff', textAlign: 'left', fontWeight: 600 }}>
                         {m.name}
                       </td>
-                      {Array.from({ length: daysInMonth }, (_, di) => di + 1).map((day) => {
-                        const isToday = isCurrentMonth && today.getDate() === day
-                        const app = dayMap?.get(day)
-                        if (!app) {
-                          return <td key={day} style={{ ...tdStyle, backgroundColor: isToday ? 'var(--apex-accent-lt)' : undefined }} />
-                        }
-                        const { code, color } = leaveTypeMeta(app.leaveType)
-                        const isPending = app.status !== 'APPROVED'
-                        // Half-day is only visualized on approved (solid) badges —
-                        // combining the dashed pending outline with a half-white
-                        // fill reads as cluttered, so pending stays a plain outline.
-                        const isHalfDay = !isPending && (app.dayPortion === 'AM' || app.dayPortion === 'PM')
-                        const halfDayBackground = isHalfDay
-                          ? app.dayPortion === 'AM'
-                            ? `linear-gradient(to right, #fff 50%, ${color} 50%)`
-                            : `linear-gradient(to right, ${color} 50%, #fff 50%)`
-                          : undefined
-                        return (
-                          <td key={day} style={{ ...tdStyle, backgroundColor: isToday ? 'var(--apex-accent-lt)' : undefined, padding: 3 }}>
-                            <span
-                              title={`${app.leaveType}${isHalfDay ? ` — Half Day (${app.dayPortion})` : ''}${app.status === 'PENDING_ARCHITECT' ? ' — Awaiting Architect Approval' : app.status === 'PENDING_DIRECTOR' ? ' — Awaiting Director Approval' : ''}`}
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                width: 26,
-                                height: 20,
-                                borderRadius: 4,
-                                fontSize: 9,
-                                fontWeight: 700,
-                                color: isPending ? color : (isHalfDay ? '#000' : '#fff'),
-                                backgroundColor: isPending ? '#fff' : (isHalfDay ? undefined : color),
-                                background: halfDayBackground,
-                                border: isPending ? `1.5px dashed ${color}` : (isHalfDay ? `1px solid ${color}` : 'none'),
-                              }}
-                            >
-                              {code}
-                            </span>
-                          </td>
-                        )
-                      })}
+                      {renderDayCells({ dayMap, daysInMonth, isCurrentMonth, todayDate: today.getDate() })}
                     </tr>
                   )
                 })}
