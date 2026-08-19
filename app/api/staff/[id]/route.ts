@@ -41,6 +41,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (count !== groupIds.length) return NextResponse.json({ error: 'One or more groups not found' }, { status: 400 })
   }
 
+  // Deactivating a group's architect/director without reassigning them first
+  // would strand any application routed to that group at that stage forever
+  // — nobody left who's authorized to act on it short of the admin override.
+  if (isActive === false) {
+    const assignedGroups = await prisma.leaveGroup.findMany({
+      where: { OR: [{ architectId: id }, { directorId: id }] },
+      select: { name: true, architectId: true, directorId: true },
+    })
+    if (assignedGroups.length > 0) {
+      const names = assignedGroups.map((g) => g.name).join(', ')
+      return NextResponse.json({ error: `Reassign the architect/director role on these leave groups before deactivating this user: ${names}` }, { status: 400 })
+    }
+  }
+
   if (username) {
     const existingUsername = await prisma.user.findFirst({ where: { username, NOT: { id } } })
     if (existingUsername) return NextResponse.json({ error: 'A user with this Name already exists' }, { status: 409 })

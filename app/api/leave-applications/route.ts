@@ -103,6 +103,22 @@ export async function POST(req: NextRequest) {
     validProjectId = project.id
   }
 
+  // Block overlapping applications up front — otherwise two overlapping
+  // approvals would each overwrite the other's TimesheetEntry rows on
+  // approval, leaving a stale "APPROVED" application whose dates no longer
+  // match what's actually on the timesheet.
+  const overlapping = await prisma.leaveApplication.findFirst({
+    where: {
+      userId: session.user.id,
+      status: { in: ['PENDING_ARCHITECT', 'PENDING_DIRECTOR', 'APPROVED'] },
+      startDate: { lte: parsedEnd },
+      endDate: { gte: parsedStart },
+    },
+  })
+  if (overlapping) {
+    return NextResponse.json({ error: 'You already have a pending or approved leave application that overlaps these dates' }, { status: 409 })
+  }
+
   const applicant = await prisma.user.findUnique({
     where: { id: session.user.id },
     include: { leaveGroupMemberships: { include: { leaveGroup: { select: { id: true, directorId: true, architectId: true } } } } },
