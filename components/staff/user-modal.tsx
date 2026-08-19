@@ -23,6 +23,8 @@ type User = {
   isActive: boolean
   basicSalary?: number | null
   otEligible?: boolean
+  annualLeaveEntitlement?: number | null
+  annualLeaveBroughtForward?: number
   leaveGroupIds?: string[]
 }
 
@@ -42,6 +44,8 @@ export function UserModal({ user, roles, leaveGroups, trigger }: { user?: User; 
   const [isActive, setIsActive] = useState(user?.isActive ?? true)
   const [basicSalary, setBasicSalary] = useState(user?.basicSalary?.toString() ?? '')
   const [otEligible, setOtEligible] = useState(user?.otEligible ?? false)
+  const [annualLeaveEntitlement, setAnnualLeaveEntitlement] = useState(user?.annualLeaveEntitlement?.toString() ?? '')
+  const [annualLeaveBroughtForward, setAnnualLeaveBroughtForward] = useState(user?.annualLeaveBroughtForward?.toString() ?? '0')
   const [leaveGroupIds, setLeaveGroupIds] = useState<Set<string>>(new Set(user?.leaveGroupIds ?? []))
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
@@ -88,8 +92,8 @@ export function UserModal({ user, roles, leaveGroups, trigger }: { user?: User; 
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(
         user
-          ? { name, username, email, department, designation, roleId, isActive, basicSalary, otEligible, leaveGroupIds: [...leaveGroupIds], ...(password ? { password } : {}) }
-          : { name, username, email, password, department, designation, roleId, basicSalary, otEligible, leaveGroupIds: [...leaveGroupIds] }
+          ? { name, username, email, department, designation, roleId, isActive, basicSalary, otEligible, annualLeaveEntitlement, annualLeaveBroughtForward, leaveGroupIds: [...leaveGroupIds], ...(password ? { password } : {}) }
+          : { name, username, email, password, department, designation, roleId, basicSalary, otEligible, annualLeaveEntitlement, annualLeaveBroughtForward, leaveGroupIds: [...leaveGroupIds] }
       ),
     })
     setSaving(false)
@@ -111,18 +115,33 @@ export function UserModal({ user, roles, leaveGroups, trigger }: { user?: User; 
 
       {open && (
         <div
-          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300 }}
+          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300, padding: 16 }}
           onClick={() => setOpen(false)}
         >
-          <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: '#fff', borderRadius: 10, padding: 24, width: 400 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>{user ? 'Edit User' : 'New Staff'}</h2>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: '#fff',
+              borderRadius: 10,
+              width: '100%',
+              maxWidth: 440,
+              maxHeight: '90vh',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+            }}
+          >
+            <div style={{ padding: '24px 24px 0' }}>
+              <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>{user ? 'Edit User' : 'New Staff'}</h2>
 
-            {error && (
-              <div style={{ marginBottom: 12, padding: '8px 12px', borderRadius: 6, backgroundColor: 'var(--apex-red-lt)', color: 'var(--apex-red)', fontSize: 12 }}>
-                {error}
-              </div>
-            )}
+              {error && (
+                <div style={{ marginBottom: 12, padding: '8px 12px', borderRadius: 6, backgroundColor: 'var(--apex-red-lt)', color: 'var(--apex-red)', fontSize: 12 }}>
+                  {error}
+                </div>
+              )}
+            </div>
 
+            <div style={{ padding: '0 24px 16px', overflowY: 'auto', flex: 1 }}>
             <div style={{ marginBottom: 12 }}>
               <label style={labelStyle}>Full Name</label>
               <input style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} />
@@ -204,6 +223,19 @@ export function UserModal({ user, roles, leaveGroups, trigger }: { user?: User; 
                 Only staff marked eligible see the OT option on their Timesheet.
               </div>
             </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 12 }}>
+              <div>
+                <label style={labelStyle}>Annual Leave Entitlement (days/yr)</label>
+                <input type="number" min="0" step="0.5" style={inputStyle} value={annualLeaveEntitlement} onChange={(e) => setAnnualLeaveEntitlement(e.target.value)} placeholder="e.g. 14" />
+              </div>
+              <div>
+                <label style={labelStyle}>Brought Forward (days)</label>
+                <input type="number" min="0" step="0.5" style={inputStyle} value={annualLeaveBroughtForward} onChange={(e) => setAnnualLeaveBroughtForward(e.target.value)} />
+              </div>
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--apex-muted)', marginTop: -8, marginBottom: 12 }}>
+              Re-enter both at the start of each year — leaving Entitlement blank means Annual Leave stays unrestricted for this person.
+            </div>
             {user && (
               <div style={{ marginBottom: 20 }}>
                 <label style={labelStyle}>Status</label>
@@ -213,8 +245,9 @@ export function UserModal({ user, roles, leaveGroups, trigger }: { user?: User; 
                 </select>
               </div>
             )}
+            </div>
 
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: user ? 0 : 20 }}>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', padding: '16px 24px', borderTop: '1px solid var(--apex-border)' }}>
               <button onClick={() => setOpen(false)} style={{ padding: '8px 16px', border: '1px solid var(--apex-border)', backgroundColor: '#fff', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
                 Cancel
               </button>

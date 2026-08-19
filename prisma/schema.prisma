@@ -30,6 +30,13 @@ model User {
   // Whether this person can log OT hours on their timesheet at all — most
   // staff (e.g. salaried without OT entitlement) shouldn't see the option.
   otEligible      Boolean  @default(false)
+  // Annual Leave days entitled for the current year, and unused days
+  // manually carried forward from the previous year (HR re-enters both at
+  // the start of each year — mirrors the Ent./B/f columns HR already
+  // maintains by hand, so no automated year-end rollover is needed). See
+  // lib/leave-balance.ts. Null entitlement means unset, not zero.
+  annualLeaveEntitlement     Float?
+  annualLeaveBroughtForward  Float    @default(0)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

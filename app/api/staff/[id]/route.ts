@@ -18,7 +18,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!hasPermission(session.user, 'MANAGE_USERS')) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const { id } = await params
-  const { name, username, email, department, designation, roleId, isActive, password, basicSalary, otEligible, leaveGroupIds } = await req.json()
+  const { name, username, email, department, designation, roleId, isActive, password, basicSalary, otEligible, annualLeaveEntitlement, annualLeaveBroughtForward, leaveGroupIds } = await req.json()
 
   if (password !== undefined && password !== '' && password.length < 6) {
     return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 })
@@ -81,6 +81,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: 'Basic Salary must be a non-negative number' }, { status: 400 })
   }
 
+  const parsedEntitlement = annualLeaveEntitlement !== undefined ? parseRate(annualLeaveEntitlement) : undefined
+  const parsedBroughtForward = annualLeaveBroughtForward !== undefined ? parseRate(annualLeaveBroughtForward) : undefined
+  if ((parsedEntitlement && !parsedEntitlement.ok) || (parsedBroughtForward && !parsedBroughtForward.ok)) {
+    return NextResponse.json({ error: 'Annual Leave Entitlement and Brought Forward must be non-negative numbers' }, { status: 400 })
+  }
+
   // Every pay formula — normal hours included — derives from Basic Salary.
   // Without it, OT-eligible staff would silently cost RM0.00 everywhere.
   // Only worth the extra lookup when either field is actually changing.
@@ -115,8 +121,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ...(password ? { passwordHash: await bcrypt.hash(password, 10) } : {}),
       ...(parsedBasicSalary ? { basicSalary: parsedBasicSalary.rate } : {}),
       ...(otEligible !== undefined ? { otEligible: Boolean(otEligible) } : {}),
+      ...(parsedEntitlement ? { annualLeaveEntitlement: parsedEntitlement.rate } : {}),
+      ...(parsedBroughtForward ? { annualLeaveBroughtForward: parsedBroughtForward.rate ?? 0 } : {}),
     },
-    select: { id: true, name: true, username: true, email: true, department: true, designation: true, roleId: true, role: { select: { name: true } }, isActive: true, basicSalary: true, otEligible: true, leaveGroupMemberships: { select: { leaveGroupId: true } } },
+    select: { id: true, name: true, username: true, email: true, department: true, designation: true, roleId: true, role: { select: { name: true } }, isActive: true, basicSalary: true, otEligible: true, annualLeaveEntitlement: true, annualLeaveBroughtForward: true, leaveGroupMemberships: { select: { leaveGroupId: true } } },
   })
   await logAudit({
     actor: session.user,

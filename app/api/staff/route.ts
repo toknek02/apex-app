@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!hasPermission(session.user, 'MANAGE_USERS')) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { name, username, email, password, department, designation, roleId, basicSalary, otEligible, leaveGroupIds } = await req.json()
+  const { name, username, email, password, department, designation, roleId, basicSalary, otEligible, annualLeaveEntitlement, annualLeaveBroughtForward, leaveGroupIds } = await req.json()
   if (!name || !username || !roleId) return NextResponse.json({ error: 'Full Name, Name, and role are required' }, { status: 400 })
   if (/\s/.test(username)) return NextResponse.json({ error: 'Name (login) cannot contain spaces' }, { status: 400 })
   if (!password || password.length < 6) {
@@ -44,6 +44,12 @@ export async function POST(req: NextRequest) {
   // Without it, OT-eligible staff would silently cost RM0.00 everywhere.
   if (otEligible && !parsedBasicSalary.rate) {
     return NextResponse.json({ error: 'Basic Salary is required for staff eligible for OT' }, { status: 400 })
+  }
+
+  const parsedEntitlement = parseRate(annualLeaveEntitlement)
+  const parsedBroughtForward = parseRate(annualLeaveBroughtForward)
+  if (!parsedEntitlement.ok || !parsedBroughtForward.ok) {
+    return NextResponse.json({ error: 'Annual Leave Entitlement and Brought Forward must be non-negative numbers' }, { status: 400 })
   }
 
   const existingUsername = await prisma.user.findUnique({ where: { username } })
@@ -75,6 +81,8 @@ export async function POST(req: NextRequest) {
       roleId,
       basicSalary: parsedBasicSalary.rate,
       otEligible: Boolean(otEligible),
+      annualLeaveEntitlement: parsedEntitlement.rate,
+      annualLeaveBroughtForward: parsedBroughtForward.rate ?? 0,
       leaveGroupMemberships: { create: groupIds.map((leaveGroupId) => ({ leaveGroupId })) },
     },
     select: { id: true, name: true, username: true, department: true, designation: true, roleId: true, role: { select: { name: true } }, leaveGroupMemberships: { select: { leaveGroupId: true } } },

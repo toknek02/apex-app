@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { notifyUsers } from '@/lib/notifications'
 import { LEAVE_EVENT_TYPES, HALF_DAY_ELIGIBLE_LEAVE_TYPES } from '@/lib/timesheet-event-types'
 import { parseLocalDate } from '@/lib/date-utils'
+import { daysForApplication, getAnnualLeaveBalance } from '@/lib/leave-balance'
 
 async function getHrRecipientIds(excludeUserId?: string) {
   const hrUsers = await prisma.user.findMany({
@@ -117,6 +118,25 @@ export async function POST(req: NextRequest) {
   })
   if (overlapping) {
     return NextResponse.json({ error: 'You already have a pending or approved leave application that overlaps these dates' }, { status: 409 })
+  }
+
+  // Annual Leave draws down a per-year entitlement; once that runs out, the
+  // applicant has to use Unpaid Annual Leave instead — this only applies to
+  // the paid type, and only once HR has actually set an entitlement (a null
+  // entitlement means "not configured yet", not "zero days allowed").
+  if (leaveType === 'Annual Leave') {
+    const balance = await getAnnualLeaveBalance(session.user.id, parsedStart.getFullYear())
+    if (balance.remaining !== null) {
+      const requestedDays = daysForApplication({ startDate: parsedStart, endDate: parsedEnd, dayPortion: portion })
+      if (requestedDays > balance.remaining) {
+        return NextResponse.json(
+          {
+            error: `Not enough Annual Leave balance — you have ${balance.remaining} day(s) left this year. Apply Unpaid Annual Leave instead for the rest.`,
+          },
+          { status: 400 }
+        )
+      }
+    }
   }
 
   const applicant = await prisma.user.findUnique({

@@ -72,6 +72,7 @@ const SECTION_TITLES: Record<string, string> = {
   '/announcements': 'Announcements',
   '/announcements/new': 'New Announcement',
   '/notifications': 'Notifications',
+  '/profile': 'My Profile',
   '/system/venue': 'Venue',
   '/system/roles': 'Roles',
   '/system/leave-groups': 'Groups',
@@ -152,7 +153,9 @@ function Header({
           markRead={notifications.markRead}
           markAllRead={notifications.markAllRead}
         />
-        <div
+        <Link
+          href="/profile"
+          title="My Profile"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -160,6 +163,7 @@ function Header({
             backgroundColor: 'rgba(255,255,255,0.1)',
             padding: '4px 12px',
             borderRadius: 20,
+            textDecoration: 'none',
           }}
         >
           <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: 'var(--apex-green)' }} />
@@ -178,7 +182,7 @@ function Header({
               {user.roleName}
             </span>
           )}
-        </div>
+        </Link>
         <button
           onClick={async () => {
             // Skip next-auth's server-computed redirect URL: with the dev server bound to

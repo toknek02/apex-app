@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import Link from 'next/link'
 import { Lock } from 'lucide-react'
 import { requireUser, hasPermission } from '@/lib/rbac'
@@ -5,6 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import { DeleteTimesheetEntryButton } from '@/components/staff/delete-timesheet-entry-button'
 import { TimesheetStaffSelector } from '@/components/staff/timesheet-staff-selector'
+import { TimesheetTabs } from '@/components/staff/timesheet-tabs'
 import { isEntryLocked, TIMESHEET_EDIT_WINDOW_DAYS } from '@/lib/timesheet-lock'
 
 function ymd(d: Date) {
@@ -40,7 +42,7 @@ export default async function TimesheetPage({
   const userQuery = !isOwnView ? `&userId=${viewingUserId}` : ''
 
   const [staff, records, viewedUser, myEntries] = await Promise.all([
-    prisma.user.findMany({ where: { isActive: true }, orderBy: { name: 'asc' } }),
+    prisma.user.findMany({ where: { isActive: true }, orderBy: [{ department: 'asc' }, { name: 'asc' }] }),
     prisma.signInRecord.findMany({ where: { signInAt: { gte: monthStart, lte: monthEnd } } }),
     isOwnView ? Promise.resolve(user) : prisma.user.findUnique({ where: { id: viewingUserId } }),
     prisma.timesheetEntry.findMany({
@@ -67,12 +69,23 @@ export default async function TimesheetPage({
   // logged in, regardless of permission.
   const attendanceStaff = canViewOthers ? staff : staff.filter((s) => s.id === user.id)
 
+  // Grouped by department, same convention as Staff Directory — with 90+
+  // staff on this grid, a flat list made it hard to find anyone.
+  const attendanceByDept = new Map<string, typeof attendanceStaff>()
+  for (const s of attendanceStaff) {
+    const dept = s.department ?? 'UNASSIGNED'
+    if (!attendanceByDept.has(dept)) attendanceByDept.set(dept, [])
+    attendanceByDept.get(dept)!.push(s)
+  }
+
   return (
     <AppShell user={{ name: user.name ?? '', roleName: user.roleName, permissions: user.permissions }}>
       <Breadcrumb items={['Staff', 'Timesheet']} />
       <h1 style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
         Timesheet — {monthLabel}
       </h1>
+
+      <TimesheetTabs active="attendance" />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
         <Link href={`/staff/timesheet?month=${prevKey}${userQuery}`} style={navBtn}>&lt; Prev Month</Link>
@@ -114,25 +127,37 @@ export default async function TimesheetPage({
             </tr>
           </thead>
           <tbody>
-            {attendanceStaff.map((s, i) => {
-              const days = signedDays.get(s.id) ?? new Set<number>()
-              return (
-                <tr key={s.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
-                  <td style={{ ...tdStyle, position: 'sticky', left: 0, backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff', textAlign: 'left', fontWeight: 600 }}>
-                    {s.name}
+            {[...attendanceByDept.entries()].map(([dept, members]) => (
+              <Fragment key={dept}>
+                <tr>
+                  <td
+                    colSpan={daysInMonth + 2}
+                    style={{ padding: '6px 14px', backgroundColor: 'var(--apex-dept-bg)', fontSize: 11, fontWeight: 700, color: 'var(--apex-tbl-hdr)', letterSpacing: '0.06em', textTransform: 'uppercase', position: 'sticky', left: 0 }}
+                  >
+                    Department: {dept}
                   </td>
-                  {Array.from({ length: daysInMonth }, (_, di) => di + 1).map((day) => {
-                    const isToday = isCurrentMonth && today.getDate() === day
-                    return (
-                      <td key={day} style={{ ...tdStyle, backgroundColor: isToday ? 'var(--apex-accent-lt)' : undefined }}>
-                        {days.has(day) ? <span style={{ color: 'var(--apex-green)', fontWeight: 700 }}>✓</span> : <span style={{ color: 'var(--apex-border)' }}>—</span>}
-                      </td>
-                    )
-                  })}
-                  <td style={{ ...tdStyle, fontWeight: 700 }}>{days.size}</td>
                 </tr>
-              )
-            })}
+                {members.map((s, i) => {
+                  const days = signedDays.get(s.id) ?? new Set<number>()
+                  return (
+                    <tr key={s.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
+                      <td style={{ ...tdStyle, position: 'sticky', left: 0, backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff', textAlign: 'left', fontWeight: 600 }}>
+                        {s.name}
+                      </td>
+                      {Array.from({ length: daysInMonth }, (_, di) => di + 1).map((day) => {
+                        const isToday = isCurrentMonth && today.getDate() === day
+                        return (
+                          <td key={day} style={{ ...tdStyle, backgroundColor: isToday ? 'var(--apex-accent-lt)' : undefined }}>
+                            {days.has(day) ? <span style={{ color: 'var(--apex-green)', fontWeight: 700 }}>✓</span> : <span style={{ color: 'var(--apex-border)' }}>—</span>}
+                          </td>
+                        )
+                      })}
+                      <td style={{ ...tdStyle, fontWeight: 700 }}>{days.size}</td>
+                    </tr>
+                  )
+                })}
+              </Fragment>
+            ))}
           </tbody>
         </table>
       </div>

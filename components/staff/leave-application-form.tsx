@@ -20,7 +20,17 @@ function Required() {
 type Project = { id: string; code: string; shortName: string }
 type LeaveGroupOption = { id: string; name: string }
 
-export function LeaveApplicationForm({ projects, leaveGroups }: { projects: Project[]; leaveGroups: LeaveGroupOption[] }) {
+export function LeaveApplicationForm({
+  projects,
+  leaveGroups,
+  annualLeaveRemaining,
+}: {
+  projects: Project[]
+  leaveGroups: LeaveGroupOption[]
+  // Null means HR hasn't set an entitlement for this person yet — Annual
+  // Leave is left unrestricted in that case, so no balance line is shown.
+  annualLeaveRemaining: number | null
+}) {
   const router = useRouter()
   const today = new Date().toISOString().slice(0, 10)
 
@@ -112,6 +122,20 @@ export function LeaveApplicationForm({ projects, leaveGroups }: { projects: Proj
             <option key={t} value={t}>{t}</option>
           ))}
         </select>
+        {leaveType === 'Annual Leave' && annualLeaveRemaining !== null && (
+          <div
+            style={{
+              fontSize: 11,
+              marginTop: 5,
+              color: annualLeaveRemaining <= 0 ? 'var(--apex-red)' : 'var(--apex-muted)',
+              fontWeight: annualLeaveRemaining <= 0 ? 600 : 400,
+            }}
+          >
+            {annualLeaveRemaining <= 0
+              ? `You have ${annualLeaveRemaining} Annual Leave day(s) left this year — apply Unpaid Annual Leave instead.`
+              : `${annualLeaveRemaining} day(s) of Annual Leave left this year.`}
+          </div>
+        )}
       </div>
 
       {leaveGroups.length > 1 && (
