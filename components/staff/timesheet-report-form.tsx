@@ -2,7 +2,7 @@
 
 import { Fragment, useState } from 'react'
 import { Trash2 } from 'lucide-react'
-import { formatCurrency } from '@/lib/cost-calc'
+import { formatCurrency } from '@/lib/payroll'
 
 type Project = { id: string; code: string; shortName: string }
 type EntryResult = {

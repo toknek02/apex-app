@@ -7,6 +7,8 @@ import { ProjectTeamForm } from '@/components/system/project-team-form'
 import { DeleteProjectButton } from '@/components/system/delete-project-button'
 import { formatDuration } from '@/lib/project-duration'
 import { PROJECT_STATUS_STYLES } from '@/lib/project-statuses'
+import { attributeEntryCosts } from '@/lib/entry-cost'
+import { formatCurrency } from '@/lib/payroll'
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requirePermission('MANAGE_PROJECTS')
@@ -17,20 +19,25 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     prisma.user.findMany({ where: { isActive: true }, orderBy: { name: 'asc' }, select: { id: true, name: true, department: true } }),
     prisma.timesheetEntry.findMany({
       where: { projectId: id },
-      select: { userId: true, normalMins: true, otMins: true, user: { select: { name: true, department: true } } },
+      select: { id: true, userId: true, date: true, normalMins: true, otMins: true, basicSalaryAtEntry: true, user: { select: { name: true, department: true, basicSalary: true } } },
     }),
   ])
   if (!project) redirect('/staff/project')
 
-  const byStaff = new Map<string, { name: string; department: string | null; normalMins: number; otMins: number }>()
+  const basicSalaryByUserId = new Map(entries.map((e) => [e.userId, e.user.basicSalary]))
+  const costs = await attributeEntryCosts(entries, basicSalaryByUserId)
+
+  const byStaff = new Map<string, { name: string; department: string | null; normalMins: number; otMins: number; cost: number }>()
   for (const e of entries) {
-    if (!byStaff.has(e.userId)) byStaff.set(e.userId, { name: e.user.name, department: e.user.department, normalMins: 0, otMins: 0 })
+    if (!byStaff.has(e.userId)) byStaff.set(e.userId, { name: e.user.name, department: e.user.department, normalMins: 0, otMins: 0, cost: 0 })
     const s = byStaff.get(e.userId)!
     s.normalMins += e.normalMins
     s.otMins += e.otMins
+    s.cost += costs.get(e.id)?.totalCost ?? 0
   }
   const totalNormalMins = entries.reduce((sum, e) => sum + e.normalMins, 0)
   const totalOtMins = entries.reduce((sum, e) => sum + e.otMins, 0)
+  const totalCost = [...byStaff.values()].reduce((sum, s) => sum + s.cost, 0)
 
   const s = PROJECT_STATUS_STYLES[project.status] ?? PROJECT_STATUS_STYLES.Active
 
@@ -69,7 +76,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       />
 
       <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 24, maxWidth: 560, margin: '0 auto 20px' }}>
-        <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 14 }}>Hours Logged (all time)</h2>
+        <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 14 }}>Hours &amp; Cost Estimate (all time)</h2>
         {byStaff.size === 0 ? (
           <p style={{ fontSize: 12, color: 'var(--apex-muted)' }}>No timesheet entries logged against this project yet.</p>
         ) : (
@@ -80,6 +87,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                   <th style={{ padding: '6px 8px', textAlign: 'left', fontWeight: 600, borderRight: '1px solid var(--apex-border)' }}>Staff</th>
                   <th style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 600, borderRight: '1px solid var(--apex-border)' }}>Normal</th>
                   <th style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 600, borderRight: '1px solid var(--apex-border)' }}>OT</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 600 }}>Cost</th>
                 </tr>
               </thead>
               <tbody>
@@ -91,6 +99,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                     </td>
                     <td style={{ padding: '6px 8px', textAlign: 'right', borderRight: '1px solid var(--apex-border)' }}>{(row.normalMins / 60).toFixed(2)}</td>
                     <td style={{ padding: '6px 8px', textAlign: 'right', borderRight: '1px solid var(--apex-border)' }}>{(row.otMins / 60).toFixed(2)}</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'right' }}>{formatCurrency(row.cost)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -99,11 +108,12 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                   <td style={{ padding: '8px 8px', fontWeight: 700, borderRight: '1px solid var(--apex-border)' }}>Total</td>
                   <td style={{ padding: '8px 8px', textAlign: 'right', fontWeight: 700, borderRight: '1px solid var(--apex-border)' }}>{(totalNormalMins / 60).toFixed(2)}</td>
                   <td style={{ padding: '8px 8px', textAlign: 'right', fontWeight: 700, borderRight: '1px solid var(--apex-border)' }}>{(totalOtMins / 60).toFixed(2)}</td>
+                  <td style={{ padding: '8px 8px', textAlign: 'right', fontWeight: 700 }}>{formatCurrency(totalCost)}</td>
                 </tr>
               </tfoot>
             </table>
             <p style={{ fontSize: 11, color: 'var(--apex-muted)', marginTop: 10 }}>
-              For a filterable date-range report, use Timesheet &gt; Reports.
+              Estimate only — based on each staff member's Basic Salary and the OT rate rules. For a filterable date-range report, use Timesheet &gt; Reports.
             </p>
           </>
         )}

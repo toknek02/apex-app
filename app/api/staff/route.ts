@@ -29,17 +29,21 @@ export async function POST(req: NextRequest) {
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!hasPermission(session.user, 'MANAGE_USERS')) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { name, username, email, password, department, designation, roleId, hourlyRate, otRate, leaveGroupIds } = await req.json()
+  const { name, username, email, password, department, designation, roleId, basicSalary, otEligible, leaveGroupIds } = await req.json()
   if (!name || !username || !roleId) return NextResponse.json({ error: 'Full Name, Name, and role are required' }, { status: 400 })
   if (/\s/.test(username)) return NextResponse.json({ error: 'Name (login) cannot contain spaces' }, { status: 400 })
   if (!password || password.length < 6) {
     return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 })
   }
 
-  const parsedHourlyRate = parseRate(hourlyRate)
-  const parsedOtRate = parseRate(otRate)
-  if (!parsedHourlyRate.ok || !parsedOtRate.ok) {
-    return NextResponse.json({ error: 'Rates must be non-negative numbers' }, { status: 400 })
+  const parsedBasicSalary = parseRate(basicSalary)
+  if (!parsedBasicSalary.ok) {
+    return NextResponse.json({ error: 'Basic Salary must be a non-negative number' }, { status: 400 })
+  }
+  // Every pay formula — normal hours included — derives from Basic Salary.
+  // Without it, OT-eligible staff would silently cost RM0.00 everywhere.
+  if (otEligible && !parsedBasicSalary.rate) {
+    return NextResponse.json({ error: 'Basic Salary is required for staff eligible for OT' }, { status: 400 })
   }
 
   const existingUsername = await prisma.user.findUnique({ where: { username } })
@@ -69,8 +73,8 @@ export async function POST(req: NextRequest) {
       department: department || null,
       designation: designation || null,
       roleId,
-      hourlyRate: parsedHourlyRate.rate,
-      otRate: parsedOtRate.rate,
+      basicSalary: parsedBasicSalary.rate,
+      otEligible: Boolean(otEligible),
       leaveGroupMemberships: { create: groupIds.map((leaveGroupId) => ({ leaveGroupId })) },
     },
     select: { id: true, name: true, username: true, department: true, designation: true, roleId: true, role: { select: { name: true } }, leaveGroupMemberships: { select: { leaveGroupId: true } } },

@@ -12,6 +12,7 @@ export type PermissionCode =
   | 'VIEW_ERROR_LOG'
   | 'RECEIVE_HR_LEAVE_NOTIFICATIONS'
   | 'MANAGE_LEAVE_GROUPS'
+  | 'MANAGE_PUBLIC_HOLIDAYS'
 
 export type PermissionMeta = {
   code: PermissionCode
@@ -33,4 +34,5 @@ export const PERMISSIONS: PermissionMeta[] = [
   { code: 'VIEW_ERROR_LOG', label: 'View error log', description: 'View server and browser errors captured by the application for troubleshooting.' },
   { code: 'RECEIVE_HR_LEAVE_NOTIFICATIONS', label: 'Receive HR leave notifications', description: 'Get notified whenever any staff member applies for leave or has a leave application decided, regardless of group.' },
   { code: 'MANAGE_LEAVE_GROUPS', label: 'Manage groups', description: 'Create groups and assign each one a director — the person who approves that group’s leave applications.' },
+  { code: 'MANAGE_PUBLIC_HOLIDAYS', label: 'Manage public holidays', description: 'Add and remove the dates HR designates as public holidays, used to apply the public-holiday OT rate.' },
 ]

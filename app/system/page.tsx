@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { Building, Users, UsersRound, ShieldCheck, Settings, History, AlertTriangle, KeyRound } from 'lucide-react'
+import { Building, Users, UsersRound, ShieldCheck, Settings, History, AlertTriangle, KeyRound, CalendarOff } from 'lucide-react'
 import { requireUser, hasPermission } from '@/lib/rbac'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import type { PermissionCode } from '@/lib/permissions'
@@ -10,6 +10,7 @@ const CARDS: { label: string; Icon: typeof Users; href: string; requires: Permis
   { label: 'Venue', Icon: Building, href: '/system/venue', requires: 'MANAGE_VENUES' },
   { label: 'Roles', Icon: ShieldCheck, href: '/system/roles', requires: 'MANAGE_ROLES' },
   { label: 'Groups', Icon: UsersRound, href: '/system/leave-groups', requires: 'MANAGE_LEAVE_GROUPS' },
+  { label: 'Public Holidays', Icon: CalendarOff, href: '/system/public-holidays', requires: 'MANAGE_PUBLIC_HOLIDAYS' },
   { label: 'Settings', Icon: Settings, href: '/system/settings', requires: 'MANAGE_SETTINGS' },
   { label: 'Password Resets', Icon: KeyRound, href: '/system/password-resets', requires: 'MANAGE_USERS' },
   { label: 'Audit Log', Icon: History, href: '/system/audit', requires: 'VIEW_AUDIT_LOG' },

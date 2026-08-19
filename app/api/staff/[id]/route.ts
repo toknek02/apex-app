@@ -18,7 +18,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!hasPermission(session.user, 'MANAGE_USERS')) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const { id } = await params
-  const { name, username, email, department, designation, roleId, isActive, password, hourlyRate, otRate, leaveGroupIds } = await req.json()
+  const { name, username, email, department, designation, roleId, isActive, password, basicSalary, otEligible, leaveGroupIds } = await req.json()
 
   if (password !== undefined && password !== '' && password.length < 6) {
     return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 })
@@ -76,10 +76,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
   }
 
-  const parsedHourlyRate = hourlyRate !== undefined ? parseRate(hourlyRate) : undefined
-  const parsedOtRate = otRate !== undefined ? parseRate(otRate) : undefined
-  if ((parsedHourlyRate && !parsedHourlyRate.ok) || (parsedOtRate && !parsedOtRate.ok)) {
-    return NextResponse.json({ error: 'Rates must be non-negative numbers' }, { status: 400 })
+  const parsedBasicSalary = basicSalary !== undefined ? parseRate(basicSalary) : undefined
+  if (parsedBasicSalary && !parsedBasicSalary.ok) {
+    return NextResponse.json({ error: 'Basic Salary must be a non-negative number' }, { status: 400 })
+  }
+
+  // Every pay formula — normal hours included — derives from Basic Salary.
+  // Without it, OT-eligible staff would silently cost RM0.00 everywhere.
+  // Only worth the extra lookup when either field is actually changing.
+  if (otEligible !== undefined || basicSalary !== undefined) {
+    const current = await prisma.user.findUnique({ where: { id }, select: { otEligible: true, basicSalary: true } })
+    const finalOtEligible = otEligible !== undefined ? Boolean(otEligible) : current?.otEligible ?? false
+    const finalBasicSalary = parsedBasicSalary?.ok ? parsedBasicSalary.rate : current?.basicSalary ?? null
+    if (finalOtEligible && !finalBasicSalary) {
+      return NextResponse.json({ error: 'Basic Salary is required for staff eligible for OT' }, { status: 400 })
+    }
   }
 
   if (groupIds !== undefined) {
@@ -102,10 +113,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ...(roleId !== undefined ? { roleId } : {}),
       ...(isActive !== undefined ? { isActive: Boolean(isActive) } : {}),
       ...(password ? { passwordHash: await bcrypt.hash(password, 10) } : {}),
-      ...(parsedHourlyRate ? { hourlyRate: parsedHourlyRate.rate } : {}),
-      ...(parsedOtRate ? { otRate: parsedOtRate.rate } : {}),
+      ...(parsedBasicSalary ? { basicSalary: parsedBasicSalary.rate } : {}),
+      ...(otEligible !== undefined ? { otEligible: Boolean(otEligible) } : {}),
     },
-    select: { id: true, name: true, username: true, email: true, department: true, designation: true, roleId: true, role: { select: { name: true } }, isActive: true, hourlyRate: true, otRate: true, leaveGroupMemberships: { select: { leaveGroupId: true } } },
+    select: { id: true, name: true, username: true, email: true, department: true, designation: true, roleId: true, role: { select: { name: true } }, isActive: true, basicSalary: true, otEligible: true, leaveGroupMemberships: { select: { leaveGroupId: true } } },
   })
   await logAudit({
     actor: session.user,
@@ -113,7 +124,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     targetType: 'User',
     targetId: user.id,
     targetLabel: user.name,
-    metadata: { name, username, email, department, designation, roleId, isActive, leaveGroupIds: groupIds, passwordReset: Boolean(password), ratesChanged: Boolean(parsedHourlyRate || parsedOtRate) },
+    metadata: { name, username, email, department, designation, roleId, isActive, leaveGroupIds: groupIds, passwordReset: Boolean(password), salaryChanged: Boolean(parsedBasicSalary), otEligible },
   })
   return NextResponse.json({ user })
 }

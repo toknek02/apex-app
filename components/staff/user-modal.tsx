@@ -21,8 +21,8 @@ type User = {
   designation: string | null
   roleId: string
   isActive: boolean
-  hourlyRate?: number | null
-  otRate?: number | null
+  basicSalary?: number | null
+  otEligible?: boolean
   leaveGroupIds?: string[]
 }
 
@@ -40,8 +40,8 @@ export function UserModal({ user, roles, leaveGroups, trigger }: { user?: User; 
   const [designation, setDesignation] = useState(user?.designation ?? '')
   const [roleId, setRoleId] = useState(user?.roleId ?? roles[0]?.id ?? '')
   const [isActive, setIsActive] = useState(user?.isActive ?? true)
-  const [hourlyRate, setHourlyRate] = useState(user?.hourlyRate?.toString() ?? '')
-  const [otRate, setOtRate] = useState(user?.otRate?.toString() ?? '')
+  const [basicSalary, setBasicSalary] = useState(user?.basicSalary?.toString() ?? '')
+  const [otEligible, setOtEligible] = useState(user?.otEligible ?? false)
   const [leaveGroupIds, setLeaveGroupIds] = useState<Set<string>>(new Set(user?.leaveGroupIds ?? []))
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
@@ -77,6 +77,10 @@ export function UserModal({ user, roles, leaveGroups, trigger }: { user?: User; 
       setError('Password must be at least 6 characters')
       return
     }
+    if (otEligible && !Number(basicSalary)) {
+      setError('Basic Salary is required for staff eligible for OT')
+      return
+    }
 
     setSaving(true)
     const res = await fetch(user ? `/api/staff/${user.id}` : '/api/staff', {
@@ -84,8 +88,8 @@ export function UserModal({ user, roles, leaveGroups, trigger }: { user?: User; 
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(
         user
-          ? { name, username, email, department, designation, roleId, isActive, hourlyRate, otRate, leaveGroupIds: [...leaveGroupIds], ...(password ? { password } : {}) }
-          : { name, username, email, password, department, designation, roleId, hourlyRate, otRate, leaveGroupIds: [...leaveGroupIds] }
+          ? { name, username, email, department, designation, roleId, isActive, basicSalary, otEligible, leaveGroupIds: [...leaveGroupIds], ...(password ? { password } : {}) }
+          : { name, username, email, password, department, designation, roleId, basicSalary, otEligible, leaveGroupIds: [...leaveGroupIds] }
       ),
     })
     setSaving(false)
@@ -184,14 +188,20 @@ export function UserModal({ user, roles, leaveGroups, trigger }: { user?: User; 
                 Can belong to more than one — they'll pick which group to route each leave application through.
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 12 }}>
-              <div>
-                <label style={labelStyle}>Hourly Rate (RM/hr)</label>
-                <input type="number" min="0" step="0.01" style={inputStyle} value={hourlyRate} onChange={(e) => setHourlyRate(e.target.value)} placeholder="e.g. 25.00" />
+            <div style={{ marginBottom: 12 }}>
+              <label style={labelStyle}>Basic Salary (RM/month)</label>
+              <input type="number" min="0" step="0.01" style={inputStyle} value={basicSalary} onChange={(e) => setBasicSalary(e.target.value)} placeholder="e.g. 4500.00" />
+              <div style={{ fontSize: 11, color: 'var(--apex-muted)', marginTop: 5 }}>
+                Hourly and daily pay rates are derived from this (÷26 days, ÷8 hours) — used for normal pay and every OT formula.
               </div>
-              <div>
-                <label style={labelStyle}>OT Rate (RM/hr)</label>
-                <input type="number" min="0" step="0.01" style={inputStyle} value={otRate} onChange={(e) => setOtRate(e.target.value)} placeholder="e.g. 37.50" />
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+                <input type="checkbox" checked={otEligible} onChange={(e) => setOtEligible(e.target.checked)} />
+                Eligible for Overtime (OT)
+              </label>
+              <div style={{ fontSize: 11, color: 'var(--apex-muted)', marginTop: 5 }}>
+                Only staff marked eligible see the OT option on their Timesheet.
               </div>
             </div>
             {user && (

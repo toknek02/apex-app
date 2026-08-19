@@ -22,8 +22,14 @@ model User {
   designation     String?
   isActive        Boolean  @default(true)
   activeSessionId String?
-  hourlyRate      Float?
-  otRate          Float?
+  // Monthly basic salary — the single source of truth for pay. Hourly rate
+  // (÷26 working days ÷8 hours) and daily rate (÷26) are always derived from
+  // this rather than entered separately, so normal pay and every OT formula
+  // stay consistent with each other. See lib/payroll.ts.
+  basicSalary     Float?
+  // Whether this person can log OT hours on their timesheet at all — most
+  // staff (e.g. salaried without OT entitlement) shouldn't see the option.
+  otEligible      Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -209,6 +215,16 @@ model Project {
   leaveApplications LeaveApplication[]
 }
 
+// Dates HR has designated as public holidays — cross-referenced against
+// TimesheetEntry.date to apply the public-holiday OT rate (see
+// lib/payroll.ts) instead of the weekday/Saturday/Sunday ones.
+model PublicHoliday {
+  id        String   @id @default(cuid())
+  date      DateTime @unique
+  name      String
+  createdAt DateTime @default(now())
+}
+
 model ProjectMember {
   id        String   @id @default(cuid())
   projectId String
@@ -378,6 +394,12 @@ model TimesheetEntry {
   task       String?
   normalMins Int      @default(0)
   otMins     Int      @default(0)
+  // Snapshot of the submitter's Basic Salary at the moment this entry was
+  // created — cost calculations use this instead of the user's current
+  // Basic Salary, so a later raise/pay cut doesn't retroactively change the
+  // computed cost of past entries. Null on rows created before this field
+  // existed; those fall back to the user's current salary.
+  basicSalaryAtEntry Float?
   // Minutes since midnight, local time. Optional and independent of
   // normalMins/otMins (which drive payroll hours) — these are purely so the
   // Activities Summary Gantt chart can place the entry on a timeline.

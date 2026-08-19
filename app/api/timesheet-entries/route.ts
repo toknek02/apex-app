@@ -5,7 +5,7 @@ import { EVENT_TYPES, LEAVE_EVENT_TYPES } from '@/lib/timesheet-event-types'
 import { STAGES } from '@/lib/logbook-stages'
 import { TASKS } from '@/lib/logbook-tasks'
 import { buildTimesheetWorkbook } from '@/lib/timesheet-export'
-import { calcCost } from '@/lib/cost-calc'
+import { attributeEntryCosts } from '@/lib/entry-cost'
 import { parseLocalDate } from '@/lib/date-utils'
 
 const MAX_MINS_PER_ENTRY = 24 * 60
@@ -51,7 +51,7 @@ export async function GET(request: Request) {
             }
           : {}),
       },
-      include: { project: true, ...(teamScope ? { user: { select: { id: true, name: true, department: true, hourlyRate: true, otRate: true } } } : {}) },
+      include: { project: true, ...(teamScope ? { user: { select: { id: true, name: true, department: true, basicSalary: true } } } : {}) },
       orderBy: teamScope ? [{ userId: 'asc' }, { date: 'asc' }] : { date: 'asc' },
     }),
     teamScope
@@ -65,13 +65,20 @@ export async function GET(request: Request) {
   // Compute cost server-side from each entry's owner's rate, then strip the raw
   // rate figures back out before this leaves the server — rates stay visible
   // only to whoever can manage staff (see /api/staff), not every director who
-  // can view a cost report.
-  const entriesWithCost = entries.map((e) => {
-    const { user, ...rest } = e
-    if (!teamScope || !user) return rest
-    const { hourlyRate, otRate, ...userWithoutRates } = user
-    return { ...rest, user: userWithoutRates, cost: calcCost(e.normalMins, e.otMins, hourlyRate, otRate) }
-  })
+  // can view a cost report. attributeEntryCosts looks beyond this
+  // project-filtered list to get each user's TRUE daily OT total (a day's OT
+  // can span more than one project) before splitting cost back per entry.
+  let entriesWithCost = entries.map((e) => { const { user, ...rest } = e; return rest })
+  if (teamScope) {
+    const basicSalaryByUserId = new Map(entries.map((e) => [e.userId, e.user?.basicSalary ?? null]))
+    const costs = await attributeEntryCosts(entries, basicSalaryByUserId)
+    entriesWithCost = entries.map((e) => {
+      const { user, ...rest } = e
+      if (!user) return rest
+      const { basicSalary, ...userWithoutRates } = user
+      return { ...rest, user: userWithoutRates, cost: costs.get(e.id) }
+    })
+  }
 
   if (searchParams.get('format') === 'xlsx') {
     const buffer = await buildTimesheetWorkbook({
@@ -137,9 +144,20 @@ export async function POST(request: Request) {
   }
 
   const normalizedNormalMins = Math.max(0, Number(normalMins) || 0)
-  const normalizedOtMins = Math.max(0, Number(otMins) || 0)
+  let normalizedOtMins = Math.max(0, Number(otMins) || 0)
   if (normalizedNormalMins > MAX_MINS_PER_ENTRY || normalizedOtMins > MAX_MINS_PER_ENTRY) {
     return NextResponse.json({ error: 'Hours for a single entry cannot exceed 24' }, { status: 400 })
+  }
+
+  // Snapshotting the submitter's current Basic Salary now (rather than
+  // reading it live at report time) means a later raise/pay cut doesn't
+  // retroactively change the cost already computed for this entry.
+  const submitter = await prisma.user.findUnique({ where: { id: session.user.id }, select: { otEligible: true, basicSalary: true } })
+
+  // Never trust the client for this — only OT-eligible staff can log OT,
+  // regardless of what the form submits.
+  if (normalizedOtMins > 0 && !submitter?.otEligible) {
+    normalizedOtMins = 0
   }
 
   if (projectId) {
@@ -161,6 +179,7 @@ export async function POST(request: Request) {
       task: task || null,
       normalMins: normalizedNormalMins,
       otMins: normalizedOtMins,
+      basicSalaryAtEntry: submitter?.basicSalary ?? null,
       startMins: normalizedStartMins,
       endMins: normalizedEndMins,
       remarks: remarks || null,

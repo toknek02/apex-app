@@ -28,7 +28,7 @@ const NAV: {
   { key: 'staff', href: '/staff', label: 'Staff', Icon: Users },
   { key: 'announcements', href: '/announcements', label: 'Announcements', Icon: Megaphone },
   { key: 'notifications', href: '/notifications', label: 'Notifications', Icon: Bell },
-  { key: 'system', href: '/system', label: 'System', Icon: Settings, requiresAnyOf: ['MANAGE_USERS', 'MANAGE_ROLES', 'MANAGE_VENUES', 'MANAGE_PROJECTS', 'MANAGE_SETTINGS', 'VIEW_AUDIT_LOG', 'VIEW_ERROR_LOG', 'MANAGE_LEAVE_GROUPS'] },
+  { key: 'system', href: '/system', label: 'System', Icon: Settings, requiresAnyOf: ['MANAGE_USERS', 'MANAGE_ROLES', 'MANAGE_VENUES', 'MANAGE_PROJECTS', 'MANAGE_SETTINGS', 'VIEW_AUDIT_LOG', 'VIEW_ERROR_LOG', 'MANAGE_LEAVE_GROUPS', 'MANAGE_PUBLIC_HOLIDAYS'] },
 ]
 
 const SUB: Record<string, { href: string; label: string; requires?: PermissionCode }[]> = {
@@ -48,6 +48,7 @@ const SUB: Record<string, { href: string; label: string; requires?: PermissionCo
     { href: '/system/venue', label: 'Venue' },
     { href: '/system/roles', label: 'Roles' },
     { href: '/system/leave-groups', label: 'Groups', requires: 'MANAGE_LEAVE_GROUPS' },
+    { href: '/system/public-holidays', label: 'Public Holidays', requires: 'MANAGE_PUBLIC_HOLIDAYS' },
     { href: '/system/settings', label: 'Settings', requires: 'MANAGE_SETTINGS' },
     { href: '/system/password-resets', label: 'Password Resets', requires: 'MANAGE_USERS' },
     { href: '/system/audit', label: 'Audit Log', requires: 'VIEW_AUDIT_LOG' },
@@ -74,6 +75,7 @@ const SECTION_TITLES: Record<string, string> = {
   '/system/venue': 'Venue',
   '/system/roles': 'Roles',
   '/system/leave-groups': 'Groups',
+  '/system/public-holidays': 'Public Holidays',
 }
 
 function Clock() {

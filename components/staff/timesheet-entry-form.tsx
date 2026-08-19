@@ -24,7 +24,7 @@ function Required() {
 const HOURS = Array.from({ length: 13 }, (_, i) => i)
 const MINUTES = [0, 15, 30, 45]
 
-export function TimesheetEntryForm({ projects }: { projects: Project[] }) {
+export function TimesheetEntryForm({ projects, otEligible }: { projects: Project[]; otEligible: boolean }) {
   const router = useRouter()
   const today = new Date().toISOString().slice(0, 10)
 
@@ -161,7 +161,7 @@ export function TimesheetEntryForm({ projects }: { projects: Project[] }) {
         Optional — set both to show this entry on the Activities Summary timeline.
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: otEligible ? '1fr 1fr' : '1fr', gap: 16, marginBottom: 16 }}>
         <div>
           <label style={labelStyle}>Hrs (Normal)<Required /></label>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -177,21 +177,23 @@ export function TimesheetEntryForm({ projects }: { projects: Project[] }) {
             </select>
           </div>
         </div>
-        <div>
-          <label style={labelStyle}>Hrs (OT)</label>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <select style={inputStyle} value={otHr} onChange={(e) => setOtHr(Number(e.target.value))}>
-              {HOURS.map((h) => (
-                <option key={h} value={h}>{h} Hr</option>
-              ))}
-            </select>
-            <select style={inputStyle} value={otMin} onChange={(e) => setOtMin(Number(e.target.value))}>
-              {MINUTES.map((m) => (
-                <option key={m} value={m}>{String(m).padStart(2, '0')} Min</option>
-              ))}
-            </select>
+        {otEligible && (
+          <div>
+            <label style={labelStyle}>Hrs (OT)</label>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <select style={inputStyle} value={otHr} onChange={(e) => setOtHr(Number(e.target.value))}>
+                {HOURS.map((h) => (
+                  <option key={h} value={h}>{h} Hr</option>
+                ))}
+              </select>
+              <select style={inputStyle} value={otMin} onChange={(e) => setOtMin(Number(e.target.value))}>
+                {MINUTES.map((m) => (
+                  <option key={m} value={m}>{String(m).padStart(2, '0')} Min</option>
+                ))}
+              </select>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <div style={{ marginBottom: 20 }}>
@@ -200,7 +202,7 @@ export function TimesheetEntryForm({ projects }: { projects: Project[] }) {
       </div>
 
       <div style={{ marginBottom: 20, fontSize: 12, color: 'var(--apex-muted)', fontWeight: 600 }}>
-        Total Hrs: {(normalMins / 60).toFixed(2)} / {(otMins / 60).toFixed(2)}
+        {otEligible ? `Total Hrs: ${(normalMins / 60).toFixed(2)} / ${(otMins / 60).toFixed(2)}` : `Total Hrs: ${(normalMins / 60).toFixed(2)}`}
       </div>
 
       <button

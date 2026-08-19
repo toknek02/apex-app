@@ -64,7 +64,7 @@ export default async function PasswordResetsPage() {
                   <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }}>
                     {matched && (
                       <UserModal
-                        user={{ id: matched.id, name: matched.name, username: matched.username, email: matched.email, department: matched.department, designation: matched.designation, roleId: matched.roleId, isActive: matched.isActive, hourlyRate: matched.hourlyRate, otRate: matched.otRate, leaveGroupIds: matched.leaveGroupMemberships.map((lgm) => lgm.leaveGroupId) }}
+                        user={{ id: matched.id, name: matched.name, username: matched.username, email: matched.email, department: matched.department, designation: matched.designation, roleId: matched.roleId, isActive: matched.isActive, basicSalary: matched.basicSalary, otEligible: matched.otEligible, leaveGroupIds: matched.leaveGroupMemberships.map((lgm) => lgm.leaveGroupId) }}
                         roles={roles}
                         leaveGroups={leaveGroups}
                         trigger={
