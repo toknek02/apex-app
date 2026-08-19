@@ -419,6 +419,25 @@ export function AppShell({ user, children }: { user: NavUser; children: React.Re
     setMobileOpen(false)
   }, [pathname])
 
+  // Everyone gets signed out at 6:30pm daily (lib/auth.ts enforces this
+  // server-side too, so a background poll or the next navigation would
+  // eventually catch it) — this just makes it immediate for a tab that's
+  // sitting open and idle right at the cutoff, instead of going stale until
+  // the user next interacts with it.
+  useEffect(() => {
+    let triggered = false
+    const checkCutoff = () => {
+      if (triggered) return
+      const now = new Date()
+      if (now.getHours() > 18 || (now.getHours() === 18 && now.getMinutes() >= 30)) {
+        triggered = true
+        signOut({ callbackUrl: '/login' })
+      }
+    }
+    const interval = setInterval(checkCutoff, 30_000)
+    return () => clearInterval(interval)
+  }, [])
+
   function toggleCollapsed() {
     setCollapsed((prev) => {
       const next = !prev

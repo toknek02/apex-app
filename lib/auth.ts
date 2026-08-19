@@ -4,6 +4,18 @@ import bcrypt from 'bcryptjs'
 import { randomUUID } from 'crypto'
 import { prisma } from '@/lib/prisma'
 
+// Everyone gets logged out at 6:30pm daily, regardless of how long ago they
+// signed in — returns the timestamp of the most recent 6:30pm (today's, if
+// it's already past; otherwise yesterday's). A token issued before that
+// boundary is stale and gets invalidated on its next use.
+function lastSixThirtyCutoff(): number {
+  const now = new Date()
+  const cutoff = new Date(now)
+  cutoff.setHours(18, 30, 0, 0)
+  if (now.getTime() < cutoff.getTime()) cutoff.setDate(cutoff.getDate() - 1)
+  return cutoff.getTime()
+}
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   trustHost: true,
   session: { strategy: 'jwt' },
@@ -47,6 +59,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (typeof token.id === 'string') {
         const current = await prisma.user.findUnique({ where: { id: token.id }, select: { activeSessionId: true } })
         if (!current || current.activeSessionId !== token.sessionId) return null
+
+        const iatMs = typeof token.iat === 'number' ? token.iat * 1000 : 0
+        if (iatMs < lastSixThirtyCutoff()) {
+          // Close out the attendance record the same way an explicit sign-out
+          // would — the signOut() event doesn't fire for this kind of
+          // server-side invalidation, so it has to happen here instead.
+          await prisma.signInRecord.updateMany({
+            where: { userId: token.id, signOutAt: null },
+            data: { signOutAt: new Date() },
+          })
+          return null
+        }
       }
       return token
     },
