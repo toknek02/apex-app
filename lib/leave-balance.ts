@@ -45,7 +45,11 @@ export async function getAnnualLeaveBalance(userId: string, year: number = new D
   const usedDays = applications.reduce((sum, a) => sum + daysForApplication(a), 0)
   const entitlement = user?.annualLeaveEntitlement ?? null
   const broughtForward = user?.annualLeaveBroughtForward ?? 0
-  const totalAvailable = entitlement === null ? null : entitlement + broughtForward
+  // Unrestricted only when NOTHING has been configured — a Brought Forward
+  // value entered without an Entitlement still means HR set something, and
+  // it shouldn't silently vanish just because Entitlement was left blank.
+  const isConfigured = entitlement !== null || broughtForward !== 0
+  const totalAvailable = isConfigured ? (entitlement ?? 0) + broughtForward : null
   const remaining = totalAvailable === null ? null : totalAvailable - usedDays
 
   return { year, entitlement, broughtForward, totalAvailable, usedDays, remaining }

@@ -48,13 +48,13 @@ export default async function ProfilePage() {
 
       <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 24, maxWidth: 480, margin: '0 auto' }}>
         <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>Annual Leave — {balance.year}</h2>
-        {balance.entitlement === null ? (
+        {balance.totalAvailable === null ? (
           <p style={{ fontSize: 12, color: 'var(--apex-muted)', fontStyle: 'italic' }}>
             HR hasn't set an Annual Leave entitlement for you yet — applications aren't restricted in the meantime.
           </p>
         ) : (
           <>
-            <InfoRow label="Entitlement this year" value={`${balance.entitlement} day(s)`} />
+            <InfoRow label="Entitlement this year" value={balance.entitlement === null ? '0 (not set)' : `${balance.entitlement} day(s)`} />
             <InfoRow label="Brought forward" value={`${balance.broughtForward} day(s)`} />
             <InfoRow label="Total available" value={`${balance.totalAvailable} day(s)`} />
             <InfoRow label="Used / pending" value={`${balance.usedDays} day(s)`} />
