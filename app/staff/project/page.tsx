@@ -3,6 +3,7 @@ import { requirePermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import { ProjectModal } from '@/components/system/project-modal'
+import { ProjectUploadModal } from '@/components/system/project-upload-modal'
 import { ProjectListTable } from '@/components/system/project-list-table'
 import { PROJECT_STATUSES } from '@/lib/project-statuses'
 
@@ -31,13 +32,22 @@ export default async function ProjectPage({ searchParams }: { searchParams: Prom
       <Breadcrumb items={['Staff', 'Project']} />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <h1 style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700 }}>Project</h1>
-        <ProjectModal
-          trigger={
-            <span style={{ padding: '8px 16px', backgroundColor: 'var(--apex-accent)', color: '#fff', borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
-              Add Project
-            </span>
-          }
-        />
+        <div style={{ display: 'flex', gap: 10 }}>
+          <ProjectUploadModal
+            trigger={
+              <span style={{ padding: '8px 16px', border: '1px solid var(--apex-accent)', color: 'var(--apex-accent)', backgroundColor: '#fff', borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
+                Upload
+              </span>
+            }
+          />
+          <ProjectModal
+            trigger={
+              <span style={{ padding: '8px 16px', backgroundColor: 'var(--apex-accent)', color: '#fff', borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
+                Add Project
+              </span>
+            }
+          />
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: 4, marginBottom: 16, borderBottom: '1px solid var(--apex-border)' }}>

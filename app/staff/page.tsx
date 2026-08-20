@@ -4,6 +4,7 @@ import { requireUser, hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import { UserModal } from '@/components/staff/user-modal'
+import { StaffUploadModal } from '@/components/staff/staff-upload-modal'
 
 export default async function StaffPage() {
   const user = await requireUser()
@@ -58,7 +59,14 @@ export default async function StaffPage() {
       <h1 style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700, marginBottom: 16 }}>Staff Directory</h1>
 
       {canManageUsers && (
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginBottom: 12 }}>
+          <StaffUploadModal
+            trigger={
+              <span style={{ padding: '8px 16px', border: '1px solid var(--apex-accent)', color: 'var(--apex-accent)', backgroundColor: '#fff', borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
+                Upload
+              </span>
+            }
+          />
           <UserModal
             roles={roles}
             leaveGroups={leaveGroups}
