@@ -17,8 +17,37 @@ function Required() {
   return <span style={{ color: 'var(--apex-red)' }}> *</span>
 }
 
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 0', borderBottom: '1px solid var(--apex-border)', fontSize: 13 }}>
+      <span style={{ color: 'var(--apex-muted)' }}>{label}</span>
+      <span style={{ fontWeight: 600, textAlign: 'right', maxWidth: '65%' }}>{value}</span>
+    </div>
+  )
+}
+
+function fmtDate(iso: string) {
+  return new Date(`${iso}T00:00:00`).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  PENDING_ARCHITECT: 'Pending — Architect Review',
+  PENDING_DIRECTOR: 'Pending — Director Review',
+}
+
 type Project = { id: string; code: string; shortName: string }
 type LeaveGroupOption = { id: string; name: string }
+type Submitted = {
+  leaveType: string
+  startDate: string
+  endDate: string
+  dayPortion: 'FULL' | 'AM' | 'PM'
+  reason: string
+  projectLabel: string | null
+  groupLabel: string | null
+  status: string
+  warning: string | null
+}
 
 export function LeaveApplicationForm({
   projects,
@@ -43,8 +72,8 @@ export function LeaveApplicationForm({
   const [leaveGroupId, setLeaveGroupId] = useState(leaveGroups[0]?.id ?? '')
   const [reason, setReason] = useState('')
   const [errors, setErrors] = useState<string[]>([])
-  const [warning, setWarning] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [submitted, setSubmitted] = useState<Submitted | null>(null)
 
   const halfDayEligible = HALF_DAY_ELIGIBLE_LEAVE_TYPES.includes(leaveType)
   const dayPortion = dayLength === 'HALF' && halfDayEligible ? halfPortion : 'FULL'
@@ -83,20 +112,95 @@ export function LeaveApplicationForm({
     setSubmitting(false)
     if (res.ok) {
       const data = await res.json()
-      if (data.warning) {
-        setWarning(data.warning)
-        setTimeout(() => {
-          router.push('/staff/leave')
-          router.refresh()
-        }, 2500)
-      } else {
-        router.push('/staff/leave')
-        router.refresh()
-      }
+      const project = projects.find((p) => p.id === projectId)
+      const group = leaveGroups.find((g) => g.id === (leaveGroupId || leaveGroups[0]?.id))
+      setSubmitted({
+        leaveType,
+        startDate,
+        endDate,
+        dayPortion,
+        reason,
+        projectLabel: project ? `${project.code} — ${project.shortName}` : null,
+        groupLabel: group?.name ?? null,
+        status: data.application.status,
+        warning: data.warning ?? null,
+      })
+      router.refresh()
     } else {
       const data = await res.json().catch(() => ({}))
       setErrors([data.error ?? 'Failed to submit leave application'])
     }
+  }
+
+  function applyAnother() {
+    setSubmitted(null)
+    setLeaveType(LEAVE_EVENT_TYPES[0])
+    setStartDate(today)
+    setEndDate(today)
+    setDayLength('FULL')
+    setProjectId('')
+    setReason('')
+    setErrors([])
+  }
+
+  if (submitted) {
+    const isHalfDay = submitted.dayPortion !== 'FULL'
+    const dateLabel = submitted.startDate === submitted.endDate
+      ? fmtDate(submitted.startDate)
+      : `${fmtDate(submitted.startDate)} – ${fmtDate(submitted.endDate)}`
+
+    return (
+      <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 24, maxWidth: 560, margin: '0 auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+          <span style={{ fontSize: 20 }}>✓</span>
+          <h2 style={{ fontSize: 16, fontWeight: 700 }}>Application Submitted</h2>
+        </div>
+
+        {submitted.warning && (
+          <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 6, backgroundColor: 'var(--apex-accent-lt)', color: 'var(--apex-accent)', fontSize: 12 }}>
+            {submitted.warning}
+          </div>
+        )}
+
+        <DetailRow label="Leave Type" value={submitted.leaveType} />
+        <DetailRow label="Dates" value={isHalfDay ? `${dateLabel} (${submitted.dayPortion} half-day)` : dateLabel} />
+        {submitted.projectLabel && <DetailRow label="Project" value={submitted.projectLabel} />}
+        {submitted.reason && <DetailRow label="Reason" value={submitted.reason} />}
+        <DetailRow label="Routed To" value={submitted.groupLabel ?? 'HR (no group assigned)'} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 0' }}>
+          <span style={{ fontSize: 12, color: 'var(--apex-muted)' }}>Status</span>
+          <span
+            style={{
+              padding: '3px 10px',
+              borderRadius: 99,
+              fontSize: 11,
+              fontWeight: 700,
+              color: 'var(--apex-accent)',
+              backgroundColor: 'var(--apex-accent-lt)',
+            }}
+          >
+            {STATUS_LABEL[submitted.status] ?? submitted.status}
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 20 }}>
+          <button
+            type="button"
+            onClick={applyAnother}
+            style={{ padding: '8px 16px', border: '1px solid var(--apex-border)', backgroundColor: '#fff', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+          >
+            Apply for Another
+          </button>
+          <button
+            type="button"
+            onClick={() => router.push('/staff/leave')}
+            style={{ padding: '8px 16px', border: 'none', backgroundColor: 'var(--apex-navy)', color: '#fff', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+          >
+            View My Applications
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -107,11 +211,6 @@ export function LeaveApplicationForm({
       {errors.length > 0 && (
         <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 6, backgroundColor: 'var(--apex-red-lt)', color: 'var(--apex-red)', fontSize: 12 }}>
           Please fill in: {errors.join(', ')}
-        </div>
-      )}
-      {warning && (
-        <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 6, backgroundColor: 'var(--apex-accent-lt)', color: 'var(--apex-accent)', fontSize: 12 }}>
-          Application submitted. {warning}
         </div>
       )}
 
