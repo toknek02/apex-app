@@ -11,7 +11,7 @@ export function dailyRateOf(basicSalary: number | null | undefined): number {
 }
 
 // "YYYY-MM-DD" from local calendar fields — matches how TimesheetEntry.date
-// and PublicHoliday.date are both stored (local midnight via
+// and PublicHoliday dates are both stored (local midnight via
 // lib/date-utils.parseLocalDate), so this is safe to use as a lookup key.
 export function localDateKey(date: Date): string {
   const y = date.getFullYear()
@@ -20,8 +20,30 @@ export function localDateKey(date: Date): string {
   return `${y}-${m}-${d}`
 }
 
-export function getDayType(date: Date, publicHolidayKeys: ReadonlySet<string>): DayType {
-  if (publicHolidayKeys.has(localDateKey(date))) return 'PUBLIC_HOLIDAY'
+export type PublicHolidayRange = { startDate: Date; endDate: Date; recurring: boolean }
+
+// Non-recurring: the date must fall within the holiday's exact start–end
+// range (year included) — e.g. Hari Raya, which shifts dates every year.
+// Recurring: only the month/day of the range repeats — e.g. Merdeka Day
+// (31 Aug every year) — so the range is re-anchored onto the checked date's
+// own year before comparing. Doesn't handle a recurring range spanning a
+// Dec 31 → Jan 1 boundary; no public holiday in practice does.
+function dateFallsInHoliday(date: Date, holiday: PublicHolidayRange): boolean {
+  if (!holiday.recurring) {
+    return date.getTime() >= holiday.startDate.getTime() && date.getTime() <= holiday.endDate.getTime()
+  }
+  const year = date.getFullYear()
+  const start = new Date(year, holiday.startDate.getMonth(), holiday.startDate.getDate())
+  const end = new Date(year, holiday.endDate.getMonth(), holiday.endDate.getDate(), 23, 59, 59, 999)
+  return date.getTime() >= start.getTime() && date.getTime() <= end.getTime()
+}
+
+export function isPublicHoliday(date: Date, holidays: readonly PublicHolidayRange[]): boolean {
+  return holidays.some((h) => dateFallsInHoliday(date, h))
+}
+
+export function getDayType(date: Date, holidays: readonly PublicHolidayRange[]): DayType {
+  if (isPublicHoliday(date, holidays)) return 'PUBLIC_HOLIDAY'
   const day = date.getDay()
   if (day === 0) return 'SUNDAY'
   if (day === 6) return 'SATURDAY'

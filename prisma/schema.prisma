@@ -227,9 +227,16 @@ model Project {
 // lib/payroll.ts) instead of the weekday/Saturday/Sunday ones.
 model PublicHoliday {
   id        String   @id @default(cuid())
-  date      DateTime @unique
+  startDate DateTime
+  endDate   DateTime
   name      String
+  // Recurs every year on the same month/day range (e.g. Merdeka Day) rather
+  // than being tied to the specific year it was entered for (e.g. Hari Raya,
+  // which shifts dates yearly on the Islamic calendar).
+  recurring Boolean  @default(false)
   createdAt DateTime @default(now())
+
+  @@unique([startDate, endDate])
 }
 
 model ProjectMember {

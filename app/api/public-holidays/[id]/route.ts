@@ -20,7 +20,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     targetType: 'PublicHoliday',
     targetId: publicHoliday.id,
     targetLabel: publicHoliday.name,
-    metadata: { date: publicHoliday.date },
+    metadata: { startDate: publicHoliday.startDate, endDate: publicHoliday.endDate, recurring: publicHoliday.recurring },
   })
   return NextResponse.json({ ok: true })
 }

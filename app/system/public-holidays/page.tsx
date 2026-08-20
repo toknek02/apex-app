@@ -6,7 +6,7 @@ import { PublicHolidayForm } from '@/components/system/public-holiday-form'
 export default async function PublicHolidaysPage() {
   const user = await requirePermission('MANAGE_PUBLIC_HOLIDAYS')
 
-  const publicHolidays = await prisma.publicHoliday.findMany({ orderBy: { date: 'asc' } })
+  const publicHolidays = await prisma.publicHoliday.findMany({ orderBy: { startDate: 'asc' } })
 
   return (
     <AppShell user={{ name: user.name ?? '', roleName: user.roleName, permissions: user.permissions }}>
@@ -16,7 +16,7 @@ export default async function PublicHolidaysPage() {
         Dates marked here are cross-referenced against timesheet entries to apply the public-holiday overtime rate.
       </p>
       <PublicHolidayForm
-        publicHolidays={publicHolidays.map((h) => ({ id: h.id, date: h.date.toISOString(), name: h.name }))}
+        publicHolidays={publicHolidays.map((h) => ({ id: h.id, startDate: h.startDate.toISOString(), endDate: h.endDate.toISOString(), name: h.name, recurring: h.recurring }))}
       />
     </AppShell>
   )

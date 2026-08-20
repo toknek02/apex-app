@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { calcNormalCost, costForPayableHours, getDayType, getOtHoursForDay, localDateKey } from '@/lib/payroll'
+import { calcNormalCost, costForPayableHours, getDayType, getOtHoursForDay } from '@/lib/payroll'
 
 type EntryForCost = {
   id: string
@@ -45,9 +45,8 @@ export async function attributeEntryCosts(
       where: { userId: { in: userIds }, date: { in: dates } },
       _sum: { otMins: true },
     }),
-    prisma.publicHoliday.findMany({ select: { date: true } }),
+    prisma.publicHoliday.findMany({ select: { startDate: true, endDate: true, recurring: true } }),
   ])
-  const holidayKeys = new Set(publicHolidays.map((h) => localDateKey(h.date)))
   const dayTotalOt = new Map<string, number>()
   for (const row of dayOtSums) dayTotalOt.set(`${row.userId}|${row.date.getTime()}`, row._sum.otMins ?? 0)
 
@@ -59,7 +58,7 @@ export async function attributeEntryCosts(
     let mealAllowance = 0
     if (e.otMins > 0) {
       const dayOtMins = dayTotalOt.get(`${e.userId}|${e.date.getTime()}`) ?? e.otMins
-      const dayType = getDayType(e.date, holidayKeys)
+      const dayType = getDayType(e.date, publicHolidays)
       const dayHours = getOtHoursForDay(dayType, dayOtMins / 60)
       const share = e.otMins / dayOtMins
       const entryPayableHours = dayHours.payableHours * share
