@@ -185,6 +185,7 @@ function Header({
         </Link>
         <button
           onClick={async () => {
+            if (!confirm('Sign out of APEX?')) return
             // Skip next-auth's server-computed redirect URL: with the dev server bound to
             // 0.0.0.0, that can echo back the bind address itself instead of the browser's
             // actual origin. A plain relative navigation always resolves correctly.
@@ -437,7 +438,7 @@ export function AppShell({ user, children }: { user: NavUser; children: React.Re
       const now = new Date()
       if (now.getHours() > 18 || (now.getHours() === 18 && now.getMinutes() >= 30)) {
         triggered = true
-        signOut({ callbackUrl: '/login' })
+        signOut({ callbackUrl: '/login?reason=cutoff' })
       }
     }
     const interval = setInterval(checkCutoff, 30_000)

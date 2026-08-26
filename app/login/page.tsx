@@ -1,14 +1,32 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 
+const LOGOUT_REASON_MESSAGES: Record<string, string> = {
+  cutoff: 'You were automatically signed out at 6:30pm. Please sign in again.',
+}
+
 export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
+  )
+}
+
+function LoginForm() {
+  const searchParams = useSearchParams()
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [dismissedNotice, setDismissedNotice] = useState(false)
+
+  const reason = searchParams.get('reason')
+  const notice = !dismissedNotice && reason ? LOGOUT_REASON_MESSAGES[reason] : undefined
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -67,6 +85,33 @@ export default function LoginPage() {
           </span>
           <p style={{ marginTop: 6, fontSize: 13, color: 'var(--apex-muted)' }}>Sign in to your account</p>
         </div>
+
+        {notice && (
+          <div
+            style={{
+              marginBottom: 16,
+              padding: '10px 14px',
+              borderRadius: 6,
+              backgroundColor: 'var(--apex-accent-lt)',
+              color: 'var(--apex-accent)',
+              fontSize: 12,
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              gap: 10,
+            }}
+          >
+            <span>{notice}</span>
+            <button
+              type="button"
+              onClick={() => setDismissedNotice(true)}
+              aria-label="Dismiss"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', fontSize: 14, lineHeight: 1, padding: 0 }}
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
