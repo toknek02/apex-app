@@ -11,13 +11,14 @@ import { PROJECT_STATUS_STYLES } from '@/lib/project-statuses'
 import { attributeEntryCosts } from '@/lib/entry-cost'
 import { formatCurrency } from '@/lib/payroll'
 import { parseLocalDate } from '@/lib/date-utils'
+import { STAGES } from '@/lib/logbook-stages'
 
 export default async function ProjectDetailPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ tab?: string; from?: string; to?: string }>
+  searchParams: Promise<{ tab?: string; from?: string; to?: string; stage?: string }>
 }) {
   const user = await requirePermission('MANAGE_PROJECTS')
   const { id } = await params
@@ -27,6 +28,7 @@ export default async function ProjectDetailPage({
   const fromDate = sp.from ? parseLocalDate(sp.from) : null
   const toDate = sp.to ? parseLocalDate(sp.to) : null
   const dateFilterInvalid = Boolean((sp.from && !fromDate) || (sp.to && !toDate) || (fromDate && toDate && toDate.getTime() < fromDate.getTime()))
+  const stageFilter = sp.stage && STAGES.includes(sp.stage) ? sp.stage : ''
 
   const [project, staff, entries] = await Promise.all([
     prisma.project.findUnique({ where: { id }, include: { members: { select: { userId: true } } } }),
@@ -38,6 +40,7 @@ export default async function ProjectDetailPage({
           where: {
             projectId: id,
             ...(fromDate || toDate ? { date: { ...(fromDate ? { gte: fromDate } : {}), ...(toDate ? { lte: toDate } : {}) } } : {}),
+            ...(stageFilter ? { stage: stageFilter } : {}),
           },
           select: { id: true, userId: true, date: true, normalMins: true, otMins: true, basicSalaryAtEntry: true, user: { select: { name: true, department: true, basicSalary: true } } },
         })
@@ -114,7 +117,7 @@ export default async function ProjectDetailPage({
       {activeTab === 'cost' && (
         <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 24, maxWidth: 560, margin: '0 auto 20px' }}>
           <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 14 }}>
-            Hours &amp; Cost Estimate {fromDate || toDate ? '' : '(all time)'}
+            Hours &amp; Cost Estimate {fromDate || toDate ? '' : '(all time)'}{stageFilter ? ` — ${stageFilter}` : ''}
           </h2>
 
           <form method="GET" style={{ display: 'flex', gap: 10, alignItems: 'flex-end', marginBottom: 18, flexWrap: 'wrap' }}>
@@ -137,13 +140,26 @@ export default async function ProjectDetailPage({
                 style={{ padding: '7px 9px', border: '1px solid var(--apex-border)', borderRadius: 6, fontSize: 12 }}
               />
             </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, marginBottom: 4 }}>Stage</label>
+              <select
+                name="stage"
+                defaultValue={stageFilter}
+                style={{ padding: '7px 9px', border: '1px solid var(--apex-border)', borderRadius: 6, fontSize: 12 }}
+              >
+                <option value="">All Stages</option>
+                {STAGES.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
             <button
               type="submit"
               style={{ padding: '7px 16px', backgroundColor: 'var(--apex-navy)', color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
             >
               Apply
             </button>
-            {(sp.from || sp.to) && (
+            {(sp.from || sp.to || stageFilter) && (
               <a
                 href={`/staff/project/${project.id}?tab=cost`}
                 style={{ padding: '7px 16px', border: '1px solid var(--apex-border)', borderRadius: 6, fontSize: 12, color: 'var(--apex-text)', textDecoration: 'none' }}
@@ -156,7 +172,7 @@ export default async function ProjectDetailPage({
           {dateFilterInvalid ? (
             <p style={{ fontSize: 12, color: 'var(--apex-red)' }}>Invalid date range — From must be on or before To.</p>
           ) : byStaff.size === 0 ? (
-            <p style={{ fontSize: 12, color: 'var(--apex-muted)' }}>No timesheet entries logged against this project{fromDate || toDate ? ' in this range' : ' yet'}.</p>
+            <p style={{ fontSize: 12, color: 'var(--apex-muted)' }}>No timesheet entries logged against this project{fromDate || toDate || stageFilter ? ' matching this filter' : ' yet'}.</p>
           ) : (
             <>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
