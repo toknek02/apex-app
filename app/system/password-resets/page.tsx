@@ -8,14 +8,16 @@ import { PasswordResetActions } from '@/components/system/password-reset-actions
 export default async function PasswordResetsPage() {
   const user = await requirePermission('MANAGE_USERS')
 
-  const [pending, roles, leaveGroups] = await Promise.all([
+  const [pending, roles, leaveGroups, designationRows] = await Promise.all([
     prisma.passwordResetRequest.findMany({
       where: { status: 'pending' },
       orderBy: { createdAt: 'asc' },
     }),
     prisma.role.findMany({ orderBy: { name: 'asc' } }),
     prisma.leaveGroup.findMany({ orderBy: { name: 'asc' } }),
+    prisma.user.findMany({ where: { designation: { not: null } }, select: { designation: true }, distinct: ['designation'] }),
   ])
+  const designations = [...new Set(designationRows.map((r) => r.designation).filter((d): d is string => Boolean(d?.trim())))].sort()
 
   const userIds = pending.map((r) => r.userId).filter((id): id is string => Boolean(id))
   const matchedUsers = userIds.length > 0
@@ -67,6 +69,7 @@ export default async function PasswordResetsPage() {
                         user={{ id: matched.id, name: matched.name, username: matched.username, email: matched.email, department: matched.department, designation: matched.designation, roleId: matched.roleId, isActive: matched.isActive, basicSalary: matched.basicSalary, otEligible: matched.otEligible, annualLeaveEntitlement: matched.annualLeaveEntitlement, annualLeaveBroughtForward: matched.annualLeaveBroughtForward, leaveGroupIds: matched.leaveGroupMemberships.map((lgm) => lgm.leaveGroupId) }}
                         roles={roles}
                         leaveGroups={leaveGroups}
+                        designations={designations}
                         trigger={
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--apex-accent)', fontWeight: 600 }}>
                             <Pencil size={13} /> Reset

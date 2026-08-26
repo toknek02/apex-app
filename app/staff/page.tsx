@@ -15,7 +15,7 @@ export default async function StaffPage() {
   const endOfDay = new Date(now)
   endOfDay.setHours(23, 59, 59, 999)
 
-  const [staff, roles, leaveGroups, openRecords, todaysAttendance] = await Promise.all([
+  const [staff, roles, leaveGroups, designationRows, openRecords, todaysAttendance] = await Promise.all([
     prisma.user.findMany({
       where: canManageUsers ? {} : { isActive: true },
       include: { role: true, leaveGroupMemberships: { select: { leaveGroupId: true } } },
@@ -23,12 +23,16 @@ export default async function StaffPage() {
     }),
     canManageUsers ? prisma.role.findMany({ orderBy: { name: 'asc' } }) : Promise.resolve([]),
     canManageUsers ? prisma.leaveGroup.findMany({ orderBy: { name: 'asc' } }) : Promise.resolve([]),
+    canManageUsers
+      ? prisma.user.findMany({ where: { designation: { not: null } }, select: { designation: true }, distinct: ['designation'] })
+      : Promise.resolve([]),
     prisma.signInRecord.findMany({ where: { signOutAt: null } }),
     prisma.eventAttendee.findMany({
       where: { event: { date: { gte: startOfDay, lte: endOfDay } } },
       include: { event: true },
     }),
   ])
+  const designations = [...new Set(designationRows.map((r) => r.designation).filter((d): d is string => Boolean(d?.trim())))].sort()
 
   const openByUser = new Map(openRecords.map((r) => [r.userId, r]))
   const atPlannerUserIds = new Set(
@@ -70,6 +74,7 @@ export default async function StaffPage() {
           <UserModal
             roles={roles}
             leaveGroups={leaveGroups}
+            designations={designations}
             trigger={
               <span style={{ padding: '8px 16px', backgroundColor: 'var(--apex-accent)', color: '#fff', borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
                 New Staff
@@ -132,6 +137,7 @@ export default async function StaffPage() {
                             user={{ id: m.id, name: m.name, username: m.username, email: m.email, department: m.department, designation: m.designation, roleId: m.roleId, isActive: m.isActive, basicSalary: m.basicSalary, otEligible: m.otEligible, annualLeaveEntitlement: m.annualLeaveEntitlement, annualLeaveBroughtForward: m.annualLeaveBroughtForward, leaveGroupIds: m.leaveGroupMemberships.map((lgm) => lgm.leaveGroupId) }}
                             roles={roles}
                             leaveGroups={leaveGroups}
+                            designations={designations}
                             trigger={<Pencil size={14} color="var(--apex-accent)" />}
                           />
                         </td>

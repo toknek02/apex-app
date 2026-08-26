@@ -31,7 +31,7 @@ type User = {
 type RoleOption = { id: string; name: string }
 type LeaveGroupOption = { id: string; name: string }
 
-export function UserModal({ user, roles, leaveGroups, trigger }: { user?: User; roles: RoleOption[]; leaveGroups: LeaveGroupOption[]; trigger: React.ReactNode }) {
+export function UserModal({ user, roles, leaveGroups, designations = [], trigger }: { user?: User; roles: RoleOption[]; leaveGroups: LeaveGroupOption[]; designations?: string[]; trigger: React.ReactNode }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState(user?.name ?? '')
@@ -179,7 +179,21 @@ export function UserModal({ user, roles, leaveGroups, trigger }: { user?: User; 
             </div>
             <div style={{ marginBottom: 12 }}>
               <label style={labelStyle}>Designation</label>
-              <input style={inputStyle} value={designation} onChange={(e) => setDesignation(e.target.value)} placeholder="e.g. Architect" />
+              <input
+                style={inputStyle}
+                value={designation}
+                onChange={(e) => setDesignation(e.target.value)}
+                placeholder="e.g. Architect"
+                list="designation-options"
+              />
+              <datalist id="designation-options">
+                {designations.map((d) => (
+                  <option key={d} value={d} />
+                ))}
+              </datalist>
+              <div style={{ fontSize: 11, color: 'var(--apex-muted)', marginTop: 5 }}>
+                Pick an existing designation from the suggestions, or type a new one.
+              </div>
             </div>
             <div style={{ marginBottom: 12 }}>
               <label style={labelStyle}>Role</label>
