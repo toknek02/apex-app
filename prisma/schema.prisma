@@ -216,6 +216,25 @@ model Project {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
+  // The fields below are populated when importing from the firm's historical
+  // "Projects List" register (job-number ledger going back decades) via
+  // parseProjectsListWorkbook / the Projects List import — left null for
+  // projects created normally through the app.
+  jobNo           String?
+  phase           String?
+  scopeOfWorks    String?
+  address         String?
+  state           String?
+  country         String?
+  mainTypology    String?
+  subTypology     String?
+  designInCharge  String?
+  siteArea        Float?
+  gfa             Float?
+  noOfFloors      Int?
+  noOfUnits       Int?
+  certification   String?
+
   events           Event[]
   timesheetEntries TimesheetEntry[]
   members          ProjectMember[]

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import { ProjectModal } from '@/components/system/project-modal'
 import { ProjectUploadModal } from '@/components/system/project-upload-modal'
+import { ProjectRegistryImportModal } from '@/components/system/project-registry-import-modal'
 import { ProjectListTable } from '@/components/system/project-list-table'
 import { PROJECT_STATUSES } from '@/lib/project-statuses'
 
@@ -37,6 +38,13 @@ export default async function ProjectPage({ searchParams }: { searchParams: Prom
             trigger={
               <span style={{ padding: '8px 16px', border: '1px solid var(--apex-accent)', color: 'var(--apex-accent)', backgroundColor: '#fff', borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
                 Upload
+              </span>
+            }
+          />
+          <ProjectRegistryImportModal
+            trigger={
+              <span style={{ padding: '8px 16px', border: '1px solid var(--apex-accent)', color: 'var(--apex-accent)', backgroundColor: '#fff', borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
+                Import Projects List
               </span>
             }
           />

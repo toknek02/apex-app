@@ -113,3 +113,123 @@ export async function parseProjectWorkbook(buffer: Buffer, filename: string): Pr
 
   return rows
 }
+
+function cellDate(row: ExcelJS.Row, col: number): Date | null {
+  const value = row.getCell(col).value
+  return value instanceof Date ? value : null
+}
+
+function cellNumber(row: ExcelJS.Row, col: number): number | null {
+  const value = row.getCell(col).value
+  if (typeof value === 'number') return value
+  const text = cellText(row, col)
+  const n = Number(text)
+  return text && Number.isFinite(n) ? n : null
+}
+
+export type ProjectsListRow = {
+  jobNo: string
+  phase: string
+  title: string
+  entryDate: Date | null
+  scopeOfWorks: string
+  status: string
+  completionDate: Date | null
+  street: string
+  taman: string
+  city: string
+  mukim: string
+  daerah: string
+  state: string
+  country: string
+  mainTypology: string
+  subTypology: string
+  client: string
+  designInCharge: string
+  siteArea: number | null
+  gfa: number | null
+  noOfFloors: number | null
+  noOfUnits: number | null
+  certification: string
+}
+
+// Parses the firm's historical "Projects List" master register — a single
+// flat sheet (Job No, Phase, Project Name, ...) going back decades, distinct
+// in shape from the generic Code/Short Name/Title format parseProjectWorkbook
+// handles. Every project row needs a Job No; rows with neither a Job No nor a
+// Project Name are placeholders (a reserved job number with nothing entered
+// yet) and are skipped by the caller, not here.
+export async function parseProjectsListWorkbook(buffer: Buffer, filename: string): Promise<ProjectsListRow[]> {
+  const workbook = await loadWorkbook(buffer, filename)
+  const rows: ProjectsListRow[] = []
+
+  const columnKeywords = [
+    ['job no'],
+    ['phase'],
+    ['project name'],
+    ['entry date'],
+    ['scope of works'],
+    ['status'],
+    ['completion date'],
+    ['street'],
+    ['taman'],
+    ['city'],
+    ['mukim'],
+    ['daerah'],
+    ['state'],
+    ['country'],
+    ['main typology'],
+    ['sub typology'],
+    ['client'],
+    ['d-i-c', 'dic'],
+    ['site area'],
+    ['gfa'],
+    ['no of floor', 'no. of floor'],
+    ['no. of units', 'no of units'],
+    ['certification'],
+  ]
+
+  workbook.eachSheet((worksheet) => {
+    const header = findHeaderRow(worksheet, columnKeywords)
+    if (!header) return
+    const [
+      jobNoCol, phaseCol, titleCol, entryDateCol, scopeCol, statusCol, completionDateCol,
+      streetCol, tamanCol, cityCol, mukimCol, daerahCol, stateCol, countryCol,
+      mainTypologyCol, subTypologyCol, clientCol, dicCol, siteAreaCol, gfaCol, floorsCol, unitsCol, certificationCol,
+    ] = header.cols
+
+    for (let r = header.rowNumber + 1; r <= worksheet.rowCount; r++) {
+      const row = worksheet.getRow(r)
+      const jobNo = cellText(row, jobNoCol)
+      const title = cellText(row, titleCol)
+      if (!jobNo) continue
+      rows.push({
+        jobNo,
+        phase: cellText(row, phaseCol),
+        title,
+        entryDate: cellDate(row, entryDateCol),
+        scopeOfWorks: cellText(row, scopeCol),
+        status: cellText(row, statusCol),
+        completionDate: cellDate(row, completionDateCol),
+        street: cellText(row, streetCol),
+        taman: cellText(row, tamanCol),
+        city: cellText(row, cityCol),
+        mukim: cellText(row, mukimCol),
+        daerah: cellText(row, daerahCol),
+        state: cellText(row, stateCol),
+        country: cellText(row, countryCol),
+        mainTypology: cellText(row, mainTypologyCol),
+        subTypology: cellText(row, subTypologyCol),
+        client: cellText(row, clientCol),
+        designInCharge: cellText(row, dicCol),
+        siteArea: cellNumber(row, siteAreaCol),
+        gfa: cellNumber(row, gfaCol),
+        noOfFloors: cellNumber(row, floorsCol),
+        noOfUnits: cellNumber(row, unitsCol),
+        certification: cellText(row, certificationCol),
+      })
+    }
+  })
+
+  return rows
+}
