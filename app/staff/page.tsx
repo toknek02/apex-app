@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import { UserModal } from '@/components/staff/user-modal'
 import { StaffUploadModal } from '@/components/staff/staff-upload-modal'
+import { DeleteUserButton } from '@/components/staff/delete-user-button'
 
 export default async function StaffPage() {
   const user = await requireUser()
@@ -133,13 +134,16 @@ export default async function StaffPage() {
                       </td>
                       {canManageUsers && (
                         <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }}>
-                          <UserModal
-                            user={{ id: m.id, name: m.name, username: m.username, email: m.email, department: m.department, designation: m.designation, roleId: m.roleId, isActive: m.isActive, basicSalary: m.basicSalary, otEligible: m.otEligible, annualLeaveEntitlement: m.annualLeaveEntitlement, annualLeaveBroughtForward: m.annualLeaveBroughtForward, leaveGroupIds: m.leaveGroupMemberships.map((lgm) => lgm.leaveGroupId) }}
-                            roles={roles}
-                            leaveGroups={leaveGroups}
-                            designations={designations}
-                            trigger={<Pencil size={14} color="var(--apex-accent)" />}
-                          />
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <UserModal
+                              user={{ id: m.id, name: m.name, username: m.username, email: m.email, department: m.department, designation: m.designation, roleId: m.roleId, isActive: m.isActive, basicSalary: m.basicSalary, otEligible: m.otEligible, annualLeaveEntitlement: m.annualLeaveEntitlement, annualLeaveBroughtForward: m.annualLeaveBroughtForward, leaveGroupIds: m.leaveGroupMemberships.map((lgm) => lgm.leaveGroupId) }}
+                              roles={roles}
+                              leaveGroups={leaveGroups}
+                              designations={designations}
+                              trigger={<Pencil size={14} color="var(--apex-accent)" />}
+                            />
+                            {m.id !== user.id && <DeleteUserButton userId={m.id} userName={m.name} />}
+                          </div>
                         </td>
                       )}
                     </tr>

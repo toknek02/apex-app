@@ -136,3 +136,55 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   })
   return NextResponse.json({ user })
 }
+
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth()
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!hasPermission(session.user, 'MANAGE_USERS')) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const { id } = await params
+  if (id === session.user.id) {
+    return NextResponse.json({ error: 'You cannot delete your own account' }, { status: 400 })
+  }
+
+  const existing = await prisma.user.findUnique({
+    where: { id },
+    include: {
+      _count: {
+        select: {
+          signInRecords: true,
+          timesheetEntries: true,
+          leaveApplications: true,
+          reviewedLeaveApplications: true,
+          architectApprovedLeaveApplications: true,
+          eventAttendees: true,
+          createdEvents: true,
+          announcements: true,
+          announcementReceipts: true,
+          notifications: true,
+          directedLeaveGroups: true,
+          architectedLeaveGroups: true,
+        },
+      },
+    },
+  })
+  if (!existing) return NextResponse.json({ error: 'User not found' }, { status: 404 })
+
+  const hasActivity = Object.values(existing._count).some((c) => c > 0)
+  if (hasActivity) {
+    return NextResponse.json(
+      { error: 'Cannot delete a user with existing activity (timesheets, leave, sign-ins, etc.) — set their Status to Inactive instead.' },
+      { status: 409 }
+    )
+  }
+
+  await prisma.user.delete({ where: { id } })
+  await logAudit({
+    actor: session.user,
+    action: 'user.delete',
+    targetType: 'User',
+    targetId: existing.id,
+    targetLabel: existing.name,
+  })
+  return NextResponse.json({ ok: true })
+}
