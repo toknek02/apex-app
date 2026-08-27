@@ -1,5 +1,4 @@
 import { PrismaClient } from '@prisma/client'
-import { logAudit } from '../lib/audit'
 
 const prisma = new PrismaClient()
 
@@ -7,6 +6,13 @@ const prisma = new PrismaClient()
 // out anyone who's still "signed in" at end of day and force their session
 // to end, so attendance doesn't drift into the next day just because
 // someone left without formally signing out.
+//
+// Writes its own audit-log row directly (rather than importing
+// lib/audit.ts's logAudit) because that file pulls in lib/prisma.ts via the
+// `@/` path alias, which ts-node can't resolve when run through
+// scripts/tsconfig.json (no `paths` mapping there) — that silently broke
+// this exact script for weeks (every run failed at import time, before
+// main() ever ran, so no attendance records were ever actually closed).
 async function main() {
   const now = new Date()
 
@@ -15,11 +21,14 @@ async function main() {
     prisma.user.updateMany({ where: { activeSessionId: { not: null } }, data: { activeSessionId: null } }),
   ])
 
-  await logAudit({
-    actor: { id: 'system', name: 'System (EOD auto sign-out)' },
-    action: 'attendance.eod_auto_signout',
-    targetType: 'SignInRecord',
-    metadata: { closedRecordCount: closedRecords.count, sessionsInvalidated: clearedSessions.count, ranAt: now.toISOString() },
+  await prisma.auditLog.create({
+    data: {
+      actorId: 'system',
+      actorName: 'System (EOD auto sign-out)',
+      action: 'attendance.eod_auto_signout',
+      targetType: 'SignInRecord',
+      metadata: { closedRecordCount: closedRecords.count, sessionsInvalidated: clearedSessions.count, ranAt: now.toISOString() },
+    },
   })
 
   console.log(`Closed ${closedRecords.count} open attendance record(s), invalidated ${clearedSessions.count} active session(s) at ${now.toISOString()}`)
