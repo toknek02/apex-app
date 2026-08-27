@@ -5,6 +5,7 @@ import { requireUser, hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import { DeleteEventButton } from '@/components/logbook/delete-event-button'
+import { EventDetailsModal } from '@/components/logbook/event-details-modal'
 
 function startOfWeek(d: Date) {
   const x = new Date(d)
@@ -51,7 +52,12 @@ export default async function LogbookPage({
         ? { OR: [{ private: false }, { createdById: user.id }, { attendees: { some: { userId: user.id } } }] }
         : {}),
     },
-    include: { venue: true, attendees: { include: { user: { select: { id: true, name: true } } } } },
+    include: {
+      venue: true,
+      attendees: { include: { user: { select: { id: true, name: true } } } },
+      project: { select: { code: true, shortName: true } },
+      createdBy: { select: { name: true } },
+    },
     orderBy: { date: 'asc' },
   })
 
@@ -152,9 +158,33 @@ export default async function LogbookPage({
                         {e.date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
                       </td>
                       <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }}>
-                        {e.attendees.map((a) => a.user.name).join(', ')}
-                        {e.attendees.length > 0 ? ': ' : ''}
-                        {e.title}
+                        <EventDetailsModal
+                          canEdit={e.createdById === user.id || hasPermission(user, 'EDIT_ANY_EVENT')}
+                          event={{
+                            id: e.id,
+                            title: e.title,
+                            date: e.date.toISOString(),
+                            durationMins: e.durationMins,
+                            stage: e.stage,
+                            task: e.task,
+                            venueName: e.venue?.description ?? null,
+                            externalVenue: e.externalVenue,
+                            project: e.project,
+                            attendeeNames: e.attendees.map((a) => a.user.name),
+                            createdByName: e.createdBy.name,
+                            resources: e.resources,
+                            remarks: e.remarks,
+                            private: e.private,
+                            remindMe: e.remindMe,
+                          }}
+                          trigger={
+                            <span style={{ cursor: 'pointer' }}>
+                              {e.attendees.map((a) => a.user.name).join(', ')}
+                              {e.attendees.length > 0 ? ': ' : ''}
+                              {e.title}
+                            </span>
+                          }
+                        />
                       </td>
                       <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>
                         {e.venue?.description ?? e.externalVenue ?? '—'}
