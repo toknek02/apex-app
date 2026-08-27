@@ -142,7 +142,7 @@ export default async function StaffPage() {
                               designations={designations}
                               trigger={<Pencil size={14} color="var(--apex-accent)" />}
                             />
-                            {m.id !== user.id && <DeleteUserButton userId={m.id} userName={m.name} />}
+                            {m.id !== user.id && !m.isActive && <DeleteUserButton userId={m.id} userName={m.name} />}
                           </div>
                         </td>
                       )}

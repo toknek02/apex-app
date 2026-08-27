@@ -170,10 +170,14 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   })
   if (!existing) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
+  if (existing.isActive) {
+    return NextResponse.json({ error: 'Only inactive users can be deleted — set their Status to Inactive first.' }, { status: 409 })
+  }
+
   const hasActivity = Object.values(existing._count).some((c) => c > 0)
   if (hasActivity) {
     return NextResponse.json(
-      { error: 'Cannot delete a user with existing activity (timesheets, leave, sign-ins, etc.) — set their Status to Inactive instead.' },
+      { error: 'Cannot delete a user with existing activity (timesheets, leave, sign-ins, etc.) — their history would be lost.' },
       { status: 409 }
     )
   }
