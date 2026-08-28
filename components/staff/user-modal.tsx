@@ -25,13 +25,29 @@ type User = {
   otEligible?: boolean
   annualLeaveEntitlement?: number | null
   annualLeaveBroughtForward?: number
+  medicalLeaveEntitlement?: number | null
+  medicalLeaveBroughtForward?: number
   leaveGroupIds?: string[]
 }
 
 type RoleOption = { id: string; name: string }
 type LeaveGroupOption = { id: string; name: string }
 
-export function UserModal({ user, roles, leaveGroups, designations = [], trigger }: { user?: User; roles: RoleOption[]; leaveGroups: LeaveGroupOption[]; designations?: string[]; trigger: React.ReactNode }) {
+export function UserModal({
+  user,
+  roles,
+  leaveGroups,
+  designations = [],
+  canManageEntitlements = false,
+  trigger,
+}: {
+  user?: User
+  roles: RoleOption[]
+  leaveGroups: LeaveGroupOption[]
+  designations?: string[]
+  canManageEntitlements?: boolean
+  trigger: React.ReactNode
+}) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState(user?.name ?? '')
@@ -46,6 +62,8 @@ export function UserModal({ user, roles, leaveGroups, designations = [], trigger
   const [otEligible, setOtEligible] = useState(user?.otEligible ?? false)
   const [annualLeaveEntitlement, setAnnualLeaveEntitlement] = useState(user?.annualLeaveEntitlement?.toString() ?? '')
   const [annualLeaveBroughtForward, setAnnualLeaveBroughtForward] = useState(user?.annualLeaveBroughtForward?.toString() ?? '0')
+  const [medicalLeaveEntitlement, setMedicalLeaveEntitlement] = useState(user?.medicalLeaveEntitlement?.toString() ?? '')
+  const [medicalLeaveBroughtForward, setMedicalLeaveBroughtForward] = useState(user?.medicalLeaveBroughtForward?.toString() ?? '0')
   const [leaveGroupIds, setLeaveGroupIds] = useState<Set<string>>(new Set(user?.leaveGroupIds ?? []))
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
@@ -87,13 +105,19 @@ export function UserModal({ user, roles, leaveGroups, designations = [], trigger
     }
 
     setSaving(true)
+    // Entitlement fields are only sent when the viewer is allowed to manage
+    // them — omitted (rather than sent-but-ignored) so a non-HR admin
+    // editing other fields can never even accidentally overwrite these.
+    const entitlementFields = canManageEntitlements
+      ? { annualLeaveEntitlement, annualLeaveBroughtForward, medicalLeaveEntitlement, medicalLeaveBroughtForward }
+      : {}
     const res = await fetch(user ? `/api/staff/${user.id}` : '/api/staff', {
       method: user ? 'PATCH' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(
         user
-          ? { name, username, email, department, designation, roleId, isActive, basicSalary, otEligible, annualLeaveEntitlement, annualLeaveBroughtForward, leaveGroupIds: [...leaveGroupIds], ...(password ? { password } : {}) }
-          : { name, username, email, password, department, designation, roleId, basicSalary, otEligible, annualLeaveEntitlement, annualLeaveBroughtForward, leaveGroupIds: [...leaveGroupIds] }
+          ? { name, username, email, department, designation, roleId, isActive, basicSalary, otEligible, ...entitlementFields, leaveGroupIds: [...leaveGroupIds], ...(password ? { password } : {}) }
+          : { name, username, email, password, department, designation, roleId, basicSalary, otEligible, ...entitlementFields, leaveGroupIds: [...leaveGroupIds] }
       ),
     })
     setSaving(false)
@@ -121,7 +145,7 @@ export function UserModal({ user, roles, leaveGroups, designations = [], trigger
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              backgroundColor: '#fff',
+              backgroundColor: 'var(--apex-surface)',
               borderRadius: 10,
               width: '100%',
               maxWidth: 440,
@@ -237,19 +261,37 @@ export function UserModal({ user, roles, leaveGroups, designations = [], trigger
                 Only staff marked eligible see the OT option on their Timesheet.
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 12 }}>
-              <div>
-                <label style={labelStyle}>Annual Leave Entitlement (days/yr)</label>
-                <input type="number" min="0" step="0.5" style={inputStyle} value={annualLeaveEntitlement} onChange={(e) => setAnnualLeaveEntitlement(e.target.value)} placeholder="e.g. 14" />
+            {canManageEntitlements ? (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 12 }}>
+                  <div>
+                    <label style={labelStyle}>Annual Leave Entitlement (days/yr)</label>
+                    <input type="number" min="0" step="0.5" style={inputStyle} value={annualLeaveEntitlement} onChange={(e) => setAnnualLeaveEntitlement(e.target.value)} placeholder="e.g. 14" />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Brought Forward (days)</label>
+                    <input type="number" min="0" step="0.5" style={inputStyle} value={annualLeaveBroughtForward} onChange={(e) => setAnnualLeaveBroughtForward(e.target.value)} />
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 12 }}>
+                  <div>
+                    <label style={labelStyle}>Medical Leave Entitlement (days/yr)</label>
+                    <input type="number" min="0" step="0.5" style={inputStyle} value={medicalLeaveEntitlement} onChange={(e) => setMedicalLeaveEntitlement(e.target.value)} placeholder="e.g. 14" />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Brought Forward (days)</label>
+                    <input type="number" min="0" step="0.5" style={inputStyle} value={medicalLeaveBroughtForward} onChange={(e) => setMedicalLeaveBroughtForward(e.target.value)} />
+                  </div>
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--apex-muted)', marginTop: -8, marginBottom: 12 }}>
+                  Re-enter both at the start of each year — leaving Entitlement blank means that leave type stays unrestricted for this person.
+                </div>
+              </>
+            ) : (
+              <div style={{ marginBottom: 12, padding: '10px 12px', borderRadius: 6, backgroundColor: 'var(--apex-row-alt)', fontSize: 11, color: 'var(--apex-muted)' }}>
+                Annual Leave / Medical Leave entitlements can only be changed by HR.
               </div>
-              <div>
-                <label style={labelStyle}>Brought Forward (days)</label>
-                <input type="number" min="0" step="0.5" style={inputStyle} value={annualLeaveBroughtForward} onChange={(e) => setAnnualLeaveBroughtForward(e.target.value)} />
-              </div>
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--apex-muted)', marginTop: -8, marginBottom: 12 }}>
-              Re-enter both at the start of each year — leaving Entitlement blank means Annual Leave stays unrestricted for this person.
-            </div>
+            )}
             {user && (
               <div style={{ marginBottom: 20 }}>
                 <label style={labelStyle}>Status</label>
@@ -262,7 +304,7 @@ export function UserModal({ user, roles, leaveGroups, designations = [], trigger
             </div>
 
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', padding: '16px 24px', borderTop: '1px solid var(--apex-border)' }}>
-              <button onClick={() => setOpen(false)} style={{ padding: '8px 16px', border: '1px solid var(--apex-border)', backgroundColor: '#fff', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
+              <button onClick={() => setOpen(false)} style={{ padding: '8px 16px', border: '1px solid var(--apex-border)', backgroundColor: 'var(--apex-surface)', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
                 Cancel
               </button>
               <button

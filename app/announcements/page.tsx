@@ -33,13 +33,13 @@ export default async function AnnouncementsPage() {
       </div>
 
       {announcements.length === 0 ? (
-        <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 24, fontSize: 13, color: 'var(--apex-muted)' }}>
+        <div style={{ backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 24, fontSize: 13, color: 'var(--apex-muted)' }}>
           No announcements yet.
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {announcements.map((a) => (
-            <div key={a.id} style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 20 }}>
+            <div key={a.id} style={{ backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 20 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{a.title}</h2>
                 {canManage && (

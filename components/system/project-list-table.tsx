@@ -45,7 +45,7 @@ export function ProjectListTable({ projects }: { projects: ProjectRow[] }) {
         />
       </div>
 
-      <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
+      <div style={{ backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
@@ -70,7 +70,7 @@ export function ProjectListTable({ projects }: { projects: ProjectRow[] }) {
                   <tr
                     key={p.id}
                     onClick={() => router.push(`/staff/project/${p.id}`)}
-                    style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff', cursor: 'pointer' }}
+                    style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : 'var(--apex-surface)', cursor: 'pointer' }}
                   >
                     <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12, color: 'var(--apex-accent)', fontWeight: 600 }}>{p.code}</td>
                     <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }}>{p.shortName || '—'}</td>

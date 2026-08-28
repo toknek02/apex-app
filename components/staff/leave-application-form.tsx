@@ -150,7 +150,7 @@ export function LeaveApplicationForm({
       : `${fmtDate(submitted.startDate)} – ${fmtDate(submitted.endDate)}`
 
     return (
-      <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 24, maxWidth: 560, margin: '0 auto' }}>
+      <div style={{ backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 24, maxWidth: 560, margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
           <span style={{ fontSize: 20 }}>✓</span>
           <h2 style={{ fontSize: 16, fontWeight: 700 }}>Application Submitted</h2>
@@ -187,7 +187,7 @@ export function LeaveApplicationForm({
           <button
             type="button"
             onClick={applyAnother}
-            style={{ padding: '8px 16px', border: '1px solid var(--apex-border)', backgroundColor: '#fff', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+            style={{ padding: '8px 16px', border: '1px solid var(--apex-border)', backgroundColor: 'var(--apex-surface)', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
           >
             Apply for Another
           </button>
@@ -206,7 +206,7 @@ export function LeaveApplicationForm({
   return (
     <form
       onSubmit={handleSubmit}
-      style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 24, maxWidth: 560, margin: '0 auto' }}
+      style={{ backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 24, maxWidth: 560, margin: '0 auto' }}
     >
       {errors.length > 0 && (
         <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 6, backgroundColor: 'var(--apex-red-lt)', color: 'var(--apex-red)', fontSize: 12 }}>

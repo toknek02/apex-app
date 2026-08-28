@@ -98,7 +98,7 @@ export default async function LeavePage() {
       {showApprovalSection && (
         <>
           <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, marginBottom: 12 }}>Pending My Approval</h2>
-          <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto', marginBottom: 28 }}>
+          <div style={{ backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto', marginBottom: 28 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
@@ -116,7 +116,7 @@ export default async function LeavePage() {
                   </tr>
                 ) : (
                   pendingForApproval.map((a, i) => (
-                    <tr key={a.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
+                    <tr key={a.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : 'var(--apex-surface)' }}>
                       <td style={{ ...tdStyle, fontWeight: 600 }}>{a.user.name}</td>
                       <td style={tdStyle}>{a.leaveType}</td>
                       <td style={{ ...tdStyle, color: 'var(--apex-muted)' }}>{projectLabel(a.project)}</td>
@@ -138,7 +138,7 @@ export default async function LeavePage() {
       {isHR && (
         <>
           <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, marginBottom: 12 }}>All Applications (HR view)</h2>
-          <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto', marginBottom: 28, maxHeight: 360 }}>
+          <div style={{ backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto', marginBottom: 28, maxHeight: 360 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
@@ -156,7 +156,7 @@ export default async function LeavePage() {
                   </tr>
                 ) : (
                   hrApplications.map((a, i) => (
-                    <tr key={a.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
+                    <tr key={a.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : 'var(--apex-surface)' }}>
                       <td style={{ ...tdStyle, fontWeight: 600 }}>{a.user.name}</td>
                       <td style={tdStyle}>{a.leaveType}</td>
                       <td style={{ ...tdStyle, color: 'var(--apex-muted)' }}>{projectLabel(a.project)}</td>
@@ -173,7 +173,7 @@ export default async function LeavePage() {
       )}
 
       <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, marginBottom: 12 }}>My Applications</h2>
-      <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
+      <div style={{ backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
@@ -191,7 +191,7 @@ export default async function LeavePage() {
               </tr>
             ) : (
               myApplications.map((a, i) => (
-                <tr key={a.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
+                <tr key={a.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : 'var(--apex-surface)' }}>
                   <td style={tdStyle}>{a.leaveType}</td>
                   <td style={{ ...tdStyle, color: 'var(--apex-muted)' }}>{projectLabel(a.project)}</td>
                   <td style={tdStyle}>{dateRangeLabel(a.startDate, a.endDate, a.dayPortion)}</td>

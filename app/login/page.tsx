@@ -60,30 +60,30 @@ function LoginForm() {
       }}
     >
       <div
+        className="apex-card"
         style={{
           width: '100%',
           maxWidth: 380,
-          backgroundColor: '#fff',
-          border: '1px solid var(--apex-border)',
-          borderRadius: 10,
           padding: 28,
-          boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
-          boxSizing: 'border-box',
+          boxShadow: 'var(--apex-shadow-pop)',
         }}
       >
-        <div style={{ marginBottom: 28 }}>
-          <span
-            style={{
-              fontFamily: 'Sora, sans-serif',
-              fontWeight: 700,
-              fontSize: 26,
-              color: 'var(--apex-accent)',
-              letterSpacing: '-0.5px',
-            }}
-          >
-            APEX
-          </span>
-          <p style={{ marginTop: 6, fontSize: 13, color: 'var(--apex-muted)' }}>Sign in to your account</p>
+        <div style={{ marginBottom: 26, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ width: 10, height: 10, borderRadius: 3, background: 'var(--apex-accent)' }} />
+          <div>
+            <span
+              style={{
+                fontFamily: 'var(--apex-font-display)',
+                fontWeight: 700,
+                fontSize: 24,
+                color: 'var(--apex-text)',
+                letterSpacing: '-0.02em',
+              }}
+            >
+              APEX
+            </span>
+            <p style={{ margin: '2px 0 0', fontSize: 13, color: 'var(--apex-muted)' }}>Sign in to your account</p>
+          </div>
         </div>
 
         {notice && (
@@ -91,9 +91,9 @@ function LoginForm() {
             style={{
               marginBottom: 16,
               padding: '10px 14px',
-              borderRadius: 6,
+              borderRadius: 'var(--apex-radius-sm)',
               backgroundColor: 'var(--apex-accent-lt)',
-              color: 'var(--apex-accent)',
+              color: 'var(--apex-accent-hover)',
               fontSize: 12,
               display: 'flex',
               alignItems: 'flex-start',
@@ -115,8 +115,9 @@ function LoginForm() {
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 5 }}>Name or Email</label>
+            <label className="apex-label">Name or Email</label>
             <input
+              className="apex-input"
               type="text"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
@@ -124,33 +125,20 @@ function LoginForm() {
               autoFocus
               autoComplete="username"
               placeholder="e.g. azmi"
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '1px solid var(--apex-border)',
-                borderRadius: 6,
-                fontSize: 16,
-                boxSizing: 'border-box',
-              }}
+              style={{ fontSize: 16 }}
             />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 5 }}>Password</label>
+            <label className="apex-label">Password</label>
             <input
+              className="apex-input"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               autoComplete="current-password"
               placeholder="••••••••"
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '1px solid var(--apex-border)',
-                borderRadius: 6,
-                fontSize: 16,
-                boxSizing: 'border-box',
-              }}
+              style={{ fontSize: 16 }}
             />
           </div>
 
@@ -158,7 +146,7 @@ function LoginForm() {
             <div
               style={{
                 padding: '8px 12px',
-                borderRadius: 6,
+                borderRadius: 'var(--apex-radius-sm)',
                 backgroundColor: 'var(--apex-red-lt)',
                 color: 'var(--apex-red)',
                 fontSize: 12,
@@ -168,28 +156,13 @@ function LoginForm() {
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              marginTop: 4,
-              padding: '13px 0',
-              backgroundColor: 'var(--apex-navy)',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 6,
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.6 : 1,
-            }}
-          >
+          <button type="submit" disabled={loading} className="apex-btn apex-btn-primary" style={{ marginTop: 4, width: '100%', minHeight: 44 }}>
             {loading ? 'Signing in…' : 'Sign In'}
           </button>
         </form>
 
         <p style={{ marginTop: 14, fontSize: 12, textAlign: 'center' }}>
-          <Link href="/forgot-password" style={{ color: 'var(--apex-accent)', textDecoration: 'none', fontWeight: 600 }}>
+          <Link href="/forgot-password" style={{ fontWeight: 600 }}>
             Forgot password?
           </Link>
         </p>

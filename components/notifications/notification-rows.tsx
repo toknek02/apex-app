@@ -31,7 +31,7 @@ function Row({ item, variant, onClick, alt }: { item: NotificationItem; variant:
         padding: s.padding,
         borderBottom: '1px solid var(--apex-border)',
         cursor: item.link ? 'pointer' : 'default',
-        backgroundColor: item.read ? (alt ? 'var(--apex-row-alt)' : '#fff') : 'var(--apex-accent-lt)',
+        backgroundColor: item.read ? (alt ? 'var(--apex-row-alt)' : 'var(--apex-surface)') : 'var(--apex-accent-lt)',
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
@@ -71,7 +71,7 @@ function GroupRow({ type, items, variant, onItemClick }: { type: string; items: 
         padding: s.padding,
         borderBottom: '1px solid var(--apex-border)',
         cursor: 'pointer',
-        backgroundColor: unread > 0 ? 'var(--apex-accent-lt)' : '#fff',
+        backgroundColor: unread > 0 ? 'var(--apex-accent-lt)' : 'var(--apex-surface)',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',

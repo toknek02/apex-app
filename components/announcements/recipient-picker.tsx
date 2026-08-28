@@ -59,7 +59,7 @@ export function RecipientPicker({ staff, selected, onChange }: { staff: StaffOpt
             return (
               <div key={dept} style={{ marginBottom: 14 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--apex-tbl-hdr)', letterSpacing: '0.04em' }}>DEPT: {dept}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--apex-section-fg)', letterSpacing: '0.04em' }}>DEPT: {dept}</span>
                   <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--apex-muted)', cursor: 'pointer', marginLeft: 'auto' }}>
                     <input type="checkbox" checked={allChecked} onChange={(e) => toggleDept(members, e.target.checked)} />
                     All in this Dept

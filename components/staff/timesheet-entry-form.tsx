@@ -93,7 +93,7 @@ export function TimesheetEntryForm({ projects, otEligible }: { projects: Project
   return (
     <form
       onSubmit={handleSubmit}
-      style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 24, maxWidth: 640, margin: '0 auto' }}
+      style={{ backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 24, maxWidth: 640, margin: '0 auto' }}
     >
       {errors.length > 0 && (
         <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 6, backgroundColor: 'var(--apex-red-lt)', color: 'var(--apex-red)', fontSize: 12 }}>

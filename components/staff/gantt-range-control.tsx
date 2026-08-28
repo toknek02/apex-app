@@ -50,7 +50,7 @@ export function GanttRangeControl({ startHour, endHour }: { startHour: number; e
             params.delete('endHour')
             router.push(`/staff/activities/summary?${params.toString()}`)
           }}
-          style={{ ...selectStyle, cursor: 'pointer', backgroundColor: '#fff' }}
+          style={{ ...selectStyle, cursor: 'pointer', backgroundColor: 'var(--apex-surface)' }}
         >
           Reset
         </button>

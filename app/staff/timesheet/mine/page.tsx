@@ -71,7 +71,7 @@ export default async function MyTimesheetPage({
         </Link>
       </div>
 
-      <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
+      <div style={{ backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
         <table style={{ borderCollapse: 'collapse', fontSize: 12, width: '100%' }}>
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
@@ -89,7 +89,7 @@ export default async function MyTimesheetPage({
               </tr>
             ) : (
               myEntries.map((e, i) => (
-                <tr key={e.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
+                <tr key={e.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : 'var(--apex-surface)' }}>
                   <td style={{ ...tdStyle, textAlign: 'left' }}>{e.date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</td>
                   <td style={{ ...tdStyle, textAlign: 'left' }}>{e.eventType}</td>
                   <td style={{ ...tdStyle, textAlign: 'left' }}>{e.project ? `${e.project.code} — ${e.project.shortName}` : '—'}</td>
@@ -134,7 +134,7 @@ const navBtn: React.CSSProperties = {
   fontSize: 12,
   textDecoration: 'none',
   color: 'var(--apex-text)',
-  backgroundColor: '#fff',
+  backgroundColor: 'var(--apex-surface)',
 }
 
 const thStyle: React.CSSProperties = {

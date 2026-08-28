@@ -70,7 +70,7 @@ export function NotificationBell({
               width: 340,
               maxHeight: 420,
               overflowY: 'auto',
-              backgroundColor: '#fff',
+              backgroundColor: 'var(--apex-surface)',
               border: '1px solid var(--apex-border)',
               borderRadius: 10,
               boxShadow: '0 8px 24px rgba(0,0,0,0.15)',

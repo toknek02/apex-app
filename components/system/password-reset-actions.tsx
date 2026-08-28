@@ -35,7 +35,7 @@ export function PasswordResetActions({ requestId }: { requestId: string }) {
       <button
         onClick={() => setStatus('dismissed')}
         disabled={loading}
-        style={{ padding: '5px 12px', borderRadius: 6, border: '1px solid var(--apex-border)', backgroundColor: '#fff', color: 'var(--apex-muted)', fontSize: 11, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1 }}
+        style={{ padding: '5px 12px', borderRadius: 6, border: '1px solid var(--apex-border)', backgroundColor: 'var(--apex-surface)', color: 'var(--apex-muted)', fontSize: 11, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1 }}
       >
         Dismiss
       </button>

@@ -55,7 +55,7 @@ export function VenueModal({ venue, trigger }: { venue?: Venue; trigger: React.R
           style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300 }}
           onClick={() => setOpen(false)}
         >
-          <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: '#fff', borderRadius: 10, padding: 24, width: 380 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: 'var(--apex-surface)', borderRadius: 10, padding: 24, width: 380 }}>
             <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>{venue ? 'Edit Venue' : 'New Venue'}</h2>
 
             {error && (
@@ -77,7 +77,7 @@ export function VenueModal({ venue, trigger }: { venue?: Venue; trigger: React.R
             </div>
 
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-              <button onClick={() => setOpen(false)} style={{ padding: '8px 16px', border: '1px solid var(--apex-border)', backgroundColor: '#fff', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
+              <button onClick={() => setOpen(false)} style={{ padding: '8px 16px', border: '1px solid var(--apex-border)', backgroundColor: 'var(--apex-surface)', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
                 Cancel
               </button>
               <button

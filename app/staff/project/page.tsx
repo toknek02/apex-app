@@ -36,14 +36,14 @@ export default async function ProjectPage({ searchParams }: { searchParams: Prom
         <div style={{ display: 'flex', gap: 10 }}>
           <ProjectUploadModal
             trigger={
-              <span style={{ padding: '8px 16px', border: '1px solid var(--apex-accent)', color: 'var(--apex-accent)', backgroundColor: '#fff', borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
+              <span style={{ padding: '8px 16px', border: '1px solid var(--apex-accent)', color: 'var(--apex-accent)', backgroundColor: 'var(--apex-surface)', borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
                 Upload
               </span>
             }
           />
           <ProjectRegistryImportModal
             trigger={
-              <span style={{ padding: '8px 16px', border: '1px solid var(--apex-accent)', color: 'var(--apex-accent)', backgroundColor: '#fff', borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
+              <span style={{ padding: '8px 16px', border: '1px solid var(--apex-accent)', color: 'var(--apex-accent)', backgroundColor: 'var(--apex-surface)', borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
                 Import Projects List
               </span>
             }

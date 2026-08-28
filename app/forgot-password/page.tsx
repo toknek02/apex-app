@@ -38,7 +38,7 @@ export default function ForgotPasswordPage() {
         style={{
           width: '100%',
           maxWidth: 380,
-          backgroundColor: '#fff',
+          backgroundColor: 'var(--apex-surface)',
           border: '1px solid var(--apex-border)',
           borderRadius: 10,
           padding: 28,

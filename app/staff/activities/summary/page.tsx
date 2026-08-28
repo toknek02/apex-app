@@ -195,7 +195,7 @@ export default async function ActivitiesSummaryPage({
         </div>
       </div>
 
-      <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
+      <div style={{ backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
@@ -225,7 +225,7 @@ export default async function ActivitiesSummaryPage({
             {[...grouped.entries()].map(([dept, members]) => (
               <Fragment key={dept}>
                 <tr>
-                  <td colSpan={3} style={{ padding: '6px 14px', backgroundColor: 'var(--apex-dept-bg)', fontSize: 11, fontWeight: 700, color: 'var(--apex-tbl-hdr)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  <td colSpan={3} style={{ padding: '6px 14px', backgroundColor: 'var(--apex-dept-bg)', fontSize: 11, fontWeight: 700, color: 'var(--apex-section-fg)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                     Department: {dept}
                   </td>
                 </tr>
@@ -237,7 +237,7 @@ export default async function ActivitiesSummaryPage({
                   const unplaced = myEntries.filter((e) => e.startMins === null && e.endMins === null && !LEAVE_EVENT_TYPES.includes(e.eventType))
 
                   return (
-                    <tr key={m.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
+                    <tr key={m.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : 'var(--apex-surface)' }}>
                       <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12, fontWeight: 600, verticalAlign: 'top' }}>{m.name}</td>
                       <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', verticalAlign: 'top' }}>
                         {placed.length === 0 && unplaced.length === 0 ? (
@@ -316,5 +316,5 @@ const navBtn: React.CSSProperties = {
   fontSize: 12,
   textDecoration: 'none',
   color: 'var(--apex-text)',
-  backgroundColor: '#fff',
+  backgroundColor: 'var(--apex-surface)',
 }

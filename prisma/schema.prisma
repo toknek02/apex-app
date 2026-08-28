@@ -37,6 +37,11 @@ model User {
   // lib/leave-balance.ts. Null entitlement means unset, not zero.
   annualLeaveEntitlement     Float?
   annualLeaveBroughtForward  Float    @default(0)
+  // Same shape as Annual Leave above, for Medical Leave (MC). Kept as a
+  // separate pair of fields rather than a generic per-type map since these
+  // two are the only leave types HR tracks a numeric entitlement against.
+  medicalLeaveEntitlement    Float?
+  medicalLeaveBroughtForward Float    @default(0)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

@@ -112,7 +112,7 @@ export default async function LogbookPage({
 
       <Controls />
 
-      <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
+      <div style={{ backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
@@ -153,7 +153,7 @@ export default async function LogbookPage({
                     </tr>
                   )}
                   {group.items.map((e, i) => (
-                    <tr key={e.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
+                    <tr key={e.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : 'var(--apex-surface)' }}>
                       <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12, whiteSpace: 'nowrap' }}>
                         {e.date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
                       </td>
@@ -230,7 +230,7 @@ function toggleItemStyle(active: boolean): React.CSSProperties {
     padding: '6px 12px',
     fontSize: 12,
     textDecoration: 'none',
-    backgroundColor: active ? 'var(--apex-navy)' : '#fff',
+    backgroundColor: active ? 'var(--apex-navy)' : 'var(--apex-surface)',
     color: active ? '#fff' : 'var(--apex-text)',
     fontWeight: active ? 600 : 400,
   }
@@ -246,7 +246,7 @@ function btnStyle(primary: boolean): React.CSSProperties {
     fontWeight: primary ? 600 : 400,
     textDecoration: 'none',
     border: `1px solid ${primary ? 'var(--apex-accent)' : 'var(--apex-border)'}`,
-    backgroundColor: primary ? 'var(--apex-accent)' : '#fff',
+    backgroundColor: primary ? 'var(--apex-accent)' : 'var(--apex-surface)',
     color: primary ? '#fff' : 'var(--apex-text)',
     cursor: 'pointer',
   }

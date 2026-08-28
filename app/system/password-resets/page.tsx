@@ -1,5 +1,5 @@
 import { Pencil } from 'lucide-react'
-import { requirePermission } from '@/lib/rbac'
+import { requirePermission, hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import { UserModal } from '@/components/staff/user-modal'
@@ -7,6 +7,7 @@ import { PasswordResetActions } from '@/components/system/password-reset-actions
 
 export default async function PasswordResetsPage() {
   const user = await requirePermission('MANAGE_USERS')
+  const canManageEntitlements = hasPermission(user, 'MANAGE_LEAVE_ENTITLEMENTS')
 
   const [pending, roles, leaveGroups, designationRows] = await Promise.all([
     prisma.passwordResetRequest.findMany({
@@ -33,7 +34,7 @@ export default async function PasswordResetsPage() {
         Requests submitted via the login page&apos;s &quot;Forgot password?&quot; link. Reset the user&apos;s password from Staff, then mark the request resolved.
       </p>
 
-      <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
+      <div style={{ backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
@@ -55,7 +56,7 @@ export default async function PasswordResetsPage() {
             {pending.map((r, i) => {
               const matched = r.userId ? userById.get(r.userId) : undefined
               return (
-                <tr key={r.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
+                <tr key={r.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : 'var(--apex-surface)' }}>
                   <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)', whiteSpace: 'nowrap' }}>
                     {r.createdAt.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
                   </td>
@@ -66,10 +67,11 @@ export default async function PasswordResetsPage() {
                   <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }}>
                     {matched && (
                       <UserModal
-                        user={{ id: matched.id, name: matched.name, username: matched.username, email: matched.email, department: matched.department, designation: matched.designation, roleId: matched.roleId, isActive: matched.isActive, basicSalary: matched.basicSalary, otEligible: matched.otEligible, annualLeaveEntitlement: matched.annualLeaveEntitlement, annualLeaveBroughtForward: matched.annualLeaveBroughtForward, leaveGroupIds: matched.leaveGroupMemberships.map((lgm) => lgm.leaveGroupId) }}
+                        user={{ id: matched.id, name: matched.name, username: matched.username, email: matched.email, department: matched.department, designation: matched.designation, roleId: matched.roleId, isActive: matched.isActive, basicSalary: matched.basicSalary, otEligible: matched.otEligible, annualLeaveEntitlement: matched.annualLeaveEntitlement, annualLeaveBroughtForward: matched.annualLeaveBroughtForward, medicalLeaveEntitlement: matched.medicalLeaveEntitlement, medicalLeaveBroughtForward: matched.medicalLeaveBroughtForward, leaveGroupIds: matched.leaveGroupMemberships.map((lgm) => lgm.leaveGroupId) }}
                         roles={roles}
                         leaveGroups={leaveGroups}
                         designations={designations}
+                        canManageEntitlements={canManageEntitlements}
                         trigger={
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--apex-accent)', fontWeight: 600 }}>
                             <Pencil size={13} /> Reset

@@ -72,7 +72,7 @@ export function PublicHolidayForm({ publicHolidays }: { publicHolidays: PublicHo
   }
 
   return (
-    <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 24, maxWidth: 640, margin: '0 auto' }}>
+    <div style={{ backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 24, maxWidth: 640, margin: '0 auto' }}>
       <form onSubmit={handleAdd} style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', marginBottom: 12, flexWrap: 'wrap' }}>
           <div>
@@ -116,7 +116,7 @@ export function PublicHolidayForm({ publicHolidays }: { publicHolidays: PublicHo
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
           <tbody>
             {publicHolidays.map((h, i) => (
-              <tr key={h.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
+              <tr key={h.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : 'var(--apex-surface)' }}>
                 <td style={{ padding: '8px 10px', width: 220 }}>{rangeLabel(h)}</td>
                 <td style={{ padding: '8px 10px' }}>
                   {h.name}

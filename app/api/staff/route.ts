@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!hasPermission(session.user, 'MANAGE_USERS')) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { name, username, email, password, department, designation, roleId, basicSalary, otEligible, annualLeaveEntitlement, annualLeaveBroughtForward, leaveGroupIds } = await req.json()
+  const { name, username, email, password, department, designation, roleId, basicSalary, otEligible, annualLeaveEntitlement, annualLeaveBroughtForward, medicalLeaveEntitlement, medicalLeaveBroughtForward, leaveGroupIds } = await req.json()
   if (!name || !username || !roleId) return NextResponse.json({ error: 'Full Name, Name, and role are required' }, { status: 400 })
   if (/\s/.test(username)) return NextResponse.json({ error: 'Name (login) cannot contain spaces' }, { status: 400 })
   if (!password || password.length < 6) {
@@ -46,10 +46,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Basic Salary is required for staff eligible for OT' }, { status: 400 })
   }
 
-  const parsedEntitlement = parseRate(annualLeaveEntitlement)
-  const parsedBroughtForward = parseRate(annualLeaveBroughtForward)
-  if (!parsedEntitlement.ok || !parsedBroughtForward.ok) {
-    return NextResponse.json({ error: 'Annual Leave Entitlement and Brought Forward must be non-negative numbers' }, { status: 400 })
+  // Only HR (MANAGE_LEAVE_ENTITLEMENTS) can set entitlements — anyone else's
+  // submitted values are silently ignored rather than rejecting the whole
+  // creation, since they're still allowed to create the user itself.
+  const canManageEntitlements = hasPermission(session.user, 'MANAGE_LEAVE_ENTITLEMENTS')
+  const parsedEntitlement = canManageEntitlements ? parseRate(annualLeaveEntitlement) : { ok: true as const, rate: null }
+  const parsedBroughtForward = canManageEntitlements ? parseRate(annualLeaveBroughtForward) : { ok: true as const, rate: null }
+  const parsedMedicalEntitlement = canManageEntitlements ? parseRate(medicalLeaveEntitlement) : { ok: true as const, rate: null }
+  const parsedMedicalBroughtForward = canManageEntitlements ? parseRate(medicalLeaveBroughtForward) : { ok: true as const, rate: null }
+  if (!parsedEntitlement.ok || !parsedBroughtForward.ok || !parsedMedicalEntitlement.ok || !parsedMedicalBroughtForward.ok) {
+    return NextResponse.json({ error: 'Leave Entitlement and Brought Forward must be non-negative numbers' }, { status: 400 })
   }
 
   const existingUsername = await prisma.user.findUnique({ where: { username } })
@@ -83,6 +89,8 @@ export async function POST(req: NextRequest) {
       otEligible: Boolean(otEligible),
       annualLeaveEntitlement: parsedEntitlement.rate,
       annualLeaveBroughtForward: parsedBroughtForward.rate ?? 0,
+      medicalLeaveEntitlement: parsedMedicalEntitlement.rate,
+      medicalLeaveBroughtForward: parsedMedicalBroughtForward.rate ?? 0,
       leaveGroupMemberships: { create: groupIds.map((leaveGroupId) => ({ leaveGroupId })) },
     },
     select: { id: true, name: true, username: true, department: true, designation: true, roleId: true, role: { select: { name: true } }, leaveGroupMemberships: { select: { leaveGroupId: true } } },

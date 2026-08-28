@@ -137,7 +137,7 @@ export function TimesheetReportForm({
     <>
       <form
         onSubmit={handleGenerate}
-        style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 20, marginBottom: 20, maxWidth: 560, margin: '0 auto 20px' }}
+        style={{ backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 20, marginBottom: 20, maxWidth: 560, margin: '0 auto 20px' }}
       >
         {canViewTeamReports && (
           <div style={{ marginBottom: 16, display: 'flex', gap: 16, fontSize: 13 }}>
@@ -196,7 +196,7 @@ export function TimesheetReportForm({
           <button
             type="button"
             onClick={handleCancel}
-            style={{ padding: '8px 22px', backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}
+            style={{ padding: '8px 22px', backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}
           >
             Cancel
           </button>
@@ -204,7 +204,7 @@ export function TimesheetReportForm({
             <button
               type="button"
               onClick={handleDownload}
-              style={{ padding: '8px 22px', backgroundColor: '#fff', border: '1px solid var(--apex-green)', color: 'var(--apex-green)', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+              style={{ padding: '8px 22px', backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-green)', color: 'var(--apex-green)', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
             >
               Download Excel
             </button>
@@ -212,7 +212,7 @@ export function TimesheetReportForm({
         </div>
       </form>
 
-      <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
+      <div style={{ backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
         <table style={{ borderCollapse: 'collapse', fontSize: 12, width: '100%' }}>
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
@@ -235,7 +235,7 @@ export function TimesheetReportForm({
               </tr>
             )}
             {!teamMode && results?.map((e, i) => (
-              <tr key={e.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
+              <tr key={e.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : 'var(--apex-surface)' }}>
                 <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px' }}>{new Date(e.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                 <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px' }}>{e.eventType}</td>
                 <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px' }}>{e.project ? `${e.project.code} — ${e.project.shortName}` : '—'}</td>
@@ -253,7 +253,7 @@ export function TimesheetReportForm({
               return (
                 <Fragment key={userId}>
                   {staff.entries.length === 0 ? (
-                    <tr style={{ backgroundColor: '#fff' }}>
+                    <tr style={{ backgroundColor: 'var(--apex-surface)' }}>
                       <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', verticalAlign: 'top', fontWeight: 600 }}>
                         {staff.name}
                         {staff.department && <div style={{ fontSize: 10, fontWeight: 400, color: 'var(--apex-muted)' }}>{staff.department}</div>}
@@ -262,7 +262,7 @@ export function TimesheetReportForm({
                     </tr>
                   ) : (
                     staff.entries.map((e, i) => (
-                      <tr key={e.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
+                      <tr key={e.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : 'var(--apex-surface)' }}>
                         {i === 0 && (
                           <td rowSpan={rowCount} style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', verticalAlign: 'top', fontWeight: 600 }}>
                             {staff.name}

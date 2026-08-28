@@ -16,6 +16,8 @@ type NavUser = {
   permissions: string[]
 }
 
+const RADIUS = 'var(--apex-radius-sm)'
+
 const NAV: {
   key: string
   href: string
@@ -79,6 +81,41 @@ const SECTION_TITLES: Record<string, string> = {
   '/system/public-holidays': 'Public Holidays',
 }
 
+const HEADER_H = 56
+const SIDEBAR_EXPANDED_WIDTH = 220
+const SIDEBAR_COLLAPSED_WIDTH = 64
+
+const pillBadge: React.CSSProperties = {
+  minWidth: 17,
+  height: 17,
+  padding: '0 5px',
+  borderRadius: 999,
+  background: 'var(--apex-red)',
+  color: '#fff',
+  fontSize: 10,
+  fontWeight: 700,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+}
+
+const dotBadge: React.CSSProperties = {
+  position: 'absolute',
+  top: -5,
+  right: -7,
+  minWidth: 13,
+  height: 13,
+  padding: '0 2px',
+  borderRadius: 99,
+  background: 'var(--apex-red)',
+  color: '#fff',
+  fontSize: 8,
+  fontWeight: 700,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+}
+
 function Clock() {
   const [now, setNow] = useState<Date | null>(null)
   useEffect(() => {
@@ -87,9 +124,13 @@ function Clock() {
     return () => clearInterval(id)
   }, [])
   if (!now) return null
-  const dateStr = now.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })
+  const dateStr = now.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' })
   const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
-  return <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>{dateStr} &nbsp;{timeStr}</span>
+  return (
+    <span style={{ color: 'var(--apex-muted)', fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>
+      {dateStr}&nbsp;&nbsp;{timeStr}
+    </span>
+  )
 }
 
 function Header({
@@ -114,14 +155,14 @@ function Header({
         top: 0,
         left: 0,
         right: 0,
-        height: 60,
+        height: HEADER_H,
         zIndex: 200,
-        backgroundColor: 'var(--apex-navy)',
-        borderBottom: '3px solid var(--apex-accent)',
+        background: 'var(--apex-surface)',
+        borderBottom: '1px solid var(--apex-border)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: isMobile ? '0 12px' : '0 24px',
+        padding: isMobile ? '0 12px' : '0 20px',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -129,19 +170,33 @@ function Header({
           <button
             onClick={onMobileToggle}
             title={mobileOpen ? 'Close menu' : 'Open menu'}
-            style={{ display: 'flex', alignItems: 'center', background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', padding: 0, marginRight: 4 }}
+            className="apex-btn apex-btn-ghost apex-btn-sm"
+            style={{ minHeight: 32, padding: 6 }}
           >
-            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+            {mobileOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
         )}
-        <span style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: 22, color: 'var(--apex-accent)', letterSpacing: '-0.5px' }}>
-          APEX
-        </span>
-        {!isMobile && <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: 20 }}>|</span>}
-        {!isMobile && (
-          <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {SECTION_TITLES[pathname] ?? 'APEX'}
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+          <span style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--apex-accent)' }} />
+          <span
+            style={{
+              fontFamily: 'var(--apex-font-display)',
+              fontWeight: 700,
+              fontSize: 18,
+              color: 'var(--apex-text)',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            APEX
           </span>
+        </Link>
+        {!isMobile && (
+          <>
+            <span style={{ color: 'var(--apex-border-strong)' }}>/</span>
+            <span style={{ color: 'var(--apex-muted)', fontSize: 13, fontWeight: 500 }}>
+              {SECTION_TITLES[pathname] ?? 'APEX'}
+            </span>
+          </>
         )}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -160,21 +215,22 @@ function Header({
             display: 'flex',
             alignItems: 'center',
             gap: 7,
-            backgroundColor: 'rgba(255,255,255,0.1)',
-            padding: '4px 12px',
-            borderRadius: 20,
+            background: 'var(--apex-surface-2)',
+            border: '1px solid var(--apex-border)',
+            padding: '4px 10px 4px 8px',
+            borderRadius: 999,
             textDecoration: 'none',
           }}
         >
-          <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: 'var(--apex-green)' }} />
-          <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: 12, fontWeight: 500 }}>{user.name}</span>
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--apex-green)' }} />
+          <span style={{ color: 'var(--apex-text)', fontSize: 12, fontWeight: 600 }}>{user.name}</span>
           {!isMobile && (
             <span
               style={{
                 fontSize: 10,
                 fontWeight: 700,
-                color: 'var(--apex-accent)',
-                backgroundColor: 'rgba(224,123,57,0.2)',
+                color: 'var(--apex-accent-hover)',
+                background: 'var(--apex-accent-lt)',
                 padding: '1px 6px',
                 borderRadius: 4,
               }}
@@ -193,26 +249,15 @@ function Header({
             window.location.href = '/login'
           }}
           title="Sign out"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 5,
-            background: 'transparent',
-            border: 'none',
-            color: 'rgba(255,255,255,0.6)',
-            cursor: 'pointer',
-            fontSize: 12,
-          }}
+          className="apex-btn apex-btn-ghost apex-btn-sm"
+          style={{ minHeight: 32, padding: 6, color: 'var(--apex-muted)' }}
         >
-          <LogOut size={14} />
+          <LogOut size={15} />
         </button>
       </div>
     </header>
   )
 }
-
-const SIDEBAR_EXPANDED_WIDTH = 200
-const SIDEBAR_COLLAPSED_WIDTH = 60
 
 function Sidebar({
   user,
@@ -241,16 +286,17 @@ function Sidebar({
     <aside
       style={{
         position: 'fixed',
-        top: 60,
+        top: HEADER_H,
         left: 0,
         bottom: 0,
         width: isMobile ? SIDEBAR_EXPANDED_WIDTH : effectiveCollapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH,
         zIndex: 150,
-        backgroundColor: 'var(--apex-navy)',
-        borderRight: '1px solid rgba(255,255,255,0.07)',
+        background: 'var(--apex-surface)',
+        borderRight: '1px solid var(--apex-border)',
         display: 'flex',
         flexDirection: 'column',
-        paddingTop: 8,
+        padding: effectiveCollapsed ? '10px 8px' : '12px',
+        gap: 2,
         overflowY: 'auto',
         overflowX: 'hidden',
         transform: isMobile ? `translateX(${mobileOpen ? '0' : '-100%'})` : 'none',
@@ -264,77 +310,49 @@ function Sidebar({
           display: 'flex',
           alignItems: 'center',
           gap: 11,
-          padding: effectiveCollapsed ? '11px 0' : '11px 18px',
+          padding: effectiveCollapsed ? '10px 0' : '9px 12px',
           justifyContent: effectiveCollapsed ? 'center' : 'flex-start',
-          border: 'none',
+          borderRadius: RADIUS,
           textDecoration: 'none',
           cursor: 'pointer',
-          backgroundColor: active ? 'rgba(224,123,57,0.14)' : 'transparent',
-          borderLeft: active ? '3px solid var(--apex-accent)' : '3px solid transparent',
-          color: active ? 'var(--apex-accent)' : 'rgba(255,255,255,0.62)',
+          background: active ? 'var(--apex-accent-lt)' : 'transparent',
+          color: active ? 'var(--apex-accent-hover)' : 'var(--apex-muted)',
           fontSize: 13,
-          fontWeight: active ? 600 : 400,
-          width: '100%',
+          fontWeight: active ? 600 : 500,
           whiteSpace: 'nowrap',
           position: 'relative',
+          transition: 'background 0.12s ease, color 0.12s ease',
         }
         return (
-          <Link key={key} href={href} style={style} title={effectiveCollapsed ? label : undefined} onClick={isMobile ? onNavigate : undefined}>
+          <Link
+            key={key}
+            href={href}
+            style={style}
+            title={effectiveCollapsed ? label : undefined}
+            onClick={isMobile ? onNavigate : undefined}
+            onMouseEnter={(e) => {
+              if (!active) e.currentTarget.style.background = 'var(--apex-surface-2)'
+            }}
+            onMouseLeave={(e) => {
+              if (!active) e.currentTarget.style.background = 'transparent'
+            }}
+          >
             <span style={{ position: 'relative', display: 'inline-flex' }}>
-              <Icon size={16} />
-              {badgeCount > 0 && effectiveCollapsed && (
-                <span
-                  style={{
-                    position: 'absolute',
-                    top: -5,
-                    right: -7,
-                    minWidth: 13,
-                    height: 13,
-                    padding: '0 2px',
-                    borderRadius: 99,
-                    backgroundColor: 'var(--apex-red)',
-                    color: '#fff',
-                    fontSize: 8,
-                    fontWeight: 700,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  {badgeCount > 9 ? '9+' : badgeCount}
-                </span>
-              )}
+              <Icon size={17} />
+              {badgeCount > 0 && effectiveCollapsed && <span style={dotBadge}>{badgeCount > 9 ? '9+' : badgeCount}</span>}
             </span>
             {!effectiveCollapsed && (
               <>
                 {label}
-                {badgeCount > 0 && (
-                  <span
-                    style={{
-                      marginLeft: 'auto',
-                      minWidth: 17,
-                      height: 17,
-                      padding: '0 5px',
-                      borderRadius: 99,
-                      backgroundColor: 'var(--apex-red)',
-                      color: '#fff',
-                      fontSize: 10,
-                      fontWeight: 700,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    {badgeCount > 9 ? '9+' : badgeCount}
-                  </span>
-                )}
+                {badgeCount > 0 && <span style={{ ...pillBadge, marginLeft: 'auto' }}>{badgeCount > 9 ? '9+' : badgeCount}</span>}
               </>
             )}
           </Link>
         )
       })}
+
       {subItems && (
-        <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+        <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--apex-border)' }}>
           {subItems.filter((item) => !item.requires || user.permissions.includes(item.requires)).map(({ href, label }) => {
             const active = pathname === href
             return (
@@ -344,12 +362,14 @@ function Sidebar({
                 onClick={isMobile ? onNavigate : undefined}
                 style={{
                   display: 'block',
-                  padding: '9px 18px 9px 44px',
+                  padding: '7px 12px 7px 40px',
+                  borderRadius: RADIUS,
                   textDecoration: 'none',
-                  fontSize: 12,
+                  fontSize: 12.5,
                   whiteSpace: 'nowrap',
-                  color: active ? 'var(--apex-accent)' : 'rgba(255,255,255,0.5)',
-                  fontWeight: active ? 600 : 400,
+                  color: active ? 'var(--apex-accent-hover)' : 'var(--apex-muted)',
+                  fontWeight: active ? 600 : 500,
+                  background: active ? 'var(--apex-accent-lt)' : 'transparent',
                 }}
               >
                 {label}
@@ -360,7 +380,7 @@ function Sidebar({
       )}
 
       {!isMobile && (
-        <div style={{ marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+        <div style={{ marginTop: 'auto', paddingTop: 8, borderTop: '1px solid var(--apex-border)' }}>
           <button
             onClick={onToggle}
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
@@ -368,13 +388,13 @@ function Sidebar({
               display: 'flex',
               alignItems: 'center',
               justifyContent: collapsed ? 'center' : 'flex-end',
-              gap: 6,
               width: '100%',
-              padding: '11px 14px',
+              padding: '9px 10px',
               border: 'none',
               background: 'transparent',
-              color: 'rgba(255,255,255,0.5)',
+              color: 'var(--apex-muted)',
               cursor: 'pointer',
+              borderRadius: RADIUS,
             }}
           >
             {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
@@ -388,7 +408,7 @@ function Sidebar({
 export function Breadcrumb({ items }: { items: string[] }) {
   return (
     <div style={{ fontSize: 12, color: 'var(--apex-muted)', marginBottom: 16 }}>
-      {['APEX', ...items].join(' > ')}
+      {['APEX', ...items].join('  /  ')}
     </div>
   )
 }
@@ -478,11 +498,11 @@ export function AppShell({ user, children }: { user: NavUser; children: React.Re
       {isMobile && mobileOpen && (
         <div
           onClick={() => setMobileOpen(false)}
-          style={{ position: 'fixed', inset: 0, top: 60, backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 140 }}
+          style={{ position: 'fixed', inset: 0, top: HEADER_H, background: 'rgba(15,23,42,0.4)', zIndex: 140 }}
         />
       )}
-      <main style={{ marginLeft: sidebarWidth, paddingTop: 60, minHeight: '100vh', transition: 'margin-left 0.18s ease' }}>
-        <div style={{ padding: isMobile ? 16 : 24 }}>{children}</div>
+      <main style={{ marginLeft: sidebarWidth, paddingTop: HEADER_H, minHeight: '100vh', transition: 'margin-left 0.18s ease' }}>
+        <div style={{ padding: isMobile ? 16 : 24, maxWidth: 1400 }}>{children}</div>
       </main>
     </div>
   )

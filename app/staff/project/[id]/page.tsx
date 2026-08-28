@@ -115,7 +115,7 @@ export default async function ProjectDetailPage({
       )}
 
       {activeTab === 'cost' && (
-        <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 24, maxWidth: 560, margin: '0 auto 20px' }}>
+        <div style={{ backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 24, maxWidth: 560, margin: '0 auto 20px' }}>
           <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 14 }}>
             Hours &amp; Cost Estimate {fromDate || toDate ? '' : '(all time)'}{stageFilter ? ` — ${stageFilter}` : ''}
           </h2>

@@ -137,143 +137,110 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   return (
     <AppShell user={{ name: user.name ?? '', roleName: user.roleName, permissions: user.permissions }}>
-      <h1 style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700, marginBottom: 20 }}>Dashboard</h1>
+      <div className="apex-page-head">
+        <div>
+          <h1 className="apex-page-title">Dashboard</h1>
+          <p className="apex-page-sub">
+            {today.toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+          </p>
+        </div>
+      </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14, marginBottom: 20 }}>
         {cards.map((c) => {
-          const cardStyle: React.CSSProperties = { backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 18, textDecoration: 'none', display: 'block' }
           const inner = (
             <>
-              <div style={{ fontSize: 12, color: 'var(--apex-muted)', marginBottom: 6 }}>{c.label}</div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: c.color ?? 'var(--apex-navy)' }}>{c.value}</div>
+              <div className="apex-stat-label">{c.label}</div>
+              <div className="apex-stat-value" style={c.color ? { color: c.color } : undefined}>{c.value}</div>
             </>
           )
           return c.href ? (
-            <Link key={c.label} href={c.href} style={cardStyle}>{inner}</Link>
+            <Link key={c.label} href={c.href} className="apex-stat">{inner}</Link>
           ) : (
-            <div key={c.label} style={cardStyle}>{inner}</div>
+            <div key={c.label} className="apex-stat">{inner}</div>
           )
         })}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 20 }}>
-        <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'hidden' }}>
-          <div style={{ padding: '12px 16px', backgroundColor: 'var(--apex-tbl-hdr)', color: '#fff', fontSize: 13, fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr)', gap: 16 }}>
+        <div className="apex-card">
+          <div className="apex-card-header">
             <span>LogBook Events</span>
             <div style={{ display: 'flex', gap: 4 }}>
-              <Link
-                href="/?view=day"
-                style={{
-                  padding: '3px 10px',
-                  borderRadius: 12,
-                  fontSize: 11,
-                  fontWeight: 600,
-                  textDecoration: 'none',
-                  color: eventsView === 'day' ? 'var(--apex-navy)' : '#fff',
-                  backgroundColor: eventsView === 'day' ? '#fff' : 'rgba(255,255,255,0.15)',
-                }}
-              >
-                Today
-              </Link>
-              <Link
-                href="/?view=week"
-                style={{
-                  padding: '3px 10px',
-                  borderRadius: 12,
-                  fontSize: 11,
-                  fontWeight: 600,
-                  textDecoration: 'none',
-                  color: eventsView === 'week' ? 'var(--apex-navy)' : '#fff',
-                  backgroundColor: eventsView === 'week' ? '#fff' : 'rgba(255,255,255,0.15)',
-                }}
-              >
-                This Week
-              </Link>
+              <Link href="/?view=day" className={`apex-btn apex-btn-sm${eventsView === 'day' ? ' apex-btn-primary' : ''}`}>Today</Link>
+              <Link href="/?view=week" className={`apex-btn apex-btn-sm${eventsView === 'week' ? ' apex-btn-primary' : ''}`}>This Week</Link>
             </div>
           </div>
           {logbookEvents.length === 0 ? (
-            <div style={{ padding: 20, fontSize: 13, color: 'var(--apex-muted)' }}>
-              No LogBook events {eventsView === 'week' ? 'this week' : 'scheduled today'}.
-            </div>
+            <div className="apex-empty">No LogBook events {eventsView === 'week' ? 'this week' : 'scheduled today'}.</div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <tbody>
-                {logbookEvents.map((e, i) => (
-                  <tr key={e.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
-                    {eventsView === 'week' && (
-                      <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12, whiteSpace: 'nowrap', color: 'var(--apex-muted)' }}>
-                        {e.date.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' })}
-                      </td>
-                    )}
-                    <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12, whiteSpace: 'nowrap' }}>
-                      {e.date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
-                    </td>
-                    <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }}>
-                      {e.attendees.map((a) => a.user.name).join(', ')}
-                      {e.attendees.length > 0 ? ': ' : ''}
-                      {e.title}
-                    </td>
-                    <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12, color: 'var(--apex-muted)' }}>
-                      {e.venue?.description ?? e.externalVenue ?? '—'}
-                    </td>
+              <table className="apex-table">
+                <thead>
+                  <tr>
+                    {eventsView === 'week' && <th>Date</th>}
+                    <th>Time</th>
+                    <th>Event</th>
+                    <th>Venue</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {logbookEvents.map((e) => (
+                    <tr key={e.id}>
+                      {eventsView === 'week' && (
+                        <td style={{ whiteSpace: 'nowrap', color: 'var(--apex-muted)' }}>
+                          {e.date.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' })}
+                        </td>
+                      )}
+                      <td style={{ whiteSpace: 'nowrap', color: 'var(--apex-muted)', fontVariantNumeric: 'tabular-nums' }}>
+                        {e.date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                      </td>
+                      <td>
+                        {e.attendees.length > 0 && (
+                          <span style={{ color: 'var(--apex-muted)' }}>{e.attendees.map((a) => a.user.name).join(', ')}: </span>
+                        )}
+                        {e.title}
+                      </td>
+                      <td style={{ color: 'var(--apex-muted)' }}>{e.venue?.description ?? e.externalVenue ?? '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
 
         {isPrivileged ? (
-          <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'hidden' }}>
-            <div style={{ padding: '12px 16px', backgroundColor: 'var(--apex-tbl-hdr)', color: '#fff', fontSize: 13, fontWeight: 600 }}>
-              Staff Activity Snapshot
-            </div>
+          <div className="apex-card">
+            <div className="apex-card-header">Staff Activity Snapshot</div>
             {signedIn.length === 0 ? (
-              <div style={{ padding: 20, fontSize: 13, color: 'var(--apex-muted)' }}>No staff currently signed in.</div>
+              <div className="apex-empty">No staff currently signed in.</div>
             ) : (
               <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-                {signedIn.map((s, i) => (
-                  <li
-                    key={s.id}
-                    style={{
-                      padding: '9px 16px',
-                      fontSize: 12,
-                      backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff',
-                      borderBottom: '1px solid var(--apex-border)',
-                    }}
-                  >
-                    <strong>{s.user.name}</strong> — Signed in at{' '}
-                    {s.signInAt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                {signedIn.map((s) => (
+                  <li key={s.id} style={{ padding: '10px 16px', fontSize: 13, borderBottom: '1px solid var(--apex-border)' }}>
+                    <strong>{s.user.name}</strong>
+                    <span style={{ color: 'var(--apex-muted)' }}>
+                      {' '}— signed in {s.signInAt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                    </span>
                   </li>
                 ))}
               </ul>
             )}
           </div>
         ) : (
-          <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'hidden' }}>
-            <div style={{ padding: '12px 16px', backgroundColor: 'var(--apex-tbl-hdr)', color: '#fff', fontSize: 13, fontWeight: 600 }}>
-              Latest Announcements
-            </div>
+          <div className="apex-card">
+            <div className="apex-card-header">Latest Announcements</div>
             {latestAnnouncements.length === 0 ? (
-              <div style={{ padding: 20, fontSize: 13, color: 'var(--apex-muted)' }}>No announcements yet.</div>
+              <div className="apex-empty">No announcements yet.</div>
             ) : (
               <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-                {latestAnnouncements.map((a, i) => (
-                  <li
-                    key={a.id}
-                    style={{
-                      padding: '9px 16px',
-                      fontSize: 12,
-                      backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff',
-                      borderBottom: '1px solid var(--apex-border)',
-                    }}
-                  >
-                    <Link href="/announcements" style={{ color: 'var(--apex-text)', textDecoration: 'none', fontWeight: 600 }}>
+                {latestAnnouncements.map((a) => (
+                  <li key={a.id} style={{ padding: '10px 16px', borderBottom: '1px solid var(--apex-border)' }}>
+                    <Link href="/announcements" style={{ color: 'var(--apex-text)', fontWeight: 600, fontSize: 13 }}>
                       {a.title}
                     </Link>
-                    <div style={{ fontSize: 10, color: 'var(--apex-muted)', marginTop: 2 }}>
+                    <div style={{ fontSize: 11, color: 'var(--apex-muted)', marginTop: 2 }}>
                       {a.createdAt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </div>
                   </li>

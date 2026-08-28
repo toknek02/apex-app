@@ -36,7 +36,7 @@ export default async function SystemAdminPage() {
             href={href}
             style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-              padding: '28px 12px', backgroundColor: '#fff', border: '1px solid var(--apex-border)',
+              padding: '28px 12px', backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)',
               borderRadius: 10, textDecoration: 'none', color: 'var(--apex-text)', fontSize: 12, fontWeight: 600,
             }}
           >

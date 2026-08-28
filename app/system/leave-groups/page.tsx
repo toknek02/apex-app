@@ -42,7 +42,7 @@ export default async function LeaveGroupsPage() {
         manage who's in it.
       </p>
 
-      <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
+      <div style={{ backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
@@ -62,7 +62,7 @@ export default async function LeaveGroupsPage() {
               </tr>
             ) : (
               leaveGroups.map((g, i) => (
-                <tr key={g.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
+                <tr key={g.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : 'var(--apex-surface)' }}>
                   <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12, fontWeight: 600 }}>{g.name}</td>
                   <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12, color: g.architect ? 'var(--apex-text)' : 'var(--apex-muted)' }}>
                     {g.architect?.name ?? '— None —'}

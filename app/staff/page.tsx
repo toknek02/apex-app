@@ -10,6 +10,7 @@ import { DeleteUserButton } from '@/components/staff/delete-user-button'
 export default async function StaffPage() {
   const user = await requireUser()
   const canManageUsers = hasPermission(user, 'MANAGE_USERS')
+  const canManageEntitlements = hasPermission(user, 'MANAGE_LEAVE_ENTITLEMENTS')
   const now = new Date()
   const startOfDay = new Date(now)
   startOfDay.setHours(0, 0, 0, 0)
@@ -67,7 +68,7 @@ export default async function StaffPage() {
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginBottom: 12 }}>
           <StaffUploadModal
             trigger={
-              <span style={{ padding: '8px 16px', border: '1px solid var(--apex-accent)', color: 'var(--apex-accent)', backgroundColor: '#fff', borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
+              <span style={{ padding: '8px 16px', border: '1px solid var(--apex-accent)', color: 'var(--apex-accent)', backgroundColor: 'var(--apex-surface)', borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
                 Upload
               </span>
             }
@@ -76,6 +77,7 @@ export default async function StaffPage() {
             roles={roles}
             leaveGroups={leaveGroups}
             designations={designations}
+            canManageEntitlements={canManageEntitlements}
             trigger={
               <span style={{ padding: '8px 16px', backgroundColor: 'var(--apex-accent)', color: '#fff', borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
                 New Staff
@@ -85,7 +87,7 @@ export default async function StaffPage() {
         </div>
       )}
 
-      <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
+      <div style={{ backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
@@ -100,7 +102,7 @@ export default async function StaffPage() {
             {[...grouped.entries()].map(([dept, members]) => (
               <Fragment key={dept}>
                 <tr>
-                  <td colSpan={columns.length} style={{ padding: '6px 14px', backgroundColor: 'var(--apex-dept-bg)', fontSize: 11, fontWeight: 700, color: 'var(--apex-tbl-hdr)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  <td colSpan={columns.length} style={{ padding: '6px 14px', backgroundColor: 'var(--apex-dept-bg)', fontSize: 11, fontWeight: 700, color: 'var(--apex-section-fg)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                     Department: {dept}
                   </td>
                 </tr>
@@ -117,7 +119,7 @@ export default async function StaffPage() {
                         : 'var(--apex-muted)'
                   const muted = statusLabel === 'Not logged in' || statusLabel === 'Inactive'
                   return (
-                    <tr key={m.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff', opacity: m.isActive ? 1 : 0.6 }}>
+                    <tr key={m.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : 'var(--apex-surface)', opacity: m.isActive ? 1 : 0.6 }}>
                       <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12, fontStyle: muted ? 'italic' : 'normal', color: muted ? 'var(--apex-muted)' : 'var(--apex-text)' }}>
                         {m.name}
                       </td>
@@ -136,10 +138,11 @@ export default async function StaffPage() {
                         <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                             <UserModal
-                              user={{ id: m.id, name: m.name, username: m.username, email: m.email, department: m.department, designation: m.designation, roleId: m.roleId, isActive: m.isActive, basicSalary: m.basicSalary, otEligible: m.otEligible, annualLeaveEntitlement: m.annualLeaveEntitlement, annualLeaveBroughtForward: m.annualLeaveBroughtForward, leaveGroupIds: m.leaveGroupMemberships.map((lgm) => lgm.leaveGroupId) }}
+                              user={{ id: m.id, name: m.name, username: m.username, email: m.email, department: m.department, designation: m.designation, roleId: m.roleId, isActive: m.isActive, basicSalary: m.basicSalary, otEligible: m.otEligible, annualLeaveEntitlement: m.annualLeaveEntitlement, annualLeaveBroughtForward: m.annualLeaveBroughtForward, medicalLeaveEntitlement: m.medicalLeaveEntitlement, medicalLeaveBroughtForward: m.medicalLeaveBroughtForward, leaveGroupIds: m.leaveGroupMemberships.map((lgm) => lgm.leaveGroupId) }}
                               roles={roles}
                               leaveGroups={leaveGroups}
                               designations={designations}
+                              canManageEntitlements={canManageEntitlements}
                               trigger={<Pencil size={14} color="var(--apex-accent)" />}
                             />
                             {m.id !== user.id && !m.isActive && <DeleteUserButton userId={m.id} userName={m.name} />}

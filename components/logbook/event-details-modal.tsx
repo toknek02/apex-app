@@ -79,7 +79,7 @@ export function EventDetailsModal({ event, canEdit, trigger }: { event: EventDet
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{ backgroundColor: '#fff', borderRadius: 10, width: '100%', maxWidth: 560, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+            style={{ backgroundColor: 'var(--apex-surface)', borderRadius: 10, width: '100%', maxWidth: 560, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
           >
             <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--apex-border)' }}>
               <h2 style={{ fontSize: 15, fontWeight: 700 }}>Event Details</h2>

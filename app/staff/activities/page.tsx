@@ -70,7 +70,7 @@ export default async function ActivitiesPage() {
 
       <NavTabs tabs={ACTIVITIES_TABS} />
 
-      <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
+      <div style={{ backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
@@ -85,7 +85,7 @@ export default async function ActivitiesPage() {
             {[...grouped.entries()].map(([dept, members]) => (
               <Fragment key={dept}>
                 <tr>
-                  <td colSpan={5} style={{ padding: '6px 14px', backgroundColor: 'var(--apex-dept-bg)', fontSize: 11, fontWeight: 700, color: 'var(--apex-tbl-hdr)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  <td colSpan={5} style={{ padding: '6px 14px', backgroundColor: 'var(--apex-dept-bg)', fontSize: 11, fontWeight: 700, color: 'var(--apex-section-fg)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                     Department: {dept}
                   </td>
                 </tr>
@@ -98,7 +98,7 @@ export default async function ActivitiesPage() {
                   const remarks = plannerEvent?.remarks ?? plannerEvent?.title ?? 'nil'
 
                   return (
-                    <tr key={m.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
+                    <tr key={m.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : 'var(--apex-surface)' }}>
                       <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12, fontStyle: eventLabel ? 'normal' : 'italic', color: eventLabel ? 'var(--apex-text)' : 'var(--apex-muted)' }}>
                         {m.name}
                       </td>

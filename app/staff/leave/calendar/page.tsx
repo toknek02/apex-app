@@ -99,7 +99,7 @@ function renderDayCells({
             fontSize: 9,
             fontWeight: 700,
             color: isPending ? color : (isHalfDay ? '#000' : '#fff'),
-            backgroundColor: isPending ? '#fff' : (isHalfDay ? undefined : color),
+            backgroundColor: isPending ? 'var(--apex-surface)' : (isHalfDay ? undefined : color),
             background: halfDayBackground,
             border: isPending ? `1.5px dashed ${color}` : (isHalfDay ? `1px solid ${color}` : 'none'),
           }}
@@ -221,7 +221,7 @@ export default async function LeaveCalendarPage({
         </div>
       </div>
 
-      <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
+      <div style={{ backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
         <table style={{ borderCollapse: 'collapse', fontSize: 11, minWidth: '100%' }}>
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
@@ -240,15 +240,15 @@ export default async function LeaveCalendarPage({
             {[...grouped.entries()].map(([dept, members]) => (
               <Fragment key={dept}>
                 <tr>
-                  <td colSpan={daysInMonth + 1} style={{ padding: '6px 14px', backgroundColor: 'var(--apex-dept-bg)', fontSize: 11, fontWeight: 700, color: 'var(--apex-tbl-hdr)', letterSpacing: '0.06em', textTransform: 'uppercase', position: 'sticky', left: 0 }}>
+                  <td colSpan={daysInMonth + 1} style={{ padding: '6px 14px', backgroundColor: 'var(--apex-dept-bg)', fontSize: 11, fontWeight: 700, color: 'var(--apex-section-fg)', letterSpacing: '0.06em', textTransform: 'uppercase', position: 'sticky', left: 0 }}>
                     Department: {dept}
                   </td>
                 </tr>
                 {members.map((m, i) => {
                   const dayMap = byUserDay.get(m.id)
                   return (
-                    <tr key={m.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
-                      <td style={{ ...tdStyle, position: 'sticky', left: 0, backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff', textAlign: 'left', fontWeight: 600 }}>
+                    <tr key={m.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : 'var(--apex-surface)' }}>
+                      <td style={{ ...tdStyle, position: 'sticky', left: 0, backgroundColor: i % 2 ? 'var(--apex-row-alt)' : 'var(--apex-surface)', textAlign: 'left', fontWeight: 600 }}>
                         {m.name}
                       </td>
                       {renderDayCells({ dayMap, daysInMonth, isCurrentMonth, todayDate: today.getDate() })}
@@ -289,7 +289,7 @@ const navBtn: React.CSSProperties = {
   fontSize: 12,
   textDecoration: 'none',
   color: 'var(--apex-text)',
-  backgroundColor: '#fff',
+  backgroundColor: 'var(--apex-surface)',
 }
 
 const thStyle: React.CSSProperties = {

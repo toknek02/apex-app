@@ -47,7 +47,7 @@ export function SettingsForm({ settings }: { settings: Settings }) {
   }
 
   return (
-    <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 24, maxWidth: 560 }}>
+    <div style={{ backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 24, maxWidth: 560 }}>
       <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>Office Location</h2>
       <p style={{ fontSize: 12, color: 'var(--apex-muted)', marginBottom: 16 }}>
         Used to restrict login to staff physically near the office (attendance is now tied to

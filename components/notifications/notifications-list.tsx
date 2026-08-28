@@ -15,7 +15,7 @@ export function NotificationsList() {
   }
 
   return (
-    <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'hidden' }}>
+    <div style={{ backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'hidden' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', backgroundColor: 'var(--apex-tbl-hdr)' }}>
         <span style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>
           {unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}

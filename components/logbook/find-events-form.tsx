@@ -64,7 +64,7 @@ export function FindEventsForm({ staff, venues, projects }: { staff: Staff[]; ve
     <>
       <form
         onSubmit={handleSearch}
-        style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 20, marginBottom: 20 }}
+        style={{ backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 20, marginBottom: 20 }}
       >
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 16 }}>
           <div>
@@ -117,14 +117,14 @@ export function FindEventsForm({ staff, venues, projects }: { staff: Staff[]; ve
           <button
             type="button"
             onClick={handleReset}
-            style={{ padding: '8px 18px', backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}
+            style={{ padding: '8px 18px', backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}
           >
             Reset
           </button>
         </div>
       </form>
 
-      <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
+      <div style={{ backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
@@ -145,7 +145,7 @@ export function FindEventsForm({ staff, venues, projects }: { staff: Staff[]; ve
             {results?.map((e, i) => {
               const d = new Date(e.date)
               return (
-                <tr key={e.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
+                <tr key={e.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : 'var(--apex-surface)' }}>
                   <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }}>{d.toLocaleDateString('en-GB')}</td>
                   <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }}>{d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}</td>
                   <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }}>

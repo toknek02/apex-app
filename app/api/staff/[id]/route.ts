@@ -18,7 +18,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!hasPermission(session.user, 'MANAGE_USERS')) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const { id } = await params
-  const { name, username, email, department, designation, roleId, isActive, password, basicSalary, otEligible, annualLeaveEntitlement, annualLeaveBroughtForward, leaveGroupIds } = await req.json()
+  const body = await req.json()
+  const { name, username, email, department, designation, roleId, isActive, password, basicSalary, otEligible, leaveGroupIds } = body
+  // Only HR (MANAGE_LEAVE_ENTITLEMENTS) can change entitlements — treat them
+  // as not submitted at all for anyone else, so the rest of the edit (name,
+  // department, role, etc.) still goes through untouched.
+  const canManageEntitlements = hasPermission(session.user, 'MANAGE_LEAVE_ENTITLEMENTS')
+  const annualLeaveEntitlement = canManageEntitlements ? body.annualLeaveEntitlement : undefined
+  const annualLeaveBroughtForward = canManageEntitlements ? body.annualLeaveBroughtForward : undefined
+  const medicalLeaveEntitlement = canManageEntitlements ? body.medicalLeaveEntitlement : undefined
+  const medicalLeaveBroughtForward = canManageEntitlements ? body.medicalLeaveBroughtForward : undefined
 
   if (password !== undefined && password !== '' && password.length < 6) {
     return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 })
@@ -83,8 +92,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const parsedEntitlement = annualLeaveEntitlement !== undefined ? parseRate(annualLeaveEntitlement) : undefined
   const parsedBroughtForward = annualLeaveBroughtForward !== undefined ? parseRate(annualLeaveBroughtForward) : undefined
-  if ((parsedEntitlement && !parsedEntitlement.ok) || (parsedBroughtForward && !parsedBroughtForward.ok)) {
-    return NextResponse.json({ error: 'Annual Leave Entitlement and Brought Forward must be non-negative numbers' }, { status: 400 })
+  const parsedMedicalEntitlement = medicalLeaveEntitlement !== undefined ? parseRate(medicalLeaveEntitlement) : undefined
+  const parsedMedicalBroughtForward = medicalLeaveBroughtForward !== undefined ? parseRate(medicalLeaveBroughtForward) : undefined
+  if (
+    (parsedEntitlement && !parsedEntitlement.ok) ||
+    (parsedBroughtForward && !parsedBroughtForward.ok) ||
+    (parsedMedicalEntitlement && !parsedMedicalEntitlement.ok) ||
+    (parsedMedicalBroughtForward && !parsedMedicalBroughtForward.ok)
+  ) {
+    return NextResponse.json({ error: 'Leave Entitlement and Brought Forward must be non-negative numbers' }, { status: 400 })
   }
 
   // Every pay formula — normal hours included — derives from Basic Salary.
@@ -123,8 +139,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ...(otEligible !== undefined ? { otEligible: Boolean(otEligible) } : {}),
       ...(parsedEntitlement ? { annualLeaveEntitlement: parsedEntitlement.rate } : {}),
       ...(parsedBroughtForward ? { annualLeaveBroughtForward: parsedBroughtForward.rate ?? 0 } : {}),
+      ...(parsedMedicalEntitlement ? { medicalLeaveEntitlement: parsedMedicalEntitlement.rate } : {}),
+      ...(parsedMedicalBroughtForward ? { medicalLeaveBroughtForward: parsedMedicalBroughtForward.rate ?? 0 } : {}),
     },
-    select: { id: true, name: true, username: true, email: true, department: true, designation: true, roleId: true, role: { select: { name: true } }, isActive: true, basicSalary: true, otEligible: true, annualLeaveEntitlement: true, annualLeaveBroughtForward: true, leaveGroupMemberships: { select: { leaveGroupId: true } } },
+    select: { id: true, name: true, username: true, email: true, department: true, designation: true, roleId: true, role: { select: { name: true } }, isActive: true, basicSalary: true, otEligible: true, annualLeaveEntitlement: true, annualLeaveBroughtForward: true, medicalLeaveEntitlement: true, medicalLeaveBroughtForward: true, leaveGroupMemberships: { select: { leaveGroupId: true } } },
   })
   await logAudit({
     actor: session.user,
@@ -132,7 +150,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     targetType: 'User',
     targetId: user.id,
     targetLabel: user.name,
-    metadata: { name, username, email, department, designation, roleId, isActive, leaveGroupIds: groupIds, passwordReset: Boolean(password), salaryChanged: Boolean(parsedBasicSalary), otEligible },
+    metadata: { name, username, email, department, designation, roleId, isActive, leaveGroupIds: groupIds, passwordReset: Boolean(password), salaryChanged: Boolean(parsedBasicSalary), otEligible, entitlementsChanged: Boolean(parsedEntitlement || parsedBroughtForward || parsedMedicalEntitlement || parsedMedicalBroughtForward) },
   })
   return NextResponse.json({ user })
 }

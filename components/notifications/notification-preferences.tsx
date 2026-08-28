@@ -35,7 +35,7 @@ export function NotificationPreferences({ initialMuted }: { initialMuted: string
       </button>
 
       {open && (
-        <div style={{ marginTop: 10, backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 16 }}>
+        <div style={{ marginTop: 10, backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 16 }}>
           <p style={{ fontSize: 12, color: 'var(--apex-muted)', marginBottom: 12 }}>
             Turn off types you don&apos;t want to be notified about. Muted notifications are never created for you — they won&apos;t appear here or in the bell.
           </p>

@@ -71,7 +71,7 @@ export function RoleModal({ role, allPermissions, trigger }: { role?: Role; allP
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{ backgroundColor: '#fff', borderRadius: 10, padding: 24, width: 440, maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}
+            style={{ backgroundColor: 'var(--apex-surface)', borderRadius: 10, padding: 24, width: 440, maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}
           >
             <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 4, flexShrink: 0 }}>{role ? 'Edit Role' : 'New Role'}</h2>
             {locked && (
@@ -115,7 +115,7 @@ export function RoleModal({ role, allPermissions, trigger }: { role?: Role; allP
             </div>
 
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexShrink: 0 }}>
-              <button onClick={() => setOpen(false)} style={{ padding: '8px 16px', border: '1px solid var(--apex-border)', backgroundColor: '#fff', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
+              <button onClick={() => setOpen(false)} style={{ padding: '8px 16px', border: '1px solid var(--apex-border)', backgroundColor: 'var(--apex-surface)', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
                 {locked ? 'Close' : 'Cancel'}
               </button>
               {!locked && (

@@ -20,7 +20,7 @@ export function RefreshButton() {
       disabled={loading}
       style={{
         display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px',
-        backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 6,
+        backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 6,
         fontSize: 12, cursor: loading ? 'not-allowed' : 'pointer',
       }}
     >

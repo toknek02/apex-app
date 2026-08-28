@@ -86,7 +86,7 @@ export function ProjectTeamForm({
   }
 
   return (
-    <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 24, maxWidth: 560, margin: '0 auto' }}>
+    <div style={{ backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 24, maxWidth: 560, margin: '0 auto' }}>
       {error && (
         <div style={{ marginBottom: 12, padding: '8px 12px', borderRadius: 6, backgroundColor: 'var(--apex-red-lt)', color: 'var(--apex-red)', fontSize: 12 }}>
           {error}
@@ -101,7 +101,7 @@ export function ProjectTeamForm({
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <tbody>
               {currentMembers.map((s, i) => (
-                <tr key={s.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
+                <tr key={s.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : 'var(--apex-surface)' }}>
                   <td style={{ padding: '7px 10px' }}>
                     {s.name}
                     {s.department && <span style={{ color: 'var(--apex-muted)', fontSize: 11 }}> ({s.department})</span>}
@@ -154,7 +154,7 @@ export function ProjectTeamForm({
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <tbody>
               {candidates.map((s, i) => (
-                <tr key={s.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
+                <tr key={s.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : 'var(--apex-surface)' }}>
                   <td style={{ padding: '7px 10px' }}>
                     {s.name}
                     {s.department && <span style={{ color: 'var(--apex-muted)', fontSize: 11 }}> ({s.department})</span>}

@@ -73,7 +73,7 @@ export function StaffUploadModal({ trigger }: { trigger: React.ReactNode }) {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{ backgroundColor: '#fff', borderRadius: 10, width: '100%', maxWidth: 460, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+            style={{ backgroundColor: 'var(--apex-surface)', borderRadius: 10, width: '100%', maxWidth: 460, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
           >
             <div style={{ padding: '24px 24px 0' }}>
               <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Upload Staff</h2>
@@ -148,7 +148,7 @@ export function StaffUploadModal({ trigger }: { trigger: React.ReactNode }) {
             </div>
 
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', padding: '16px 24px', borderTop: '1px solid var(--apex-border)' }}>
-              <button onClick={close} style={{ padding: '8px 16px', border: '1px solid var(--apex-border)', backgroundColor: '#fff', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
+              <button onClick={close} style={{ padding: '8px 16px', border: '1px solid var(--apex-border)', backgroundColor: 'var(--apex-surface)', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
                 {result ? 'Close' : 'Cancel'}
               </button>
               {!result && (

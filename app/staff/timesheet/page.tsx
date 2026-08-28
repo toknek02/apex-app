@@ -110,7 +110,7 @@ export default async function TimesheetPage({
         )}
       </div>
 
-      <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
+      <div style={{ backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
         <table style={{ borderCollapse: 'collapse', fontSize: 11, minWidth: '100%' }}>
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
@@ -132,7 +132,7 @@ export default async function TimesheetPage({
                 <tr>
                   <td
                     colSpan={daysInMonth + 2}
-                    style={{ padding: '6px 14px', backgroundColor: 'var(--apex-dept-bg)', fontSize: 11, fontWeight: 700, color: 'var(--apex-tbl-hdr)', letterSpacing: '0.06em', textTransform: 'uppercase', position: 'sticky', left: 0 }}
+                    style={{ padding: '6px 14px', backgroundColor: 'var(--apex-dept-bg)', fontSize: 11, fontWeight: 700, color: 'var(--apex-section-fg)', letterSpacing: '0.06em', textTransform: 'uppercase', position: 'sticky', left: 0 }}
                   >
                     Department: {dept}
                   </td>
@@ -140,8 +140,8 @@ export default async function TimesheetPage({
                 {members.map((s, i) => {
                   const days = signedDays.get(s.id) ?? new Set<number>()
                   return (
-                    <tr key={s.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
-                      <td style={{ ...tdStyle, position: 'sticky', left: 0, backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff', textAlign: 'left', fontWeight: 600 }}>
+                    <tr key={s.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : 'var(--apex-surface)' }}>
+                      <td style={{ ...tdStyle, position: 'sticky', left: 0, backgroundColor: i % 2 ? 'var(--apex-row-alt)' : 'var(--apex-surface)', textAlign: 'left', fontWeight: 600 }}>
                         {s.name}
                       </td>
                       {Array.from({ length: daysInMonth }, (_, di) => di + 1).map((day) => {
@@ -169,7 +169,7 @@ export default async function TimesheetPage({
       <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, marginTop: 28, marginBottom: 12 }}>
         {isOwnView ? 'My Timesheet Entries' : `${viewedUser?.name ?? 'Unknown'}’s Timesheet Entries`}
       </h2>
-      <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
+      <div style={{ backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
         <table style={{ borderCollapse: 'collapse', fontSize: 12, width: '100%' }}>
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
@@ -187,7 +187,7 @@ export default async function TimesheetPage({
               </tr>
             ) : (
               myEntries.map((e, i) => (
-                <tr key={e.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : '#fff' }}>
+                <tr key={e.id} style={{ backgroundColor: i % 2 ? 'var(--apex-row-alt)' : 'var(--apex-surface)' }}>
                   <td style={{ ...tdStyle, textAlign: 'left' }}>{e.date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</td>
                   <td style={{ ...tdStyle, textAlign: 'left' }}>{e.eventType}</td>
                   <td style={{ ...tdStyle, textAlign: 'left' }}>{e.project ? `${e.project.code} — ${e.project.shortName}` : '—'}</td>
@@ -236,7 +236,7 @@ const navBtn: React.CSSProperties = {
   fontSize: 12,
   textDecoration: 'none',
   color: 'var(--apex-text)',
-  backgroundColor: '#fff',
+  backgroundColor: 'var(--apex-surface)',
 }
 
 const thStyle: React.CSSProperties = {
