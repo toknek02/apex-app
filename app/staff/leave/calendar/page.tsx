@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { requireUser } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
-import { LeaveTabs } from '@/components/staff/leave-tabs'
+import { NavTabs, LEAVE_TABS } from '@/components/staff/nav-tabs'
 import { LeaveCalendarMonthPicker } from '@/components/staff/leave-calendar-month-picker'
 import { DepartmentFilter } from '@/components/staff/department-filter'
 import { LeaveGroupFilter } from '@/components/staff/leave-group-filter'
@@ -201,7 +201,7 @@ export default async function LeaveCalendarPage({
         </Link>
       </div>
 
-      <LeaveTabs active="calendar" />
+      <NavTabs tabs={LEAVE_TABS} />
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>

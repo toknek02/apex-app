@@ -3,7 +3,7 @@ import { requireUser, hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import { RefreshButton } from '@/components/staff/refresh-button'
-import { ActivitiesTabs } from '@/components/staff/activities-tabs'
+import { NavTabs, ACTIVITIES_TABS } from '@/components/staff/nav-tabs'
 
 export default async function ActivitiesPage() {
   const user = await requireUser()
@@ -68,7 +68,7 @@ export default async function ActivitiesPage() {
         <RefreshButton />
       </div>
 
-      <ActivitiesTabs active="current" />
+      <NavTabs tabs={ACTIVITIES_TABS} />
 
       <div style={{ backgroundColor: '#fff', border: '1px solid var(--apex-border)', borderRadius: 10, overflow: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>

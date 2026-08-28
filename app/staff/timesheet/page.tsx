@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import { DeleteTimesheetEntryButton } from '@/components/staff/delete-timesheet-entry-button'
 import { TimesheetStaffSelector } from '@/components/staff/timesheet-staff-selector'
-import { TimesheetTabs } from '@/components/staff/timesheet-tabs'
+import { NavTabs, TIMESHEET_TABS } from '@/components/staff/nav-tabs'
 import { isEntryLocked, TIMESHEET_EDIT_WINDOW_DAYS } from '@/lib/timesheet-lock'
 
 function ymd(d: Date) {
@@ -85,7 +85,7 @@ export default async function TimesheetPage({
         Timesheet — {monthLabel}
       </h1>
 
-      <TimesheetTabs active="attendance" />
+      <NavTabs tabs={TIMESHEET_TABS} />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
         <Link href={`/staff/timesheet?month=${prevKey}${userQuery}`} style={navBtn}>&lt; Prev Month</Link>

@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { requireUser } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
-import { ActivitiesTabs } from '@/components/staff/activities-tabs'
+import { NavTabs, ACTIVITIES_TABS } from '@/components/staff/nav-tabs'
 import { GanttRangeControl } from '@/components/staff/gantt-range-control'
 import { DepartmentFilter } from '@/components/staff/department-filter'
 import { LeaveGroupFilter } from '@/components/staff/leave-group-filter'
@@ -169,7 +169,7 @@ export default async function ActivitiesSummaryPage({
         </div>
       </div>
 
-      <ActivitiesTabs active="summary" />
+      <NavTabs tabs={ACTIVITIES_TABS} />
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 12 }}>
         <div style={{ display: 'flex', gap: 16, alignItems: 'center', fontSize: 11, color: 'var(--apex-muted)' }}>

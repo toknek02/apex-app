@@ -3,7 +3,7 @@ import { requireUser, hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import { LeaveApprovalActions } from '@/components/staff/leave-approval-actions'
-import { LeaveTabs } from '@/components/staff/leave-tabs'
+import { NavTabs, LEAVE_TABS } from '@/components/staff/nav-tabs'
 
 function fmtDate(d: Date) {
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
@@ -93,7 +93,7 @@ export default async function LeavePage() {
         </Link>
       </div>
 
-      <LeaveTabs active="applications" />
+      <NavTabs tabs={LEAVE_TABS} />
 
       {showApprovalSection && (
         <>

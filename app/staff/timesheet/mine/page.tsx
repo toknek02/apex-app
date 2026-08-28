@@ -3,7 +3,7 @@ import { Lock } from 'lucide-react'
 import { requireUser } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
-import { TimesheetTabs } from '@/components/staff/timesheet-tabs'
+import { NavTabs, TIMESHEET_TABS } from '@/components/staff/nav-tabs'
 import { DeleteTimesheetEntryButton } from '@/components/staff/delete-timesheet-entry-button'
 import { isEntryLocked, TIMESHEET_EDIT_WINDOW_DAYS } from '@/lib/timesheet-lock'
 
@@ -54,7 +54,7 @@ export default async function MyTimesheetPage({
         My Timesheet — {monthLabel}
       </h1>
 
-      <TimesheetTabs active="mine" />
+      <NavTabs tabs={TIMESHEET_TABS} />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
         <Link href={`/staff/timesheet/mine?month=${prevKey}`} style={navBtn}>&lt; Prev Month</Link>

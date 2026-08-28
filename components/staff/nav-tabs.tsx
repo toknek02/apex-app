@@ -1,15 +1,29 @@
-import Link from 'next/link'
+'use client'
 
-const TABS = [
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+
+export const TIMESHEET_TABS = [
+  { href: '/staff/timesheet', label: 'Attendance' },
+  { href: '/staff/timesheet/mine', label: 'My Timesheet' },
+]
+
+export const LEAVE_TABS = [
   { href: '/staff/leave', label: 'Applications' },
   { href: '/staff/leave/calendar', label: 'Calendar' },
 ]
 
-export function LeaveTabs({ active }: { active: 'applications' | 'calendar' }) {
+export const ACTIVITIES_TABS = [
+  { href: '/staff/activities', label: 'Current' },
+  { href: '/staff/activities/summary', label: 'Summary' },
+]
+
+export function NavTabs({ tabs }: { tabs: { href: string; label: string }[] }) {
+  const pathname = usePathname()
   return (
     <div style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: '1px solid var(--apex-border)' }}>
-      {TABS.map((t, i) => {
-        const isActive = (active === 'applications' && i === 0) || (active === 'calendar' && i === 1)
+      {tabs.map((t) => {
+        const isActive = pathname === t.href
         return (
           <Link
             key={t.href}
