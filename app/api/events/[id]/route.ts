@@ -95,14 +95,36 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     })
   }
 
+  const editor = session.user.id
+  const when = event.date.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })
+  const where = event.venue ? `, ${event.venue.description}` : ''
+
   // Notify anyone added to the event by this edit (not already an attendee,
   // and not the person doing the editing).
-  const newlyAdded = attendees.filter((uid) => uid !== session.user.id && !prevAttendeeIds.has(uid))
+  const newlyAdded = attendees.filter((uid) => uid !== editor && !prevAttendeeIds.has(uid))
   if (newlyAdded.length > 0) {
     await notifyUsers(newlyAdded, {
       type: 'event.invited',
       title: 'Added to a LogBook event',
-      body: `"${title}" — ${event.date.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}${event.venue ? `, ${event.venue.description}` : ''}. Added by ${session.user.name}.`,
+      body: `"${title}" — ${when}${where}. Added by ${session.user.name}.`,
+      link: '/logbook',
+    })
+  }
+
+  // Notify existing attendees (still on the event, not the editor, and not
+  // among the newly-added — they already got the fuller "added" message) if
+  // the date, time, duration or venue changed.
+  const rescheduled =
+    existing.date.getTime() !== new Date(date).getTime() ||
+    (existing.durationMins ?? null) !== (durationMins ? Number(durationMins) : null) ||
+    existing.venueId !== (venueId || null) ||
+    existing.externalVenue !== (externalVenue || null)
+  const stillOn = attendees.filter((uid) => uid !== editor && prevAttendeeIds.has(uid))
+  if (rescheduled && stillOn.length > 0) {
+    await notifyUsers(stillOn, {
+      type: 'event.updated',
+      title: 'LogBook event updated',
+      body: `"${title}" — now ${when}${where}. Updated by ${session.user.name}.`,
       link: '/logbook',
     })
   }
@@ -122,7 +144,22 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const canDelete = isOwner || hasPermission(session.user, 'EDIT_ANY_EVENT')
   if (!canDelete) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
+  const attendeeIds = (
+    await prisma.eventAttendee.findMany({ where: { eventId: id }, select: { userId: true } })
+  ).map((a) => a.userId)
+
   await prisma.event.delete({ where: { id } })
+
+  const notifyIds = attendeeIds.filter((uid) => uid !== session.user.id)
+  if (notifyIds.length > 0) {
+    await notifyUsers(notifyIds, {
+      type: 'event.cancelled',
+      title: 'LogBook event cancelled',
+      body: `"${existing.title}" scheduled for ${existing.date.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })} has been cancelled by ${session.user.name}.`,
+      link: '/logbook',
+    })
+  }
+
   if (!isOwner) {
     await logAudit({
       actor: session.user,

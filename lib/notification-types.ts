@@ -32,6 +32,16 @@ export const NOTIFICATION_TYPES: { type: string; label: string; description: str
     label: 'Added to a LogBook event',
     description: 'Someone created or edited a LogBook event and listed you as an attendee.',
   },
+  {
+    type: 'event.updated',
+    label: 'LogBook event rescheduled',
+    description: 'The date, time or venue of a LogBook event you are attending changed.',
+  },
+  {
+    type: 'event.cancelled',
+    label: 'LogBook event cancelled',
+    description: 'A LogBook event you were attending was deleted.',
+  },
 ]
 
 export function notificationTypeLabel(type: string): string {
