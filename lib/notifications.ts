@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { sendMail, absoluteUrl } from '@/lib/email'
+import { sendMail, absoluteUrl, composeEmail } from '@/lib/email'
 
 type NotificationInput = {
   userId: string
@@ -47,11 +47,14 @@ export async function notifyUsers(userIds: string[], input: Omit<NotificationInp
   // open while a slow SMTP server works through a long recipient list.
   const emails = wanted.map((u) => u.email).filter((e): e is string => !!e)
   if (emails.length > 0) {
-    const linkLine = input.link ? `\n\n${absoluteUrl(input.link)}` : ''
-    void Promise.allSettled(
-      emails.map((to) =>
-        sendMail({ to, subject: input.title, text: `${input.body ?? input.title}${linkLine}` })
-      )
-    )
+    const { text, html } = composeEmail({
+      heading: input.title,
+      paragraphs: [input.body ?? input.title],
+      cta: input.link ? { label: 'Open in MAA-OA', url: absoluteUrl(input.link) } : undefined,
+      footNote:
+        'You are receiving this because of your role or involvement in MAA-OA. ' +
+        'You can turn off email for specific notification types from your Profile page.',
+    })
+    void Promise.allSettled(emails.map((to) => sendMail({ to, subject: input.title, text, html })))
   }
 }

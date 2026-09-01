@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'node:crypto'
 import { prisma } from '@/lib/prisma'
-import { isEmailConfigured, sendMail, absoluteUrl } from '@/lib/email'
+import { isEmailConfigured, sendMail, absoluteUrl, composeEmail } from '@/lib/email'
 
 const TOKEN_TTL_MS = 60 * 60 * 1000 // 1 hour
 
@@ -27,15 +27,19 @@ export async function POST(req: NextRequest) {
       where: { id: request.id },
       data: { tokenHash, tokenExpiresAt: new Date(Date.now() + TOKEN_TTL_MS) },
     })
-    await sendMail({
-      to: user.email,
-      subject: 'Reset your MAA-OA password',
-      text:
-        `A password reset was requested for your MAA-OA account.\n\n` +
-        `Open this link to set a new password (valid for 1 hour):\n` +
-        `${absoluteUrl(`/reset-password?token=${token}`)}\n\n` +
-        `If you didn't request this, ignore this email — your password won't change.`,
+    const { text, html } = composeEmail({
+      heading: 'Password reset request',
+      paragraphs: [
+        `Hello ${user.name},`,
+        `We received a request to reset the password for your MAA-OA account (${user.email}).`,
+        `To choose a new password, use the secure link below. For your security it expires in 1 hour and can be used only once.`,
+      ],
+      cta: { label: 'Reset your password', url: absoluteUrl(`/reset-password?token=${token}`) },
+      footNote:
+        `If you did not request this, no action is needed — your current password stays active. ` +
+        `If you keep receiving these emails unexpectedly, please contact your system administrator.`,
     })
+    await sendMail({ to: user.email, subject: 'Reset your MAA-OA password', text, html })
   }
 
   // Always respond the same way regardless of whether the email matched a
