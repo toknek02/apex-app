@@ -11,3 +11,10 @@ prisma/dev.db-journal
 storage/
 backups/
 scripts/service-logs/
+
+# Claude Code plugin cache — machine-local, ~5 MB of vendored skill data
+.claude/
+
+# Python bytecode (attendance-report tool)
+__pycache__/
+*.pyc
