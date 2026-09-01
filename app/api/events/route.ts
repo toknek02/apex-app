@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth'
 import { hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { findVenueConflicts, describeConflict } from '@/lib/venue-collision'
+import { notifyUsers } from '@/lib/notifications'
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -133,6 +134,23 @@ export async function POST(req: NextRequest) {
       })
     )
   )
+
+  // Tell attendees (other than whoever created it) they've been added. One
+  // notification per person even for a repeated event, not one per occurrence.
+  const inviteeIds = attendees.filter((uid) => uid !== session.user.id)
+  if (inviteeIds.length > 0) {
+    const first = events[0]
+    const when =
+      events.length > 1
+        ? `${events.length} dates from ${first.date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`
+        : first.date.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })
+    await notifyUsers(inviteeIds, {
+      type: 'event.invited',
+      title: 'Added to a LogBook event',
+      body: `"${title}" — ${when}${first.venue ? `, ${first.venue.description}` : ''}. Added by ${session.user.name}.`,
+      link: '/logbook',
+    })
+  }
 
   return NextResponse.json({ event: events[0], events, count: events.length }, { status: 201 })
 }

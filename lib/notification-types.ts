@@ -27,6 +27,11 @@ export const NOTIFICATION_TYPES: { type: string; label: string; description: str
     label: 'New announcement',
     description: 'A new company-wide or targeted announcement was posted.',
   },
+  {
+    type: 'event.invited',
+    label: 'Added to a LogBook event',
+    description: 'Someone created or edited a LogBook event and listed you as an attendee.',
+  },
 ]
 
 export function notificationTypeLabel(type: string): string {

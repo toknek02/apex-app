@@ -4,6 +4,7 @@ import { hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { findVenueConflicts, describeConflict } from '@/lib/venue-collision'
 import { logAudit } from '@/lib/audit'
+import { notifyUsers } from '@/lib/notifications'
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -54,6 +55,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
   }
 
+  const prevAttendeeIds = new Set(
+    (await prisma.eventAttendee.findMany({ where: { eventId: id }, select: { userId: true } })).map((a) => a.userId)
+  )
+
   await prisma.eventAttendee.deleteMany({ where: { eventId: id } })
 
   const event = await prisma.event.update({
@@ -87,6 +92,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       targetId: id,
       targetLabel: existing.title,
       metadata: { ownerId: existing.createdById },
+    })
+  }
+
+  // Notify anyone added to the event by this edit (not already an attendee,
+  // and not the person doing the editing).
+  const newlyAdded = attendees.filter((uid) => uid !== session.user.id && !prevAttendeeIds.has(uid))
+  if (newlyAdded.length > 0) {
+    await notifyUsers(newlyAdded, {
+      type: 'event.invited',
+      title: 'Added to a LogBook event',
+      body: `"${title}" — ${event.date.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}${event.venue ? `, ${event.venue.description}` : ''}. Added by ${session.user.name}.`,
+      link: '/logbook',
     })
   }
 
