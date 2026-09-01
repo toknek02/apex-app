@@ -3,7 +3,7 @@ import { requireUser } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import { ThemeSwitcher } from '@/components/layout/theme-switcher'
-import { getAnnualLeaveBalance, getMedicalLeaveBalance, type LeaveBalance } from '@/lib/leave-balance'
+import { getBothLeaveBalances, type LeaveBalance } from '@/lib/leave-balance'
 
 const rowStyle: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', padding: '9px 0', borderBottom: '1px solid var(--apex-border)', fontSize: 13 }
 const labelStyle: React.CSSProperties = { color: 'var(--apex-muted)' }
@@ -19,13 +19,12 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 
 export default async function ProfilePage() {
   const sessionUser = await requireUser()
-  const [user, annualBalance, medicalBalance] = await Promise.all([
+  const [user, { annual: annualBalance, medical: medicalBalance }] = await Promise.all([
     prisma.user.findUnique({
       where: { id: sessionUser.id },
       select: { name: true, username: true, email: true, department: true, designation: true, role: { select: { name: true } } },
     }),
-    getAnnualLeaveBalance(sessionUser.id),
-    getMedicalLeaveBalance(sessionUser.id),
+    getBothLeaveBalances(sessionUser.id),
   ])
 
   return (
@@ -53,7 +52,7 @@ export default async function ProfilePage() {
       </div>
 
       <LeaveBalanceCard title="Annual Leave" balance={annualBalance} unsetMessage="HR hasn't set an Annual Leave entitlement for you yet — applications aren't restricted in the meantime." exhaustedMessage="You're out of Annual Leave for this year — new applications must be Unpaid Annual Leave instead." />
-      <LeaveBalanceCard title="Medical Leave (MC)" balance={medicalBalance} unsetMessage="HR hasn't set a Medical Leave entitlement for you yet — applications aren't restricted in the meantime." exhaustedMessage="You're out of Medical Leave for this year." last />
+      <LeaveBalanceCard title="Medical Leave (MC)" balance={medicalBalance} unsetMessage="HR hasn't set a Medical Leave entitlement for you yet." exhaustedMessage="You've used your full Medical Leave (MC) entitlement for this year — any further MC is over the tracked allowance." last />
     </AppShell>
   )
 }
