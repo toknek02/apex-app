@@ -31,7 +31,7 @@ export async function buildLeaveCalendarWorkbook({
   monthLabel: string
 }): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook()
-  workbook.creator = 'APEX'
+  workbook.creator = 'MAA-OA'
   workbook.created = new Date()
 
   const sheet = workbook.addWorksheet(monthLabel.replace(/[\\/*?:[\]]/g, ''))

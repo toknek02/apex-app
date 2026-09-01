@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { Logo } from '@/components/logo'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -47,16 +48,19 @@ export default function ForgotPasswordPage() {
         }}
       >
         <div style={{ marginBottom: 24 }}>
-          <span
-            style={{
-              fontFamily: 'Sora, sans-serif',
-              fontWeight: 700,
-              fontSize: 26,
-              color: 'var(--apex-accent)',
-              letterSpacing: '-0.5px',
-            }}
-          >
-            APEX
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+            <Logo size={26} />
+            <span
+              style={{
+                fontFamily: 'Sora, sans-serif',
+                fontWeight: 700,
+                fontSize: 26,
+                color: 'var(--apex-text)',
+                letterSpacing: '-0.5px',
+              }}
+            >
+              MAA-OA
+            </span>
           </span>
           <p style={{ marginTop: 6, fontSize: 13, color: 'var(--apex-muted)' }}>Forgot your password?</p>
         </div>

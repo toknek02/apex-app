@@ -4,6 +4,7 @@ import { Suspense, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { signIn } from 'next-auth/react'
+import { Logo } from '@/components/logo'
 
 const LOGOUT_REASON_MESSAGES: Record<string, string> = {
   cutoff: 'You were automatically signed out at 6:30pm. Please sign in again.',
@@ -68,9 +69,9 @@ function LoginForm() {
           boxShadow: 'var(--apex-shadow-pop)',
         }}
       >
-        <div style={{ marginBottom: 26, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ width: 10, height: 10, borderRadius: 3, background: 'var(--apex-accent)' }} />
-          <div>
+        <div style={{ marginBottom: 26 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Logo size={28} />
             <span
               style={{
                 fontFamily: 'var(--apex-font-display)',
@@ -80,10 +81,10 @@ function LoginForm() {
                 letterSpacing: '-0.02em',
               }}
             >
-              APEX
+              MAA-OA
             </span>
-            <p style={{ margin: '2px 0 0', fontSize: 13, color: 'var(--apex-muted)' }}>Sign in to your account</p>
           </div>
+          <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--apex-muted)' }}>Sign in to your account</p>
         </div>
 
         {notice && (
