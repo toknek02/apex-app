@@ -8,8 +8,8 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'sw
 const sora = Sora({ subsets: ['latin'], weight: ['600', '700'], variable: '--font-sora', display: 'swap' })
 
 export const metadata: Metadata = {
-  title: 'APEX',
-  description: 'APEX staff, logbook, and project management system',
+  title: 'MAA-OA',
+  description: 'Arkitek MAA — MAA-OA staff, logbook, and project management system',
 }
 
 // Runs before first paint so the theme is applied without a flash. No attribute

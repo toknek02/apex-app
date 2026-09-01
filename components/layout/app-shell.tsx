@@ -9,6 +9,7 @@ import type { PermissionCode } from '@/lib/permissions'
 import { SignInStatusPill } from '@/components/layout/sign-in-status-pill'
 import { NotificationBell } from '@/components/layout/notification-bell'
 import { useNotifications } from '@/lib/hooks/use-notifications'
+import { Logo } from '@/components/logo'
 
 type NavUser = {
   name: string
@@ -177,7 +178,7 @@ function Header({
           </button>
         )}
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
-          <span style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--apex-accent)' }} />
+          <Logo size={22} />
           <span
             style={{
               fontFamily: 'var(--apex-font-display)',
@@ -187,14 +188,14 @@ function Header({
               letterSpacing: '-0.02em',
             }}
           >
-            APEX
+            MAA-OA
           </span>
         </Link>
         {!isMobile && (
           <>
             <span style={{ color: 'var(--apex-border-strong)' }}>/</span>
             <span style={{ color: 'var(--apex-muted)', fontSize: 13, fontWeight: 500 }}>
-              {SECTION_TITLES[pathname] ?? 'APEX'}
+              {SECTION_TITLES[pathname] ?? 'MAA-OA'}
             </span>
           </>
         )}
@@ -241,7 +242,7 @@ function Header({
         </Link>
         <button
           onClick={async () => {
-            if (!confirm('Sign out of APEX?')) return
+            if (!confirm('Sign out of MAA-OA?')) return
             // Skip next-auth's server-computed redirect URL: with the dev server bound to
             // 0.0.0.0, that can echo back the bind address itself instead of the browser's
             // actual origin. A plain relative navigation always resolves correctly.
@@ -408,7 +409,7 @@ function Sidebar({
 export function Breadcrumb({ items }: { items: string[] }) {
   return (
     <div style={{ fontSize: 12, color: 'var(--apex-muted)', marginBottom: 16 }}>
-      {['APEX', ...items].join('  /  ')}
+      {['MAA-OA', ...items].join('  /  ')}
     </div>
   )
 }

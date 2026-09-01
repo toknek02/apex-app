@@ -30,7 +30,7 @@ export async function buildTimesheetWorkbook({
   teamScope: boolean
 }): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook()
-  workbook.creator = 'APEX'
+  workbook.creator = 'MAA-OA'
   workbook.created = new Date()
 
   const sheet = workbook.addWorksheet('Timesheet Entries')
