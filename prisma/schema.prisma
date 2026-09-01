@@ -411,13 +411,35 @@ model PasswordResetRequest {
   id             String    @id @default(cuid())
   email          String
   userId         String?
+  // pending | resolved | dismissed | self_served. "self_served" means the
+  // user completed the reset themselves via an emailed link (only possible
+  // when SMTP is configured); the HR queue treats it the same as resolved.
   status         String    @default("pending")
+  // SHA-256 of the single-use reset token — the raw token only ever exists
+  // in the emailed link. Null once used, expired-and-cleared, or when the
+  // request was filed with email delivery unavailable (HR-queue-only path).
+  tokenHash      String?   @unique
+  tokenExpiresAt DateTime?
   createdAt      DateTime  @default(now())
   resolvedAt     DateTime?
   resolvedById   String?
   resolvedByName String?
 
   @@index([status, createdAt])
+}
+
+// One row per year that has had its unused Annual Leave rolled forward into
+// each active staff member's brought-forward balance. fromYear is unique so
+// the rollover can't be applied twice for the same year — re-running would
+// double-count, since it reads the brought-forward it already updated.
+model LeaveRollover {
+  id            String   @id @default(cuid())
+  fromYear      Int      @unique
+  capDays       Float?
+  affectedCount Int
+  appliedById   String
+  appliedByName String
+  appliedAt     DateTime @default(now())
 }
 
 model TimesheetEntry {

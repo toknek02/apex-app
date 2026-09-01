@@ -63,7 +63,7 @@ export default function ForgotPasswordPage() {
 
         {submitted ? (
           <div style={{ fontSize: 13, lineHeight: 1.6 }}>
-            <p>If that email is on file, an administrator has been notified and will reset your password directly.</p>
+            <p>If that email is on file, you&apos;ll receive a reset link shortly. If email delivery isn&apos;t set up, an administrator has been notified and will reset your password directly.</p>
             <p style={{ marginTop: 12 }}>
               <Link href="/login" style={{ color: 'var(--apex-accent)', fontWeight: 600, textDecoration: 'none' }}>
                 Back to Sign In
@@ -73,7 +73,7 @@ export default function ForgotPasswordPage() {
         ) : (
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <p style={{ fontSize: 13, color: 'var(--apex-muted)' }}>
-              Enter your account email. An administrator will be notified and will reset your password for you.
+              Enter your account email and we&apos;ll send you a link to reset your password. If email isn&apos;t configured, an administrator will be notified to reset it for you.
             </p>
             <div>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 5 }}>Email</label>
@@ -111,7 +111,7 @@ export default function ForgotPasswordPage() {
                 opacity: loading ? 0.6 : 1,
               }}
             >
-              {loading ? 'Submitting…' : 'Notify an Admin'}
+              {loading ? 'Submitting…' : 'Send Reset Link'}
             </button>
             <p style={{ fontSize: 12, textAlign: 'center' }}>
               <Link href="/login" style={{ color: 'var(--apex-accent)', textDecoration: 'none', fontWeight: 600 }}>
