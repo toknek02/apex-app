@@ -18,3 +18,7 @@ scripts/service-logs/
 # Python bytecode (attendance-report tool)
 __pycache__/
 *.pyc
+
+# Local launchers and real staff data (attendance-report tool)
+attendance-report/*.bat
+attendance-report/employees.csv
