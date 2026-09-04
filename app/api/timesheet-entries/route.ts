@@ -160,12 +160,15 @@ export async function POST(request: Request) {
     normalizedOtMins = 0
   }
 
+  // Anyone may log time against any active project; only the project itself is
+  // validated (an unknown id would otherwise fail as a foreign-key 500).
   if (projectId) {
-    const membership = await prisma.projectMember.findUnique({
-      where: { projectId_userId: { projectId, userId: session.user.id } },
-    })
-    if (!membership) {
-      return NextResponse.json({ error: 'You are not assigned to this project' }, { status: 403 })
+    const project = await prisma.project.findUnique({ where: { id: projectId }, select: { status: true } })
+    if (!project) {
+      return NextResponse.json({ error: 'That project no longer exists' }, { status: 400 })
+    }
+    if (project.status !== 'Active') {
+      return NextResponse.json({ error: 'That project is not active' }, { status: 400 })
     }
   }
 

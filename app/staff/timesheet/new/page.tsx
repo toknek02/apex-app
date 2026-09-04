@@ -7,7 +7,10 @@ export default async function NewTimesheetEntryPage() {
   const user = await requireUser()
   const [projects, dbUser] = await Promise.all([
     prisma.project.findMany({
-      where: { status: 'Active', members: { some: { userId: user.id } } },
+      // Any active project, not just ones the user is a member of — with 591
+      // active jobs, keeping team lists current just to unblock timesheets was
+      // more admin work than the restriction was worth.
+      where: { status: 'Active' },
       orderBy: { code: 'asc' },
     }),
     prisma.user.findUnique({ where: { id: user.id }, select: { otEligible: true } }),
