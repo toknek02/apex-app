@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
+import { announcementVisibleTo } from '@/lib/announcement-visibility'
 import { saveAnnouncementFile, ALLOWED_ATTACHMENT_EXTENSIONS, MAX_ATTACHMENT_BYTES } from '@/lib/announcement-storage'
 import { logAudit } from '@/lib/audit'
 import { notifyUsers } from '@/lib/notifications'
@@ -10,12 +11,9 @@ export async function GET() {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  // No recipients on an announcement means company-wide; otherwise only its
-  // recipients can see it — except managers, who see everything for
-  // oversight/editing.
   const canManage = hasPermission(session.user, 'MANAGE_ANNOUNCEMENTS')
   const announcements = await prisma.announcement.findMany({
-    where: canManage ? {} : { OR: [{ recipients: { none: {} } }, { recipients: { some: { userId: session.user.id } } }] },
+    where: announcementVisibleTo(session.user, canManage),
     include: { attachments: true, createdBy: { select: { name: true } } },
     orderBy: { createdAt: 'desc' },
   })

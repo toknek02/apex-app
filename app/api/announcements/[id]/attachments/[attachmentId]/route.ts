@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs/promises'
 import { auth } from '@/lib/auth'
+import { hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
+import { announcementVisibleTo } from '@/lib/announcement-visibility'
 import { getAnnouncementFilePath } from '@/lib/announcement-storage'
 
 const MIME_TYPES: Record<string, string> = {
@@ -21,6 +23,18 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id, attachmentId } = await params
+  // Scope the lookup by what this person is allowed to see, so an attachment
+  // on an announcement they aren't a recipient of is indistinguishable from
+  // one that doesn't exist.
+  const announcement = await prisma.announcement.findFirst({
+    where: {
+      id,
+      ...announcementVisibleTo(session.user, hasPermission(session.user, 'MANAGE_ANNOUNCEMENTS')),
+    },
+    select: { id: true },
+  })
+  if (!announcement) return NextResponse.json({ error: 'Attachment not found' }, { status: 404 })
+
   const attachment = await prisma.announcementAttachment.findFirst({
     where: { id: attachmentId, announcementId: id },
   })

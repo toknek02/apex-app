@@ -31,30 +31,12 @@ export async function GET(request: Request) {
     return NextResponse.json({ applications })
   }
 
-  if (scope === 'pending-approval') {
-    // "Approval authority" isn't a permission — it's whoever is set as a
-    // group's architect (stage 1) or director (stage 2). The same person
-    // can hold either role for different groups, so both are checked.
-    const [architectedGroups, directedGroups] = await Promise.all([
-      prisma.leaveGroup.findMany({ where: { architectId: session.user.id }, select: { id: true } }),
-      prisma.leaveGroup.findMany({ where: { directorId: session.user.id }, select: { id: true } }),
-    ])
-    const architectGroupIds = architectedGroups.map((g) => g.id)
-    const directorGroupIds = directedGroups.map((g) => g.id)
-    if (architectGroupIds.length === 0 && directorGroupIds.length === 0) return NextResponse.json({ applications: [] })
-
-    const applications = await prisma.leaveApplication.findMany({
-      where: {
-        OR: [
-          ...(architectGroupIds.length > 0 ? [{ status: 'PENDING_ARCHITECT', leaveGroupId: { in: architectGroupIds } }] : []),
-          ...(directorGroupIds.length > 0 ? [{ status: 'PENDING_DIRECTOR', leaveGroupId: { in: directorGroupIds } }] : []),
-        ],
-      },
-      include: { user: { select: { id: true, name: true, department: true } }, project: { select: { id: true, code: true, shortName: true } } },
-      orderBy: { createdAt: 'asc' },
-    })
-    return NextResponse.json({ applications })
-  }
+  // A scope=pending-approval branch used to live here with its own copy of the
+  // approval rules. It had no callers and had already drifted out of step with
+  // the real authority check (it was missing the MANAGE_LEAVE_GROUPS override
+  // entirely), so it was removed rather than maintained as a fourth copy — see
+  // pendingApprovalScope() in lib/leave-approval.ts, which the Leave page and
+  // Dashboard badge both use.
 
   if (scope === 'all') {
     if (!hasPermission(session.user, 'RECEIVE_HR_LEAVE_NOTIFICATIONS')) {
