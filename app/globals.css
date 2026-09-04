@@ -169,6 +169,19 @@ a:hover {
   text-decoration: underline;
 }
 
+/* The dropdown list of a <select> is drawn by the browser, not the page, so it
+   doesn't pick up the surrounding theme — it inherited only the light text
+   colour and rendered it on its own white background, leaving options barely
+   readable in dark mode. Pinning BOTH colours here (rather than just the text)
+   is what guarantees the pairing can never mismatch, whichever background the
+   browser would have chosen. Applies to every select in the app, including the
+   ones still styled inline. */
+select,
+option {
+  background-color: var(--apex-surface);
+  color: var(--apex-text);
+}
+
 :focus-visible {
   outline: 2px solid var(--apex-accent);
   outline-offset: 2px;
