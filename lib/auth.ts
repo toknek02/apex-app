@@ -57,8 +57,27 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // elsewhere, that login overwrote activeSessionId, so this token's sessionId
       // no longer matches — end this session.
       if (typeof token.id === 'string') {
-        const current = await prisma.user.findUnique({ where: { id: token.id }, select: { activeSessionId: true } })
+        const current = await prisma.user.findUnique({
+          where: { id: token.id },
+          select: {
+            activeSessionId: true,
+            roleId: true,
+            department: true,
+            role: { select: { name: true, rolePermissions: { select: { permission: { select: { code: true } } } } } },
+          },
+        })
         if (!current || current.activeSessionId !== token.sessionId) return null
+
+        // Re-read role and permissions on every request rather than trusting
+        // what was baked into the token at sign-in. Otherwise granting a
+        // permission does nothing until that person happens to log out and
+        // back in — and, worse, revoking one leaves it working for the rest
+        // of their session. The session lookup above already costs a query,
+        // so this rides along on it.
+        token.roleId = current.roleId
+        token.roleName = current.role.name
+        token.permissions = current.role.rolePermissions.map((rp) => rp.permission.code)
+        token.department = current.department ?? null
 
         const iatMs = typeof token.iat === 'number' ? token.iat * 1000 : 0
         if (iatMs < lastSixThirtyCutoff()) {

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import { LeaveApprovalActions } from '@/components/staff/leave-approval-actions'
 import { NavTabs, LEAVE_TABS } from '@/components/staff/nav-tabs'
+import { pendingApprovalScope } from '@/lib/leave-approval'
 
 function fmtDate(d: Date) {
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
@@ -43,33 +44,17 @@ export default async function LeavePage() {
 
   const projectSelect = { project: { select: { code: true, shortName: true } } } as const
 
-  const [myApplications, architectedGroups, directedGroups] = await Promise.all([
+  const [myApplications, approvalScope] = await Promise.all([
     prisma.leaveApplication.findMany({ where: { userId: user.id }, include: projectSelect, orderBy: { createdAt: 'desc' } }),
-    prisma.leaveGroup.findMany({ where: { architectId: user.id }, select: { id: true, name: true } }),
-    prisma.leaveGroup.findMany({ where: { directorId: user.id }, select: { id: true, name: true } }),
+    pendingApprovalScope(user),
   ])
 
-  const architectGroupIds = architectedGroups.map((g) => g.id)
-  const directorGroupIds = directedGroups.map((g) => g.id)
-  const isArchitect = architectGroupIds.length > 0
-  const isDirector = directorGroupIds.length > 0
-  // MANAGE_LEAVE_GROUPS is the approval override for groups whose director
-  // is unavailable — extend that same override to applications from
-  // ungrouped staff, which otherwise have no director to route to and
-  // would sit pending forever with no one able to act on them.
-  const canApproveOrphaned = hasPermission(user, 'MANAGE_LEAVE_GROUPS')
-  const showApprovalSection = isArchitect || isDirector || canApproveOrphaned
+  const showApprovalSection = approvalScope.hasAuthority
 
   const [pendingForApproval, hrApplications] = await Promise.all([
-    showApprovalSection
+    approvalScope.where
       ? prisma.leaveApplication.findMany({
-          where: {
-            OR: [
-              ...(isArchitect ? [{ status: 'PENDING_ARCHITECT', leaveGroupId: { in: architectGroupIds } }] : []),
-              ...(isDirector ? [{ status: 'PENDING_DIRECTOR', leaveGroupId: { in: directorGroupIds } }] : []),
-              ...(canApproveOrphaned ? [{ status: { in: ['PENDING_ARCHITECT', 'PENDING_DIRECTOR'] }, leaveGroupId: null }] : []),
-            ],
-          },
+          where: approvalScope.where,
           include: { user: { select: { id: true, name: true, department: true } }, ...projectSelect },
           orderBy: { createdAt: 'asc' },
         })
