@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import { DeleteEventButton } from '@/components/logbook/delete-event-button'
 import { EventDetailsModal } from '@/components/logbook/event-details-modal'
+import { formatAttendees } from '@/lib/event-attendees'
 
 function startOfWeek(d: Date) {
   const x = new Date(d)
@@ -179,7 +180,7 @@ export default async function LogbookPage({
                           }}
                           trigger={
                             <span style={{ cursor: 'pointer' }}>
-                              {e.attendees.map((a) => a.user.name).join(', ')}
+                              {formatAttendees(e.attendees.map((a) => a.user.name))}
                               {e.attendees.length > 0 ? ': ' : ''}
                               {e.title}
                             </span>

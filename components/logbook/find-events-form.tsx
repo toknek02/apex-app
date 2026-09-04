@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { formatAttendees } from '@/lib/event-attendees'
 
 type Staff = { id: string; name: string }
 type Venue = { id: string; description: string }
@@ -149,7 +150,7 @@ export function FindEventsForm({ staff, venues, projects }: { staff: Staff[]; ve
                   <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }}>{d.toLocaleDateString('en-GB')}</td>
                   <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }}>{d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}</td>
                   <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }}>
-                    {e.attendees.map((a) => a.user.name).join(', ')}
+                    {formatAttendees(e.attendees.map((a) => a.user.name))}
                     {e.attendees.length > 0 ? ': ' : ''}
                     {e.title}
                   </td>

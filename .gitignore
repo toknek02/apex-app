@@ -14,11 +14,3 @@ scripts/service-logs/
 
 # Claude Code plugin cache — machine-local, ~5 MB of vendored skill data
 .claude/
-
-# Python bytecode (attendance-report tool)
-__pycache__/
-*.pyc
-
-# Local launchers and real staff data (attendance-report tool)
-attendance-report/*.bat
-attendance-report/employees.csv

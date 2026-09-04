@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { AppShell } from '@/components/layout/app-shell'
 import { getAnnualLeaveBalance } from '@/lib/leave-balance'
 import { getPendingApprovalCount } from '@/lib/leave-approval'
+import { formatAttendees } from '@/lib/event-attendees'
 
 function startOfDay(d: Date) {
   const x = new Date(d)
@@ -197,7 +198,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                       </td>
                       <td>
                         {e.attendees.length > 0 && (
-                          <span style={{ color: 'var(--apex-muted)' }}>{e.attendees.map((a) => a.user.name).join(', ')}: </span>
+                          <span style={{ color: 'var(--apex-muted)' }}>{formatAttendees(e.attendees.map((a) => a.user.name))}: </span>
                         )}
                         {e.title}
                       </td>
