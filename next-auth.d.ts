@@ -8,6 +8,7 @@ declare module 'next-auth' {
       roleName: string
       permissions: string[]
       department: string | null
+      mustCompleteSetup: boolean
     } & DefaultSession['user']
   }
 
@@ -17,6 +18,7 @@ declare module 'next-auth' {
     permissions: string[]
     department?: string | null
     sessionId?: string
+    mustCompleteSetup?: boolean
   }
 }
 
@@ -28,5 +30,6 @@ declare module 'next-auth/jwt' {
     permissions: string[]
     department?: string | null
     sessionId?: string
+    mustCompleteSetup?: boolean
   }
 }

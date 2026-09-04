@@ -49,6 +49,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.roleName = user.roleName
         token.permissions = user.permissions
         token.department = user.department ?? null
+        token.mustCompleteSetup = user.mustCompleteSetup ?? false
         token.sessionId = user.sessionId
         return token
       }
@@ -63,6 +64,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             activeSessionId: true,
             roleId: true,
             department: true,
+            mustCompleteSetup: true,
             role: { select: { name: true, rolePermissions: { select: { permission: { select: { code: true } } } } } },
           },
         })
@@ -78,6 +80,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.roleName = current.role.name
         token.permissions = current.role.rolePermissions.map((rp) => rp.permission.code)
         token.department = current.department ?? null
+        token.mustCompleteSetup = current.mustCompleteSetup
 
         const iatMs = typeof token.iat === 'number' ? token.iat * 1000 : 0
         if (iatMs < lastSixThirtyCutoff()) {
@@ -100,6 +103,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.roleName = typeof token.roleName === 'string' ? token.roleName : ''
         session.user.permissions = Array.isArray(token.permissions) ? (token.permissions as string[]) : []
         session.user.department = typeof token.department === 'string' ? token.department : null
+        session.user.mustCompleteSetup = token.mustCompleteSetup === true
       }
       return session
     },
@@ -155,6 +159,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           roleName: user.role.name,
           permissions: user.role.rolePermissions.map((rp) => rp.permission.code),
           department: user.department,
+          mustCompleteSetup: user.mustCompleteSetup,
           sessionId,
         }
       },

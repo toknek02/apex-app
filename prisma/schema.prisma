@@ -22,6 +22,12 @@ model User {
   designation     String?
   isActive        Boolean  @default(true)
   activeSessionId String?
+  // New accounts are created with a temporary password chosen by HR (the bulk
+  // upload gives everyone the same one), so on first sign-in the user is sent
+  // to /setup to pick their own password and, optionally, bind an email for
+  // self-service resets. Defaults true so every account HR creates goes
+  // through it; cleared once they've set their own password.
+  mustCompleteSetup Boolean @default(true)
   // Monthly basic salary — the single source of truth for pay. Hourly rate
   // (÷26 working days ÷8 hours) and daily rate (÷26) are always derived from
   // this rather than entered separately, so normal pay and every OT formula

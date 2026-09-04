@@ -134,7 +134,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ...(designation !== undefined ? { designation: designation || null } : {}),
       ...(roleId !== undefined ? { roleId } : {}),
       ...(isActive !== undefined ? { isActive: Boolean(isActive) } : {}),
-      ...(password ? { passwordHash: await bcrypt.hash(password, 10) } : {}),
+      // An admin-set password is a temporary one, so the user is sent back
+      // through /setup to choose their own. Self-service resets (see
+      // /api/reset-password) are the user's own choice and don't do this.
+      ...(password ? { passwordHash: await bcrypt.hash(password, 10), mustCompleteSetup: true } : {}),
       ...(parsedBasicSalary ? { basicSalary: parsedBasicSalary.rate } : {}),
       ...(otEligible !== undefined ? { otEligible: Boolean(otEligible) } : {}),
       ...(parsedEntitlement ? { annualLeaveEntitlement: parsedEntitlement.rate } : {}),
