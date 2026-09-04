@@ -1,5 +1,9 @@
 import { prisma } from '@/lib/prisma'
-import { enumerateDaysInclusive } from '@/lib/date-utils'
+import { daysForApplication } from '@/lib/date-utils'
+
+// Re-exported so existing callers (and the balance tests) keep importing it
+// from here, while the client-side form can reach it without pulling in Prisma.
+export { daysForApplication }
 
 const ANNUAL_LEAVE_TYPE = 'Annual Leave'
 const MEDICAL_LEAVE_TYPE = 'Medical Leave (MC)'
@@ -9,10 +13,6 @@ const MEDICAL_LEAVE_TYPE = 'Medical Leave (MC)'
 // one "used" any balance until the director signed off.
 const BALANCE_HOLDING_STATUSES = ['PENDING_ARCHITECT', 'PENDING_DIRECTOR', 'APPROVED']
 
-export function daysForApplication(a: { startDate: Date; endDate: Date; dayPortion: string }): number {
-  if (a.dayPortion === 'AM' || a.dayPortion === 'PM') return 0.5
-  return enumerateDaysInclusive(a.startDate, a.endDate).length
-}
 
 export type LeaveBalance = {
   year: number

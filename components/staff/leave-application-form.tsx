@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { LEAVE_EVENT_TYPES, HALF_DAY_ELIGIBLE_LEAVE_TYPES } from '@/lib/timesheet-event-types'
+import { parseLocalDate, daysForApplication } from '@/lib/date-utils'
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
@@ -74,6 +75,22 @@ export function LeaveApplicationForm({
   const [errors, setErrors] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState<Submitted | null>(null)
+
+  // Warn as soon as the dates picked exceed the balance, using the same count
+  // the server enforces — otherwise someone with 2 days left fills in a
+  // 5-day request and only finds out it's refused after submitting.
+  const parsedStart = parseLocalDate(startDate)
+  const parsedEnd = parseLocalDate(endDate)
+  const requestedDays =
+    parsedStart && parsedEnd && parsedEnd.getTime() >= parsedStart.getTime()
+      ? daysForApplication({
+          startDate: parsedStart,
+          endDate: parsedEnd,
+          dayPortion: dayLength === 'HALF' ? halfPortion : 'FULL',
+        })
+      : 0
+  const overAnnualBalance =
+    leaveType === 'Annual Leave' && annualLeaveRemaining !== null && requestedDays > annualLeaveRemaining
 
   const halfDayEligible = HALF_DAY_ELIGIBLE_LEAVE_TYPES.includes(leaveType)
   const dayPortion = dayLength === 'HALF' && halfDayEligible ? halfPortion : 'FULL'
@@ -226,13 +243,15 @@ export function LeaveApplicationForm({
             style={{
               fontSize: 11,
               marginTop: 5,
-              color: annualLeaveRemaining <= 0 ? 'var(--apex-red)' : 'var(--apex-muted)',
-              fontWeight: annualLeaveRemaining <= 0 ? 600 : 400,
+              color: overAnnualBalance ? 'var(--apex-red)' : 'var(--apex-muted)',
+              fontWeight: overAnnualBalance ? 600 : 400,
             }}
           >
             {annualLeaveRemaining <= 0
               ? `You have ${annualLeaveRemaining} Annual Leave day(s) left this year — apply Unpaid Annual Leave instead.`
-              : `${annualLeaveRemaining} day(s) of Annual Leave left this year.`}
+              : overAnnualBalance
+                ? `These dates are ${requestedDays} day(s) but you only have ${annualLeaveRemaining} left — apply Unpaid Annual Leave for the rest.`
+                : `${annualLeaveRemaining} day(s) of Annual Leave left this year.`}
           </div>
         )}
       </div>

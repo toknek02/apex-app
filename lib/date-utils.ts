@@ -21,3 +21,12 @@ export function enumerateDaysInclusive(start: Date, end: Date): Date[] {
   }
   return days
 }
+
+// How many days of balance an application consumes. Lives here rather than in
+// lib/leave-balance.ts so the application form (a client component) can warn
+// against the same number the server enforces — leave-balance.ts pulls in
+// Prisma and can't be imported from the browser.
+export function daysForApplication(a: { startDate: Date; endDate: Date; dayPortion: string }): number {
+  if (a.dayPortion === 'AM' || a.dayPortion === 'PM') return 0.5
+  return enumerateDaysInclusive(a.startDate, a.endDate).length
+}
