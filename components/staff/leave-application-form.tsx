@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { LEAVE_EVENT_TYPES, HALF_DAY_ELIGIBLE_LEAVE_TYPES } from '@/lib/timesheet-event-types'
-import { parseLocalDate, daysForApplication } from '@/lib/date-utils'
+import { parseLocalDate } from '@/lib/date-utils'
+import { planLeaveSplit } from '@/lib/leave-split'
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
@@ -48,6 +49,8 @@ type Submitted = {
   groupLabel: string | null
   status: string
   warning: string | null
+  // More than one when the request was split into paid + unpaid halves.
+  segments: { leaveType: string; startDate: string; endDate: string }[]
 }
 
 export function LeaveApplicationForm({
@@ -76,21 +79,24 @@ export function LeaveApplicationForm({
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState<Submitted | null>(null)
 
-  // Warn as soon as the dates picked exceed the balance, using the same count
-  // the server enforces — otherwise someone with 2 days left fills in a
-  // 5-day request and only finds out it's refused after submitting.
+  // Preview the shortfall using the exact function the server decides with, so
+  // what's shown here can't disagree with what actually happens on submit.
   const parsedStart = parseLocalDate(startDate)
   const parsedEnd = parseLocalDate(endDate)
-  const requestedDays =
-    parsedStart && parsedEnd && parsedEnd.getTime() >= parsedStart.getTime()
-      ? daysForApplication({
+  const plan =
+    leaveType === 'Annual Leave' && parsedStart && parsedEnd && parsedEnd.getTime() >= parsedStart.getTime()
+      ? planLeaveSplit({
           startDate: parsedStart,
           endDate: parsedEnd,
           dayPortion: dayLength === 'HALF' ? halfPortion : 'FULL',
+          remaining: annualLeaveRemaining,
         })
-      : 0
-  const overAnnualBalance =
-    leaveType === 'Annual Leave' && annualLeaveRemaining !== null && requestedDays > annualLeaveRemaining
+      : null
+  const requestedDays = plan?.requestedDays ?? 0
+  const overAnnualBalance = plan !== null && plan.kind !== 'single'
+  const canSplit = plan?.kind === 'splittable'
+  const paidDays = plan?.kind === 'splittable' ? plan.paidDays : 0
+  const unpaidDays = plan?.kind === 'splittable' ? plan.unpaidDays : 0
 
   const halfDayEligible = HALF_DAY_ELIGIBLE_LEAVE_TYPES.includes(leaveType)
   const dayPortion = dayLength === 'HALF' && halfDayEligible ? halfPortion : 'FULL'
@@ -124,7 +130,7 @@ export function LeaveApplicationForm({
     const res = await fetch('/api/leave-applications', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ leaveType, startDate, endDate, reason, dayPortion, projectId: projectId || null, leaveGroupId: leaveGroupId || null }),
+      body: JSON.stringify({ leaveType, startDate, endDate, reason, dayPortion, projectId: projectId || null, leaveGroupId: leaveGroupId || null, splitUnpaid: canSplit }),
     })
     setSubmitting(false)
     if (res.ok) {
@@ -141,6 +147,13 @@ export function LeaveApplicationForm({
         groupLabel: group?.name ?? null,
         status: data.application.status,
         warning: data.warning ?? null,
+        segments: (data.applications ?? [data.application]).map(
+          (a: { leaveType: string; startDate: string; endDate: string }) => ({
+            leaveType: a.leaveType,
+            startDate: a.startDate.slice(0, 10),
+            endDate: a.endDate.slice(0, 10),
+          })
+        ),
       })
       router.refresh()
     } else {
@@ -179,8 +192,26 @@ export function LeaveApplicationForm({
           </div>
         )}
 
-        <DetailRow label="Leave Type" value={submitted.leaveType} />
-        <DetailRow label="Dates" value={isHalfDay ? `${dateLabel} (${submitted.dayPortion} half-day)` : dateLabel} />
+        {submitted.segments.length > 1 ? (
+          <>
+            <div style={{ marginBottom: 12, padding: '10px 14px', borderRadius: 6, backgroundColor: 'var(--apex-accent-lt)', color: 'var(--apex-accent)', fontSize: 12 }}>
+              Your Annual Leave balance didn&apos;t cover these dates, so this was submitted as{' '}
+              {submitted.segments.length} separate applications — each needs its own approval.
+            </div>
+            {submitted.segments.map((s) => (
+              <DetailRow
+                key={`${s.leaveType}-${s.startDate}`}
+                label={s.leaveType}
+                value={s.startDate === s.endDate ? fmtDate(s.startDate) : `${fmtDate(s.startDate)} – ${fmtDate(s.endDate)}`}
+              />
+            ))}
+          </>
+        ) : (
+          <>
+            <DetailRow label="Leave Type" value={submitted.leaveType} />
+            <DetailRow label="Dates" value={isHalfDay ? `${dateLabel} (${submitted.dayPortion} half-day)` : dateLabel} />
+          </>
+        )}
         {submitted.projectLabel && <DetailRow label="Project" value={submitted.projectLabel} />}
         {submitted.reason && <DetailRow label="Reason" value={submitted.reason} />}
         <DetailRow label="Routed To" value={submitted.groupLabel ?? 'HR (no group assigned)'} />
@@ -249,9 +280,11 @@ export function LeaveApplicationForm({
           >
             {annualLeaveRemaining <= 0
               ? `You have ${annualLeaveRemaining} Annual Leave day(s) left this year — apply Unpaid Annual Leave instead.`
-              : overAnnualBalance
-                ? `These dates are ${requestedDays} day(s) but you only have ${annualLeaveRemaining} left — apply Unpaid Annual Leave for the rest.`
-                : `${annualLeaveRemaining} day(s) of Annual Leave left this year.`}
+              : canSplit
+                ? `These dates are ${requestedDays} day(s) but you only have ${annualLeaveRemaining} left. This will be submitted as ${paidDays} day(s) Annual Leave + ${unpaidDays} day(s) Unpaid Annual Leave.`
+                : overAnnualBalance
+                  ? `These dates are ${requestedDays} day(s) but you only have ${annualLeaveRemaining} left — apply Unpaid Annual Leave for the rest.`
+                  : `${annualLeaveRemaining} day(s) of Annual Leave left this year.`}
           </div>
         )}
       </div>

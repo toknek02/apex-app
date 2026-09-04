@@ -6,6 +6,7 @@ import { notifyUsers } from '@/lib/notifications'
 import { LEAVE_EVENT_TYPES, HALF_DAY_ELIGIBLE_LEAVE_TYPES } from '@/lib/timesheet-event-types'
 import { parseLocalDate } from '@/lib/date-utils'
 import { daysForApplication, getAnnualLeaveBalance } from '@/lib/leave-balance'
+import { planLeaveSplit, buildSplitSegments } from '@/lib/leave-split'
 
 async function getHrRecipientIds(excludeUserId?: string) {
   const hrUsers = await prisma.user.findMany({
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { leaveType, startDate, endDate, reason, dayPortion, projectId, leaveGroupId } = await req.json()
+  const { leaveType, startDate, endDate, reason, dayPortion, projectId, leaveGroupId, splitUnpaid } = await req.json()
 
   if (!leaveType || !LEAVE_EVENT_TYPES.includes(leaveType)) {
     return NextResponse.json({ error: 'Invalid leave type' }, { status: 400 })
@@ -106,11 +107,20 @@ export async function POST(req: NextRequest) {
   // applicant has to use Unpaid Annual Leave instead — this only applies to
   // the paid type, and only once HR has actually set an entitlement (a null
   // entitlement means "not configured yet", not "zero days allowed").
+  // Normally one application is created. When the request runs past the
+  // Annual Leave balance and the applicant has opted into splitting, it
+  // becomes two adjacent applications — the paid days first, the remainder as
+  // Unpaid. They don't overlap, so the guard above still holds for both.
+  type Segment = { leaveType: string; startDate: Date; endDate: Date; dayPortion: string }
+  let segments: Segment[] = [{ leaveType, startDate: parsedStart, endDate: parsedEnd, dayPortion: portion }]
+
   if (leaveType === 'Annual Leave') {
     const balance = await getAnnualLeaveBalance(session.user.id, parsedStart.getFullYear())
-    if (balance.remaining !== null) {
-      const requestedDays = daysForApplication({ startDate: parsedStart, endDate: parsedEnd, dayPortion: portion })
-      if (requestedDays > balance.remaining) {
+    const plan = planLeaveSplit({ startDate: parsedStart, endDate: parsedEnd, dayPortion: portion, remaining: balance.remaining })
+    if (plan.kind !== 'single') {
+      // Splitting is opt-in: the applicant has to have seen and accepted that
+      // part of their request becomes unpaid.
+      if (plan.kind === 'over' || splitUnpaid !== true) {
         return NextResponse.json(
           {
             error: `Not enough Annual Leave balance — you have ${balance.remaining} day(s) left this year. Apply Unpaid Annual Leave instead for the rest.`,
@@ -118,6 +128,7 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         )
       }
+      segments = buildSplitSegments(parsedStart, parsedEnd, plan.paidDays, leaveType)
     }
   }
 
@@ -150,19 +161,25 @@ export async function POST(req: NextRequest) {
   const directorId = chosenGroup?.directorId
   const initialStatus = architectId ? 'PENDING_ARCHITECT' : 'PENDING_DIRECTOR'
 
-  const application = await prisma.leaveApplication.create({
-    data: {
-      userId: applicant.id,
-      leaveType,
-      startDate: parsedStart,
-      endDate: parsedEnd,
-      dayPortion: portion,
-      reason: reason || null,
-      projectId: validProjectId,
-      leaveGroupId: chosenGroup?.id ?? null,
-      status: initialStatus,
-    },
-  })
+  // All-or-nothing: a split must never leave only its unpaid half behind.
+  const applications = await prisma.$transaction(
+    segments.map((segment) =>
+      prisma.leaveApplication.create({
+        data: {
+          userId: applicant.id,
+          leaveType: segment.leaveType,
+          startDate: segment.startDate,
+          endDate: segment.endDate,
+          dayPortion: segment.dayPortion,
+          reason: reason || null,
+          projectId: validProjectId,
+          leaveGroupId: chosenGroup?.id ?? null,
+          status: initialStatus,
+        },
+      })
+    )
+  )
+  const application = applications[0]
 
   const hrIds = await getHrRecipientIds(applicant.id)
   const firstApproverId = architectId ?? directorId
@@ -171,15 +188,18 @@ export async function POST(req: NextRequest) {
     ? parsedStart.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
     : `${parsedStart.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} – ${parsedEnd.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}`
 
+  // One notification for the whole submission, even when it was split into a
+  // paid and an unpaid application — two pings for one request is just noise.
   await notifyUsers(recipientIds, {
     type: 'leave_application.submitted',
-    title: `${applicant.name} applied for ${leaveType}`,
+    title: `${applicant.name} applied for ${segments.map((s) => s.leaveType).join(' + ')}`,
     body: dateRange,
     link: '/staff/leave',
   })
 
   return NextResponse.json({
     application,
+    applications,
     warning: firstApproverId ? undefined : 'You are not assigned to a group yet, so only HR was notified — no approver could be notified automatically.',
   }, { status: 201 })
 }
