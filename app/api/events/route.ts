@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
-import { findVenueConflicts, describeConflict } from '@/lib/venue-collision'
+import { findVenueConflicts, findAttendeeConflicts, describeConflict } from '@/lib/event-conflicts'
 import { notifyUsers } from '@/lib/notifications'
 
 export async function GET(req: NextRequest) {
@@ -89,21 +89,27 @@ export async function POST(req: NextRequest) {
   const attendees: string[] = Array.isArray(attendeeIds) && attendeeIds.length > 0 ? attendeeIds : [session.user.id]
   const resolvedDurationMins = durationMins ? Number(durationMins) : 60
 
+  const occurrences = occurrenceDates.map((d) => ({ date: new Date(d), durationMins: resolvedDurationMins }))
+  const viewer = { id: session.user.id, canSeeAllPrivate: hasPermission(session.user, 'EDIT_ANY_EVENT') }
+  const more = (n: number) => (n > 1 ? ` (+${n - 1} more clash${n - 1 === 1 ? '' : 'es'})` : '')
+
   if (venueId) {
-    const conflicts = await findVenueConflicts(
-      venueId,
-      occurrenceDates.map((d) => ({ date: new Date(d), durationMins: resolvedDurationMins }))
-    )
+    const conflicts = await findVenueConflicts(venueId, occurrences)
     if (conflicts.length > 0) {
-      const first = conflicts[0]
-      const viewer = { id: session.user.id, canSeeAllPrivate: hasPermission(session.user, 'EDIT_ANY_EVENT') }
       return NextResponse.json(
-        {
-          error: `Venue already booked for ${describeConflict(first, viewer)}${conflicts.length > 1 ? ` (+${conflicts.length - 1} more conflict${conflicts.length - 1 === 1 ? '' : 's'})` : ''}`,
-        },
+        { error: `Venue already booked for ${describeConflict(conflicts[0], viewer)}${more(conflicts.length)}` },
         { status: 409 }
       )
     }
+  }
+
+  const staffConflicts = await findAttendeeConflicts(attendees, occurrences)
+  if (staffConflicts.length > 0) {
+    const first = staffConflicts[0]
+    return NextResponse.json(
+      { error: `${first.staffName} is already booked for ${describeConflict(first, viewer)}${more(staffConflicts.length)}` },
+      { status: 409 }
+    )
   }
 
   const baseData = {

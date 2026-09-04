@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 type Staff = { id: string; name: string; department: string | null }
@@ -39,6 +39,22 @@ function Required() {
 }
 
 const MAX_REPEAT_OCCURRENCES = 365
+
+const DURATION_OPTIONS = [
+  { mins: 15, label: '15 mins' },
+  { mins: 30, label: '30 mins' },
+  { mins: 45, label: '45 mins' },
+  { mins: 60, label: '1 hour' },
+  { mins: 90, label: '1.5 hours' },
+  { mins: 120, label: '2 hours' },
+  { mins: 240, label: '4 hours' },
+  { mins: 480, label: '8 hours' },
+]
+
+// The title an event gets pre-filled with when a project is picked.
+function projectTitle(project?: Project) {
+  return project ? `${project.code} — ${project.shortName}` : ''
+}
 
 function repeatStepMs(frequency: 'daily' | 'weekly') {
   return (frequency === 'weekly' ? 7 : 1) * 24 * 60 * 60 * 1000
@@ -94,6 +110,11 @@ export function EventForm({
   const [date, setDate] = useState(eventDate ? eventDate.toISOString().slice(0, 10) : today)
   const [time, setTime] = useState(eventDate ? eventDate.toTimeString().slice(0, 5) : '09:00')
   const [durationMins, setDurationMins] = useState(String(event?.durationMins ?? 60))
+  // An existing event whose duration isn't one of the presets (set via Custom
+  // previously) has to reopen in custom mode, or its value would be lost.
+  const [customDuration, setCustomDuration] = useState(
+    Boolean(event?.durationMins && !DURATION_OPTIONS.some((o) => o.mins === event.durationMins))
+  )
   const [venueId, setVenueId] = useState(event?.venueId ?? '')
   const [externalVenue, setExternalVenue] = useState(event?.externalVenue ?? '')
   const [selectedResources, setSelectedResources] = useState<string[]>(
@@ -110,6 +131,21 @@ export function EventForm({
 
   const venueDesc = venues.find((v) => v.id === venueId)?.description ?? ''
   const showExternal = venueDesc === 'External Venue'
+
+  // Picking a project pre-fills the title with its code and short name, but
+  // must never clobber a title the user typed themselves. We only overwrite
+  // when the box is empty or still holds the previous project's auto-title —
+  // seeded here so an existing event opened for edit behaves the same way.
+  const lastAutoTitle = useRef(
+    title === projectTitle(projects.find((p) => p.id === projectId)) ? title : ''
+  )
+
+  function handleProjectChange(id: string) {
+    const auto = projectTitle(projects.find((p) => p.id === id))
+    setTitle((prev) => (prev.trim() === '' || prev === lastAutoTitle.current ? auto : prev))
+    lastAutoTitle.current = auto
+    setProjectId(id)
+  }
 
   const staffByDept = new Map<string, Staff[]>()
   for (const s of staff) {
@@ -143,6 +179,7 @@ export function EventForm({
     if (attendeeIds.length === 0) missing.push('Staff')
     if (!date) missing.push('Date')
     if (!venueId && !showExternal) missing.push('Venue')
+    if (customDuration && !(Number(durationMins) > 0)) missing.push('a Duration of at least 1 minute')
 
     let repeatDates: string[] | undefined
     if (isRepeating) {
@@ -252,7 +289,7 @@ export function EventForm({
       <div className="grid grid-cols-1 sm:grid-cols-[1.4fr_1fr_1fr] gap-4 mb-4">
         <div>
           <label style={labelStyle}>Project</label>
-          <select style={inputStyle} value={projectId} onChange={(e) => setProjectId(e.target.value)}>
+          <select style={inputStyle} value={projectId} onChange={(e) => handleProjectChange(e.target.value)}>
             <option value="">— None —</option>
             {projects.map((p) => (
               <option key={p.id} value={p.id}>{p.code} — {p.shortName}</option>
@@ -287,12 +324,34 @@ export function EventForm({
           <input type="time" style={inputStyle} value={time} onChange={(e) => setTime(e.target.value)} />
         </div>
         <div>
-          <label style={labelStyle}>Duration (minutes)</label>
-          <select style={inputStyle} value={durationMins} onChange={(e) => setDurationMins(e.target.value)}>
-            {[15, 30, 45, 60, 90, 120].map((m) => (
-              <option key={m} value={m}>{m} mins</option>
+          <label style={labelStyle}>Duration</label>
+          <select
+            style={inputStyle}
+            value={customDuration ? 'custom' : durationMins}
+            onChange={(e) => {
+              if (e.target.value === 'custom') {
+                setCustomDuration(true)
+              } else {
+                setCustomDuration(false)
+                setDurationMins(e.target.value)
+              }
+            }}
+          >
+            {DURATION_OPTIONS.map((o) => (
+              <option key={o.mins} value={o.mins}>{o.label}</option>
             ))}
+            <option value="custom">Custom…</option>
           </select>
+          {customDuration && (
+            <input
+              type="number"
+              min="1"
+              style={{ ...inputStyle, marginTop: 6 }}
+              value={durationMins}
+              onChange={(e) => setDurationMins(e.target.value)}
+              placeholder="Minutes, e.g. 75"
+            />
+          )}
         </div>
       </div>
 

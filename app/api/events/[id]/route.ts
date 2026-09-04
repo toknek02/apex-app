@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
-import { findVenueConflicts, describeConflict } from '@/lib/venue-collision'
+import { findVenueConflicts, findAttendeeConflicts, describeConflict } from '@/lib/event-conflicts'
 import { logAudit } from '@/lib/audit'
 import { notifyUsers } from '@/lib/notifications'
 
@@ -43,16 +43,26 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const attendees: string[] = Array.isArray(attendeeIds) && attendeeIds.length > 0 ? attendeeIds : [session.user.id]
   const resolvedDurationMins = durationMins ? Number(durationMins) : 60
 
+  const occurrences = [{ date: new Date(date), durationMins: resolvedDurationMins }]
+  const viewer = { id: session.user.id, canSeeAllPrivate: canEditAny }
+
   if (venueId) {
-    const conflicts = await findVenueConflicts(venueId, [{ date: new Date(date), durationMins: resolvedDurationMins }], id)
+    const conflicts = await findVenueConflicts(venueId, occurrences, id)
     if (conflicts.length > 0) {
-      const first = conflicts[0]
-      const viewer = { id: session.user.id, canSeeAllPrivate: canEditAny }
       return NextResponse.json(
-        { error: `Venue already booked for ${describeConflict(first, viewer)}` },
+        { error: `Venue already booked for ${describeConflict(conflicts[0], viewer)}` },
         { status: 409 }
       )
     }
+  }
+
+  const staffConflicts = await findAttendeeConflicts(attendees, occurrences, id)
+  if (staffConflicts.length > 0) {
+    const first = staffConflicts[0]
+    return NextResponse.json(
+      { error: `${first.staffName} is already booked for ${describeConflict(first, viewer)}` },
+      { status: 409 }
+    )
   }
 
   const prevAttendeeIds = new Set(
