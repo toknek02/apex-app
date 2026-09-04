@@ -38,6 +38,10 @@
   --apex-muted: #64748b;     /* 4.6:1 on surface — AA */
   --apex-row-alt: #f8fafc;
   --apex-dept-bg: #f1f5f9;
+  /* Form fields sit one tone off the panel behind them, so an input reads as
+     an input instead of blending into the card. Adjust here to change the
+     strength of that contrast everywhere at once. */
+  --apex-input-bg: #f1f5f9;
 
   --apex-accent: #4f46e5;        /* indigo-600 — links, active nav, focus */
   --apex-accent-hover: #4338ca;
@@ -79,6 +83,7 @@
     --apex-muted: color-mix(in srgb, #38bdf8 75%, #26354a 25%);    /* ~5.3:1 on surface — AA */
     --apex-row-alt: color-mix(in srgb, #161f30 88%, #26354a 12%);
     --apex-dept-bg: color-mix(in srgb, #26354a 55%, #161f30 45%);
+    --apex-input-bg: color-mix(in srgb, #26354a 85%, #161f30 15%);
     --apex-section-fg: color-mix(in srgb, #38bdf8 55%, white 45%);
     /* Dark mode: no separate blue header bar — table reads as one flat colour */
     --apex-tbl-hdr: var(--apex-surface);
@@ -116,6 +121,7 @@
   --apex-muted: color-mix(in srgb, #38bdf8 75%, #26354a 25%);
   --apex-row-alt: var(--apex-surface);
   --apex-dept-bg: color-mix(in srgb, #26354a 55%, #161f30 45%);
+  --apex-input-bg: color-mix(in srgb, #26354a 85%, #161f30 15%);
   --apex-section-fg: color-mix(in srgb, #38bdf8 55%, white 45%);
   --apex-tbl-hdr: var(--apex-surface);
 
@@ -169,14 +175,23 @@ a:hover {
   text-decoration: underline;
 }
 
+/* Form fields carry their own tone so they stand out from the panel behind
+   them. Checkboxes and radios are left alone — filling those breaks the
+   browser's own tick/dot rendering. Applies to every field in the app,
+   including the many still styled inline. */
+input:not([type='checkbox']):not([type='radio']),
+select,
+textarea {
+  background-color: var(--apex-input-bg);
+  color: var(--apex-text);
+}
+
 /* The dropdown list of a <select> is drawn by the browser, not the page, so it
    doesn't pick up the surrounding theme — it inherited only the light text
    colour and rendered it on its own white background, leaving options barely
    readable in dark mode. Pinning BOTH colours here (rather than just the text)
    is what guarantees the pairing can never mismatch, whichever background the
-   browser would have chosen. Applies to every select in the app, including the
-   ones still styled inline. */
-select,
+   browser would have chosen. */
 option {
   background-color: var(--apex-surface);
   color: var(--apex-text);
@@ -340,7 +355,7 @@ a.apex-stat:hover {
   padding: 9px 11px;
   border: 1px solid var(--apex-border-strong);
   border-radius: var(--apex-radius-sm);
-  background: var(--apex-surface);
+  background: var(--apex-input-bg);
   color: var(--apex-text);
   font: inherit;
   font-size: 14px;
