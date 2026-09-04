@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import { randomBytes } from 'node:crypto'
 import bcrypt from 'bcryptjs'
 import { PERMISSIONS } from '../lib/permissions'
 
@@ -53,19 +54,29 @@ async function main() {
     create: { name: 'Employee', description: 'Default role with no elevated permissions.', isSystem: false },
   })
 
-  const adminPasswordHash = await bcrypt.hash('admin123', 10)
-  await prisma.user.upsert({
-    where: { email: 'admin@apex.local' },
-    update: {},
-    create: {
-      name: 'Mohammad Azmi',
-      email: 'admin@apex.local',
-      passwordHash: adminPasswordHash,
-      roleId: administratorRole.id,
-      department: 'DIRECTOR',
-      designation: 'Administrator',
-    },
-  })
+  // The first admin's password must never be a literal in this file — it is
+  // committed to the repository, so anyone reading it would know how to sign
+  // in. Set SEED_ADMIN_PASSWORD to choose one; otherwise a random password is
+  // generated and printed once, here, and nowhere else. Either way the account
+  // is created with mustCompleteSetup, so whoever signs in first is forced to
+  // replace it immediately.
+  const existingAdmin = await prisma.user.findUnique({ where: { email: 'admin@apex.local' } })
+  if (!existingAdmin) {
+    const adminPassword = process.env.SEED_ADMIN_PASSWORD || randomBytes(12).toString('base64url')
+    await prisma.user.create({
+      data: {
+        name: 'Mohammad Azmi',
+        email: 'admin@apex.local',
+        passwordHash: await bcrypt.hash(adminPassword, 10),
+        roleId: administratorRole.id,
+        department: 'DIRECTOR',
+        designation: 'Administrator',
+        mustCompleteSetup: true,
+      },
+    })
+    console.log(`Created admin@apex.local with a one-time password: ${adminPassword}`)
+    console.log('Sign in with it now — you will be asked to set your own password immediately.')
+  }
 
   for (const v of VENUES) {
     const existing = await prisma.venue.findFirst({ where: { description: v.description } })
@@ -80,7 +91,7 @@ async function main() {
     })
   }
 
-  console.log('Seed complete. Admin login: admin@apex.local / admin123')
+  console.log('Seed complete.')
 }
 
 main()
