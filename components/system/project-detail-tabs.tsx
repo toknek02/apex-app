@@ -1,10 +1,20 @@
 import Link from 'next/link'
 
-export function ProjectDetailTabs({ projectId, active }: { projectId: string; active: 'details' | 'cost' | 'team' }) {
+export function ProjectDetailTabs({
+  projectId,
+  active,
+  canSeeCost = true,
+}: {
+  projectId: string
+  active: 'details' | 'cost' | 'team'
+  // Project Cost is derived from salaries, so it's hidden from anyone who
+  // isn't allowed to see pay data.
+  canSeeCost?: boolean
+}) {
   const tabs = [
     { key: 'details', href: `/staff/project/${projectId}`, label: 'Details' },
     { key: 'team', href: `/staff/project/${projectId}?tab=team`, label: 'Team' },
-    { key: 'cost', href: `/staff/project/${projectId}?tab=cost`, label: 'Project Cost' },
+    ...(canSeeCost ? [{ key: 'cost', href: `/staff/project/${projectId}?tab=cost`, label: 'Project Cost' }] : []),
   ] as const
 
   return (

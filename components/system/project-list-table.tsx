@@ -23,7 +23,7 @@ const inputStyle: React.CSSProperties = {
   fontSize: 13,
 }
 
-export function ProjectListTable({ projects }: { projects: ProjectRow[] }) {
+export function ProjectListTable({ projects, canManage = false }: { projects: ProjectRow[]; canManage?: boolean }) {
   const router = useRouter()
   const [search, setSearch] = useState('')
 
@@ -49,7 +49,7 @@ export function ProjectListTable({ projects }: { projects: ProjectRow[] }) {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ backgroundColor: 'var(--apex-tbl-hdr)' }}>
-              {['Project', 'Short Name', 'Status', 'Access', 'Team', 'Actions'].map((h) => (
+              {['Project', 'Short Name', 'Status', 'Access', 'Team', ...(canManage ? ['Actions'] : [])].map((h) => (
                 <th key={h} style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', textAlign: 'left', color: '#fff', fontSize: 11, fontWeight: 600, letterSpacing: '0.04em' }}>
                   {h}
                 </th>
@@ -59,7 +59,7 @@ export function ProjectListTable({ projects }: { projects: ProjectRow[] }) {
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ padding: 20, fontSize: 13, color: 'var(--apex-muted)' }}>
+                <td colSpan={canManage ? 6 : 5} style={{ padding: 20, fontSize: 13, color: 'var(--apex-muted)' }}>
                   No projects match &ldquo;{search}&rdquo;.
                 </td>
               </tr>
@@ -86,9 +86,11 @@ export function ProjectListTable({ projects }: { projects: ProjectRow[] }) {
                         {p.memberCount}
                       </span>
                     </td>
-                    <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }} onClick={(e) => e.stopPropagation()}>
-                      <DeleteProjectButton projectId={p.id} />
-                    </td>
+                    {canManage && (
+                      <td style={{ borderRight: '1px solid var(--apex-border)', padding: '9px 14px', fontSize: 12 }} onClick={(e) => e.stopPropagation()}>
+                        <DeleteProjectButton projectId={p.id} />
+                      </td>
+                    )}
                   </tr>
                 )
               })

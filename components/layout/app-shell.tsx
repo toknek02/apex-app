@@ -45,7 +45,7 @@ const SUB: Record<string, { href: string; label: string; requires?: PermissionCo
     { href: '/staff/timesheet', label: 'Timesheet' },
     { href: '/staff/activities', label: 'Activities' },
     { href: '/staff/leave', label: 'Leave' },
-    { href: '/staff/project', label: 'Project', requires: 'MANAGE_PROJECTS' },
+    { href: '/staff/project', label: 'Project' },
   ],
   system: [
     { href: '/system/venue', label: 'Venue' },

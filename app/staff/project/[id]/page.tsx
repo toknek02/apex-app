@@ -1,10 +1,12 @@
 import { redirect } from 'next/navigation'
-import { requirePermission } from '@/lib/rbac'
+import { requireUser, hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import { ProjectInfoForm } from '@/components/system/project-info-form'
 import { ProjectTeamForm } from '@/components/system/project-team-form'
 import { ProjectDetailTabs } from '@/components/system/project-detail-tabs'
+import { ProjectInfoView } from '@/components/system/project-info-view'
+import { ProjectTeamView } from '@/components/system/project-team-view'
 import { DeleteProjectButton } from '@/components/system/delete-project-button'
 import { formatDuration } from '@/lib/project-duration'
 import { PROJECT_STATUS_STYLES } from '@/lib/project-statuses'
@@ -20,10 +22,16 @@ export default async function ProjectDetailPage({
   params: Promise<{ id: string }>
   searchParams: Promise<{ tab?: string; from?: string; to?: string; stage?: string }>
 }) {
-  const user = await requirePermission('MANAGE_PROJECTS')
+  const user = await requireUser()
+  const canManage = hasPermission(user, 'MANAGE_PROJECTS')
+  // The Cost tab is derived from salaries, so it follows the same permission
+  // as any other view of someone else's pay — not mere project access.
+  const canSeeCost = hasPermission(user, 'VIEW_TIMESHEET_REPORTS')
   const { id } = await params
   const sp = await searchParams
-  const activeTab = sp.tab === 'cost' ? 'cost' : sp.tab === 'team' ? 'team' : 'details'
+  const requestedTab = sp.tab === 'cost' ? 'cost' : sp.tab === 'team' ? 'team' : 'details'
+  // Asking for a tab you can't see falls back to Details rather than erroring.
+  const activeTab = requestedTab === 'cost' && !canSeeCost ? 'details' : requestedTab
 
   const fromDate = sp.from ? parseLocalDate(sp.from) : null
   const toDate = sp.to ? parseLocalDate(sp.to) : null
@@ -31,8 +39,13 @@ export default async function ProjectDetailPage({
   const stageFilter = sp.stage && STAGES.includes(sp.stage) ? sp.stage : ''
 
   const [project, staff, entries] = await Promise.all([
-    prisma.project.findUnique({ where: { id }, include: { members: { select: { userId: true } } } }),
-    activeTab === 'team'
+    prisma.project.findUnique({
+      where: { id },
+      include: { members: { include: { user: { select: { id: true, name: true, department: true } } } } },
+    }),
+    // The full staff list is only needed to populate the add-member picker,
+    // which viewers don't get.
+    activeTab === 'team' && canManage
       ? prisma.user.findMany({ where: { isActive: true }, orderBy: { name: 'asc' }, select: { id: true, name: true, department: true } })
       : Promise.resolve([]),
     activeTab === 'cost' && !dateFilterInvalid
@@ -64,6 +77,10 @@ export default async function ProjectDetailPage({
   const totalOtMins = entries.reduce((sum, e) => sum + e.otMins, 0)
   const totalCost = [...byStaff.values()].reduce((sum, s) => sum + s.cost, 0)
 
+  const teamMembers = project.members
+    .map((m) => m.user)
+    .sort((a, b) => a.name.localeCompare(b.name))
+
   const s = PROJECT_STATUS_STYLES[project.status] ?? PROJECT_STATUS_STYLES.Active
 
   return (
@@ -85,9 +102,9 @@ export default async function ProjectDetailPage({
         </p>
       </div>
 
-      <ProjectDetailTabs projectId={project.id} active={activeTab} />
+      <ProjectDetailTabs projectId={project.id} active={activeTab} canSeeCost={canSeeCost} />
 
-      {activeTab === 'details' && (
+      {activeTab === 'details' && (canManage ? (
         <>
           <ProjectInfoForm
             project={{
@@ -108,11 +125,38 @@ export default async function ProjectDetailPage({
             <DeleteProjectButton projectId={project.id} redirectTo="/staff/project" />
           </div>
         </>
-      )}
+      ) : (
+        <ProjectInfoView
+          project={{
+            code: project.code,
+            title: project.title,
+            status: project.status,
+            client: project.client,
+            description: project.description,
+            offices: project.offices,
+            startDate: project.startDate ? project.startDate.toISOString() : null,
+            completedAt: project.completedAt ? project.completedAt.toISOString() : null,
+            address: project.address,
+            state: project.state,
+            country: project.country,
+            mainTypology: project.mainTypology,
+            subTypology: project.subTypology,
+            scopeOfWorks: project.scopeOfWorks,
+            designInCharge: project.designInCharge,
+            siteArea: project.siteArea,
+            gfa: project.gfa,
+            noOfFloors: project.noOfFloors,
+            noOfUnits: project.noOfUnits,
+            certification: project.certification,
+          }}
+        />
+      ))}
 
-      {activeTab === 'team' && (
+      {activeTab === 'team' && (canManage ? (
         <ProjectTeamForm projectId={project.id} staff={staff} initialMemberUserIds={project.members.map((m) => m.userId)} />
-      )}
+      ) : (
+        <ProjectTeamView members={teamMembers} />
+      ))}
 
       {activeTab === 'cost' && (
         <div style={{ backgroundColor: 'var(--apex-surface)', border: '1px solid var(--apex-border)', borderRadius: 10, padding: 24, maxWidth: 560, margin: '0 auto 20px' }}>

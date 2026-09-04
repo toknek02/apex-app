@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { requirePermission } from '@/lib/rbac'
+import { requireUser, hasPermission } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { AppShell, Breadcrumb } from '@/components/layout/app-shell'
 import { ProjectModal } from '@/components/system/project-modal'
@@ -9,7 +9,10 @@ import { ProjectListTable } from '@/components/system/project-list-table'
 import { PROJECT_STATUSES } from '@/lib/project-statuses'
 
 export default async function ProjectPage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
-  const user = await requirePermission('MANAGE_PROJECTS')
+  // Everyone can browse the project register; only MANAGE_PROJECTS holders
+  // get the controls that change it.
+  const user = await requireUser()
+  const canManage = hasPermission(user, 'MANAGE_PROJECTS')
   const { status: rawStatus } = await searchParams
   const activeTab = PROJECT_STATUSES.includes(rawStatus as (typeof PROJECT_STATUSES)[number]) ? rawStatus! : 'Active'
 
@@ -33,6 +36,7 @@ export default async function ProjectPage({ searchParams }: { searchParams: Prom
       <Breadcrumb items={['Staff', 'Project']} />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <h1 style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700 }}>Project</h1>
+        {canManage && (
         <div style={{ display: 'flex', gap: 10 }}>
           <ProjectUploadModal
             trigger={
@@ -56,6 +60,7 @@ export default async function ProjectPage({ searchParams }: { searchParams: Prom
             }
           />
         </div>
+        )}
       </div>
 
       <div style={{ display: 'flex', gap: 4, marginBottom: 16, borderBottom: '1px solid var(--apex-border)' }}>
@@ -78,7 +83,7 @@ export default async function ProjectPage({ searchParams }: { searchParams: Prom
         ))}
       </div>
 
-      <ProjectListTable projects={rows} />
+      <ProjectListTable projects={rows} canManage={canManage} />
     </AppShell>
   )
 }
